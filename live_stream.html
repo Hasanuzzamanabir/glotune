@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Streaming - StreamConnect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        surface: '#1e293b',
+                        'surface-glass': 'rgba(30, 41, 59, 0.7)',
+                    },
+                    animation: {
+                        fadeIn: 'fadeIn 0.3s ease',
+                        pulse_dot: 'pulse_dot 1.5s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(8px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        pulse_dot: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.3' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, .2);
+        }
+
+        .live-badge::before {
+            content: '';
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse_dot 1.5s ease-in-out infinite;
+        }
+
+        /* Agora video covers container */
+        #videoGrid>div video {
+            object-fit: cover !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Dynamic Grid Layout - Google Meet Style */
+        #videoGrid {
+            display: grid !important;
+            gap: 12px;
+            padding: 16px;
+            align-content: start;
+        }
+
+        /* 1 participant */
+        #videoGrid:has(> :only-child) {
+            grid-template-columns: 1fr;
+        }
+
+        /* 2 participants */
+        #videoGrid:has(> :nth-child(2):last-child) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* 3-4 participants */
+        #videoGrid:has(> :nth-child(3):not(:last-child)),
+        #videoGrid:has(> :nth-child(4):last-child) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* 5-6 participants */
+        #videoGrid:has(> :nth-child(5):not(:last-child)),
+        #videoGrid:has(> :nth-child(6):last-child) {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* 7+ participants - 4 columns */
+        #videoGrid:has(> :nth-child(7)) {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .room-card {
+            transition: background .15s, border-color .15s;
+        }
+
+        .room-card:hover {
+            background: rgba(0, 0, 0, .4);
+            border-color: rgba(99, 102, 241, .5);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-50 h-screen flex flex-col overflow-hidden font-sans antialiased">
+
+    <!-- ====== Auth / Setup Modal ====== -->
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
+        id="setupModal">
+        <div class="bg-surface p-8 rounded-2xl w-[420px] max-w-[90%] border border-white/10 shadow-2xl transition-transform duration-300"
+            id="modalContent">
+
+            <h2 class="text-2xl font-semibold mb-6" id="modalTitle">🔴 StreamConnect</h2>
+
+            <!-- Hidden state -->
+            <input type="hidden" id="apiUrl" value="{{ api_base|default:'/api' }}">
+            <input type="hidden" id="authToken" value="">
+            <input type="hidden" id="wsProtocol" value="{{ ws_protocol|default:'ws' }}">
+            <input type="hidden" id="wsHost" value="{{ ws_host }}"> {# empty = use window.location.host #}
+
+            <!-- Login Section -->
+            <div id="loginSection">
+                <div class="mb-4">
+                    <label class="block mb-2 text-sm text-slate-400">Email</label>
+                    <input type="email" id="emailInput" placeholder="Enter your email"
+                        class="w-full p-3 bg-black/20 border border-white/10 rounded-lg text-white outline-none focus:border-blue-500 transition-colors">
+                </div>
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm text-slate-400">Password</label>
+                    <input type="password" id="passwordInput" placeholder="Enter your password"
+                        class="w-full p-3 bg-black/20 border border-white/10 rounded-lg text-white outline-none focus:border-blue-500 transition-colors"
+                        onkeypress="if(event.key==='Enter') handleLoginOnly()">
+                </div>
+                <div id="loginError" class="mb-4 text-red-400 text-sm hidden"></div>
+                <button
+                    class="w-full inline-flex items-center justify-center py-3 px-4 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition duration-200 text-white shadow-lg shadow-blue-500/30"
+                    onclick="handleLoginOnly()" id="loginBtn">Login</button>
+            </div>
+
+            <!-- Room List Section -->
+            <div id="roomListSection" style="display:none;">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-medium text-slate-200 flex items-center gap-2">
+                        Live Rooms
+                        <span id="wsStatusDot" class="inline-block w-2 h-2 rounded-full bg-yellow-400"
+                            title="Connecting..."></span>
+                    </h3>
+                    <span class="text-xs text-slate-500">Updates automatically</span>
+                </div>
+
+                <div id="roomsContainer" class="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1 mb-5">
+                    <div class="text-slate-400 text-center py-6 text-sm animate-pulse">Connecting...</div>
+                </div>
+
+                <div class="pt-4 border-t border-white/10 flex gap-3">
+                    <button
+                        class="flex-1 inline-flex items-center justify-center py-2.5 px-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium transition duration-200 text-white shadow-lg shadow-emerald-500/30"
+                        onclick="handleGoLiveOnly()" id="startMyStreamBtn">🔴 Start My Live</button>
+                    <button
+                        class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition duration-200 text-white shadow-lg shadow-slate-700/30"
+                        onclick="joinManualRoom()" title="Join by Room ID">🔗</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Main Header ====== -->
+    <header
+        class="h-16 px-6 flex items-center justify-between bg-surface-glass backdrop-blur-md border-b border-white/10 z-10 shrink-0">
+        <div class="font-bold text-xl tracking-tight">🔴 StreamConnect</div>
+        <div class="flex items-center gap-6">
+            <div id="roomStatus" class="text-sm text-slate-400">Not Connected</div>
+            <div id="coinsDisplay" class="text-sm text-yellow-400 font-medium hidden flex items-center gap-1">
+                🪙 <span id="coinsAmount">0</span>
+            </div>
+        </div>
+        <div id="viewerBadge" class="text-xs text-slate-500 hidden">👁️ Viewer mode</div>
+    </header>
+
+    <!-- ====== Main Body ====== -->
+    <div class="flex flex-1 h-[calc(100vh-64px)] overflow-hidden relative">
+
+        <!-- Video Stage -->
+        <main class="flex-1 flex flex-col relative bg-black">
+            <!-- No-stream placeholder -->
+            <div class="flex-1 flex flex-col items-center justify-center text-slate-600 select-none"
+                id="videoPlaceholder">
+                <div class="text-6xl mb-4">📺</div>
+                <div class="text-lg font-medium">Waiting for stream...</div>
+                <div class="text-sm mt-1">The host hasn't started video yet</div>
+            </div>
+
+            <!-- Video Grid - Google Meet style auto-layout -->
+            <div class="flex-1 overflow-auto hidden" id="videoGrid"></div>
+
+            <!-- Controls bar -->
+            <div class="h-24 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 inset-x-0 flex items-center justify-center gap-4 px-8 z-20"
+                id="controls" style="display:none!important;">
+                <button
+                    class="w-12 h-12 rounded-full bg-surface-glass backdrop-blur-sm border border-white/10 text-white flex items-center justify-center cursor-pointer hover:bg-white/10 hover:scale-105 transition-all outline-none"
+                    id="micBtn" onclick="toggleMic()" title="Toggle Mic">🎤</button>
+                <button
+                    class="w-12 h-12 rounded-full bg-surface-glass backdrop-blur-sm border border-white/10 text-white flex items-center justify-center cursor-pointer hover:bg-white/10 hover:scale-105 transition-all outline-none"
+                    id="camBtn" onclick="toggleCamera()" title="Toggle Camera">📷</button>
+                <button
+                    class="py-2.5 px-6 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition duration-200 text-white shadow-lg shadow-blue-500/30"
+                    onclick="requestToStream()" id="reqStreamBtn">Request to Stream</button>
+                <button
+                    class="w-12 h-12 rounded-full bg-red-500 border-red-500 text-white flex items-center justify-center cursor-pointer hover:bg-red-600 hover:scale-105 transition-all outline-none"
+                    onclick="leaveRoom()" title="Leave">🚪</button>
+            </div>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="w-[280px] bg-surface border-l border-white/10 flex flex-col" id="sidebar">
+            <div class="flex border-b border-white/10 shrink-0">
+                <button
+                    class="flex-1 p-4 bg-transparent border-b-2 border-blue-500 text-blue-500 font-medium cursor-pointer transition-colors outline-none tab-btn"
+                    id="btn-chatTab" onclick="switchTab('chatTab')">Chat</button>
+                <button
+                    class="flex-1 p-4 bg-transparent border-b-2 border-transparent text-slate-400 font-medium cursor-pointer hover:text-slate-200 transition-colors outline-none tab-btn"
+                    id="btn-giftTab" onclick="switchTab('giftTab')">Gifts</button>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="flex-1 flex flex-col overflow-hidden tab-content" id="chatTab" style="display:flex;">
+                <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-2" id="chatArea"></div>
+                <div class="p-3 border-t border-white/10 flex gap-2 shrink-0">
+                    <input type="text"
+                        class="flex-1 bg-black/20 border border-white/10 rounded-full px-4 py-2 text-white outline-none focus:border-white/30 transition-colors text-sm"
+                        id="chatInput" placeholder="Say something..." onkeypress="handleChatPress(event)">
+                    <button
+                        class="w-9 h-9 rounded-full bg-surface-glass backdrop-blur-sm border border-white/10 text-white flex items-center justify-center cursor-pointer hover:bg-white/10 hover:scale-105 transition-all outline-none text-sm"
+                        onclick="sendChatMessage()">➤</button>
+                </div>
+            </div>
+
+            <!-- Gifts Tab -->
+            <div class="flex-1 flex-col overflow-hidden tab-content" id="giftTab" style="display:none;">
+                <div class="grid grid-cols-3 gap-2 p-3">
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-2 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-lg"
+                        onclick="sendGift('heart')">❤️<br><small class="text-xs text-slate-400 mt-0.5 block">Heart ·
+                            5🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('rose')">🌹<br><small class="text-xs text-slate-400 mt-1 block">Rose ·
+                            10🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('star')">⭐<br><small class="text-xs text-slate-400 mt-1 block">Star ·
+                            15🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('fire')">🔥<br><small class="text-xs text-slate-400 mt-1 block">Fire ·
+                            25🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('galaxy')">🌌<br><small class="text-xs text-slate-400 mt-1 block">Galaxy ·
+                            25🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('diamond')">💎<br><small class="text-xs text-slate-400 mt-1 block">Diamond ·
+                            50🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('crown')">👑<br><small class="text-xs text-slate-400 mt-1 block">Crown ·
+                            100🪙</small></button>
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg p-3 text-center cursor-pointer hover:bg-white/10 hover:border-blue-500 hover:scale-105 transition-all text-xl"
+                        onclick="sendGift('gem')">💍<br><small class="text-xs text-slate-400 mt-1 block">Gem ·
+                            75🪙</small></button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+
+
+
+    <script>
+        // ============================================================
+        //  State
+        // ============================================================
+        let rtc = { client: null, localAudioTrack: null, localVideoTrack: null, remoteUsers: {} };
+        let options = { appId: '', channel: '', token: '', uid: null };
+        let currentRoomId = null;
+        let currentUserRole = null;   // 'host' | 'audience'
+        let isMuted = false;
+        let isCamOff = false;
+
+        // WebSocket handles
+        let roomWs = null;     // ws/rooms/ — realtime room list
+        let chatWs = null;     // ws/live/{room_id}/ — in-room chat + events
+
+        // ============================================================
+        //  Helpers
+        // ============================================================
+        function getAuthHeader() {
+            return {
+                'Authorization': `Bearer ${document.getElementById('authToken').value}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function getBaseUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/$/, '');
+        }
+
+        function getWsBase() {
+            const proto = document.getElementById('wsProtocol').value || (location.protocol === 'https:' ? 'wss' : 'ws');
+            // Use configured wsHost or fallback to current browser host
+            const host = document.getElementById('wsHost').value.trim() || window.location.host;
+            return `${proto}://${host}`;
+        }
+
+        // ============================================================
+        //  Auth
+        // ============================================================
+        async function handleLoginOnly() {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            const errEl = document.getElementById('loginError');
+            errEl.classList.add('hidden');
+
+            if (!email || !password) {
+                errEl.textContent = 'Email and password are required.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('loginBtn');
+            btn.textContent = 'Logging in…';
+            btn.disabled = true;
+
+            try {
+                const token = await loginAndGetToken(email, password);
+                document.getElementById('authToken').value = token;
+
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('roomListSection').style.display = 'block';
+                document.getElementById('modalTitle').textContent = '🔴 StreamConnect';
+
+                // Fetch and display user coins
+                fetchUserCoins(token);
+
+                // Open realtime room list WebSocket
+                openRoomListWebSocket(token);
+
+            } catch (err) {
+                errEl.textContent = 'Error: ' + err.message;
+                errEl.classList.remove('hidden');
+                btn.textContent = 'Login';
+                btn.disabled = false;
+            }
+        }
+
+        async function loginAndGetToken(email, password) {
+            const res = await fetch(`${getBaseUrl()}/auth/email-login/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Login failed');
+            return data.access;
+        }
+
+        // ============================================================
+        //  Realtime Room List via WebSocket  (ws/rooms/)
+        // ============================================================
+        function openRoomListWebSocket(token) {
+            const wsBase = getWsBase();
+            const url = `${wsBase}/ws/rooms/?token=${token}`;
+
+            roomWs = new WebSocket(url);
+
+            roomWs.onopen = () => {
+                document.getElementById('wsStatusDot').className =
+                    'inline-block w-2 h-2 rounded-full bg-green-400';
+                document.getElementById('wsStatusDot').title = 'Connected — realtime';
+            };
+
+            roomWs.onmessage = (evt) => {
+                let msg;
+                try { msg = JSON.parse(evt.data); } catch { return; }
+
+                if (msg.type === 'room_list') {
+                    renderRoomList(msg.rooms || []);
+                } else if (msg.type === 'room_update') {
+                    handleRoomUpdate(msg.action, msg.room);
+                }
+            };
+
+            roomWs.onclose = () => {
+                document.getElementById('wsStatusDot').className =
+                    'inline-block w-2 h-2 rounded-full bg-red-400';
+                document.getElementById('wsStatusDot').title = 'Disconnected';
+                // Try to reconnect after 3 s if still on room list screen
+                if (document.getElementById('roomListSection').style.display !== 'none') {
+                    setTimeout(() => {
+                        const tok = document.getElementById('authToken').value;
+                        if (tok) openRoomListWebSocket(tok);
+                    }, 3000);
+                }
+            };
+
+            roomWs.onerror = () => {
+                document.getElementById('wsStatusDot').className =
+                    'inline-block w-2 h-2 rounded-full bg-orange-400';
+                document.getElementById('wsStatusDot').title = 'WS error — retrying';
+            };
+        }
+
+        // Current rooms map: room_id → data (for fast update)
+        let _roomsMap = {};
+
+        function renderRoomList(rooms) {
+            _roomsMap = {};
+            rooms.forEach(r => { _roomsMap[r.room_id] = r; });
+            _paintRoomList();
+        }
+
+        function handleRoomUpdate(action, room) {
+            if (!room) return;
+            if (action === 'added' || action === 'updated') {
+                _roomsMap[room.room_id] = room;
+            } else if (action === 'removed') {
+                delete _roomsMap[room.room_id];
+            }
+            _paintRoomList();
+        }
+
+        function _paintRoomList() {
+            const container = document.getElementById('roomsContainer');
+            const rooms = Object.values(_roomsMap);
+
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="text-slate-500 text-center py-8 text-sm bg-black/20 rounded-lg border border-white/5">
+                        📭 No active public rooms right now.<br>
+                        <span class="text-slate-600 text-xs">Be the first — start your live!</span>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            rooms.sort((a, b) => (b.started_at || '') < (a.started_at || '') ? -1 : 1);
+
+            rooms.forEach(room => {
+                const hostName = (room.host && room.host.username) ? room.host.username : 'Unknown';
+                const title = room.title || `${hostName}'s Stream`;
+                const viewers = room.viewer_count || 0;
+                const initial = hostName.charAt(0).toUpperCase();
+
+                const el = document.createElement('div');
+                el.className = 'room-card flex items-center justify-between p-3 bg-black/20 border border-white/5 rounded-xl cursor-pointer';
+                el.onclick = () => joinSpecificRoom(room.room_id);
+                el.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden min-w-0">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0 font-semibold">
+                            ${initial}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="font-medium text-slate-100 truncate text-sm">${title}</div>
+                            <div class="text-xs text-slate-400 flex items-center gap-2">
+                                <span>${hostName}</span>
+                                <span class="live-badge text-red-400">LIVE</span>
+                                <span>👁 ${viewers}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="shrink-0 px-3 py-1.5 bg-indigo-500/20 text-indigo-300 rounded-md text-xs font-semibold hover:bg-indigo-500 hover:text-white transition-colors">
+                        Join
+                    </button>`;
+                container.appendChild(el);
+            });
+        }
+
+        // ============================================================
+        //  Room actions
+        // ============================================================
+        async function joinSpecificRoom(roomId) {
+            currentRoomId = roomId;
+            await setupAndJoinRoom(roomId);
+        }
+
+        async function handleGoLiveOnly() {
+            await setupAndJoinRoom(null);
+        }
+
+        async function joinManualRoom() {
+            const roomId = prompt('Enter Room ID to join:');
+            if (roomId && roomId.trim()) await setupAndJoinRoom(roomId.trim());
+        }
+
+        async function setupAndJoinRoom(roomIdToJoin) {
+            const token = document.getElementById('authToken').value.trim();
+            if (!token) { alert('Please login first.'); return; }
+
+            // Dismiss modal
+            const modal = document.getElementById('setupModal');
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
+            // Close room-list WS (no longer needed)
+            if (roomWs) { roomWs.onclose = null; roomWs.close(); roomWs = null; }
+
+            try {
+                if (roomIdToJoin) {
+                    currentRoomId = roomIdToJoin;
+                    currentUserRole = 'audience';
+                    await API_JoinRoom(roomIdToJoin);
+                } else {
+                    const room = await API_CreateRoom();
+                    currentRoomId = room.room_id || room.id;
+                    currentUserRole = 'host';
+                    await API_StartStream(currentRoomId);
+                }
+
+                document.getElementById('roomStatus').innerHTML =
+                    `<span class="live-badge text-red-400">LIVE</span> Room: ${currentRoomId.substring(0, 8)}…`;
+
+                // Show controls
+                document.getElementById('controls').style.setProperty('display', 'flex', 'important');
+                // Hide viewer badge and stream request button for host
+                if (currentUserRole === 'host') {
+                    document.getElementById('viewerBadge').classList.add('hidden');
+                    // Host doesn't need stream request button
+                    document.getElementById('reqStreamBtn').style.display = 'none';
+                } else {
+                    document.getElementById('viewerBadge').classList.remove('hidden');
+                    // Hide mic/cam for viewers (they are audience, will be enabled if approved to stream)
+                    document.getElementById('micBtn').style.display = 'none';
+                    document.getElementById('camBtn').style.display = 'none';
+                    // Show request stream button for viewers
+                    document.getElementById('reqStreamBtn').style.display = '';
+                }
+
+                // Open in-room WebSocket (chat + events)
+                openChatWebSocket(currentRoomId, token);
+
+                // Load room members to map UIDs to usernames
+                await API_GetRoomMembers(currentRoomId);
+
+                // Fetch Agora Token and init
+                const agoraData = await API_GetAgoraToken(currentRoomId);
+                options.appId = agoraData.app_id || agoraData.appId;
+                options.token = agoraData.token;
+                options.channel = String(currentRoomId);
+                options.uid = agoraData.uid;
+                // Track current user's UID to username
+                rtc.remoteUsers[agoraData.uid] = { username: 'You' };
+
+                // Role from API: 'host' or 'audience'
+                const serverRole = agoraData.role || (currentUserRole === 'host' ? 'host' : 'audience');
+                await initializeAgora(serverRole);
+
+            } catch (err) {
+                alert('Error initializing room: ' + err.message);
+                console.error(err);
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+            }
+        }
+
+        // ============================================================
+        //  API Calls
+        // ============================================================
+        async function API_CreateRoom() {
+            const res = await fetch(`${getBaseUrl()}/live/rooms/`, {
+                method: 'POST',
+                headers: getAuthHeader(),
+                body: JSON.stringify({
+                    title: 'Live Stream ' + new Date().toLocaleTimeString(),
+                    description: 'Welcome to my stream!',
+                    is_public: true
+                })
+            });
+            if (!res.ok) throw new Error('Failed to create room');
+            return res.json();
+        }
+
+        async function API_StartStream(roomId) {
+            const res = await fetch(`${getBaseUrl()}/live/rooms/${roomId}/start/`, {
+                method: 'PUT',
+                headers: getAuthHeader()
+            });
+            if (!res.ok) {
+                // Try PATCH as fallback
+                const res2 = await fetch(`${getBaseUrl()}/live/rooms/${roomId}/start/`, {
+                    method: 'PATCH',
+                    headers: getAuthHeader()
+                });
+                if (!res2.ok) throw new Error('Failed to start room');
+                return res2.json();
+            }
+            return res.json();
+        }
+
+        async function API_JoinRoom(roomId) {
+            const res = await fetch(`${getBaseUrl()}/live/rooms/${roomId}/join/`, {
+                method: 'POST',
+                headers: getAuthHeader()
+            });
+            if (!res.ok) throw new Error('Failed to join room — it may not exist or you were banned.');
+            return res.json();
+        }
+
+        // Get room members to map UIDs to usernames
+        async function API_GetRoomMembers(roomId) {
+            try {
+                const res = await fetch(`${getBaseUrl()}/live/rooms/${roomId}/members/`, {
+                    method: 'GET',
+                    headers: getAuthHeader()
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Map user.id to username
+                    if (data.results) {
+                        data.results.forEach(member => {
+                            if (member.user) {
+                                rtc.remoteUsers[member.user.id] = { username: member.user.username };
+                            }
+                        });
+                    }
+                    console.log('📋 Loaded room members:', rtc.remoteUsers);
+                }
+            } catch (e) {
+                console.warn('Failed to fetch room members:', e);
+            }
+        }
+
+        async function API_LeaveRoom(roomId) {
+            await fetch(`${getBaseUrl()}/live/rooms/${roomId}/leave/`, {
+                method: 'POST',
+                headers: getAuthHeader()
+            });
+        }
+
+        async function API_GetAgoraToken(roomId) {
+            const res = await fetch(`${getBaseUrl()}/live/token/${roomId}/`, {
+                method: 'GET',
+                headers: getAuthHeader()
+            });
+            if (!res.ok) throw new Error('Failed to fetch Agora token');
+            return res.json();
+        }
+
+        async function API_SendMessage(text) {
+            await fetch(`${getBaseUrl()}/live/rooms/${currentRoomId}/send-message/`, {
+                method: 'POST',
+                headers: getAuthHeader(),
+                body: JSON.stringify({ message: text })
+            });
+        }
+
+        async function API_SendGift(giftType) {
+            const res = await fetch(`${getBaseUrl()}/live/rooms/${currentRoomId}/send-gift/`, {
+                method: 'POST',
+                headers: getAuthHeader(),
+                body: JSON.stringify({ gift_type: giftType, quantity: 1 })
+            });
+            return res.json();
+        }
+
+        async function API_RequestStream() {
+            const res = await fetch(`${getBaseUrl()}/live/rooms/${currentRoomId}/request-stream/`, {
+                method: 'POST',
+                headers: getAuthHeader()
+            });
+            return res;
+        }
+
+        async function fetchUserCoins(token) {
+            try {
+                const url = `${getBaseUrl()}/users/profile/`;
+                console.log('Fetching user coins from:', url);
+                const res = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const coins = data.coins || data.total_coins || 0;
+                    document.getElementById('coinsAmount').textContent = coins;
+                    document.getElementById('coinsDisplay').classList.remove('hidden');
+                    console.log('Coins fetched successfully:', coins);
+                } else {
+                    console.warn('Could not fetch user coins:', res.status, res.statusText);
+                    document.getElementById('coinsDisplay').classList.add('hidden');
+                }
+            } catch (e) {
+                console.error('Error fetching coins:', e);
+                document.getElementById('coinsDisplay').classList.add('hidden');
+            }
+        }
+
+        function updateCoinsDisplay(newCoins) {
+            document.getElementById('coinsAmount').textContent = newCoins;
+            document.getElementById('coinsDisplay').classList.remove('hidden');
+        }
+
+        // ============================================================
+        //  Agora Logic  — FIXED
+        //  serverRole: 'host' (publisher) | 'audience' (subscriber only)
+        // ============================================================
+        async function initializeAgora(serverRole) {
+            if (!options.appId) {
+                addChatSystemMessage('⚠️ Agora App ID missing — video disabled.');
+                console.error('❌ Agora App ID is undefined/empty. Options:', options);
+                return;
+            }
+
+            console.log('🎙️ Initializing Agora...', {
+                appId: options.appId ? options.appId.substring(0, 6) + '...' : null,
+                channel: options.channel,
+                uid: options.uid,
+                role: serverRole
+            });
+
+            AgoraRTC.setLogLevel(2); // Warn level
+            rtc.client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
+
+            // Force TCP/TLS proxy to bypass strict network firewalls (fixes CAN_NOT_GET_GATEWAY_SERVER)
+            try {
+                rtc.client.startProxyServer(3);
+                console.log('🛡️ Agora TCP Proxy enabled');
+            } catch (proxyErr) {
+                console.warn('⚠️ Could not start Agora proxy:', proxyErr);
+            }
+
+            // ---- Remote user joined / left ----
+            rtc.client.on('user-published', async (user, mediaType) => {
+                try {
+                    await rtc.client.subscribe(user, mediaType);
+                    showVideoGrid(true);
+
+                    if (mediaType === 'video') {
+                        const wrapper = addVideoPlayer(user.uid, false);
+                        user.videoTrack.play(`video-${user.uid}`);
+                    }
+                    if (mediaType === 'audio') {
+                        user.audioTrack.play();
+                    }
+                } catch (e) {
+                    console.error('subscribe error:', e);
+                }
+            });
+
+            rtc.client.on('user-unpublished', (user, mediaType) => {
+                if (mediaType === 'video') {
+                    const el = document.getElementById(`video-wrapper-${user.uid}`);
+                    if (el) el.remove();
+                    // Show placeholder if no video left
+                    if (document.getElementById('videoGrid').children.length === 0) {
+                        showVideoGrid(false);
+                    }
+                }
+            });
+
+            rtc.client.on('user-left', (user) => {
+                const el = document.getElementById(`video-wrapper-${user.uid}`);
+                if (el) el.remove();
+                if (document.getElementById('videoGrid').children.length === 0) {
+                    showVideoGrid(false);
+                }
+            });
+
+            // ---- Set Agora role BEFORE joining ----
+            const agoraRole = (serverRole === 'host') ? 'host' : 'audience';
+            await rtc.client.setClientRole(agoraRole);
+
+            try {
+                console.log('📡 Attempting to join Agora with:', {
+                    appId: options.appId,
+                    channel: options.channel,
+                    token: options.token ? options.token.substring(0, 20) + '...' : null,
+                    uid: options.uid
+                });
+                
+                await rtc.client.join(options.appId, options.channel, options.token, options.uid);
+                
+                console.log('✅ Successfully joined Agora channel:', options.channel);
+
+                if (agoraRole === 'host') {
+                    // HOST — create + publish local camera + mic
+                    try {
+                        rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                    } catch (e) {
+                        addChatSystemMessage('⚠️ Microphone access denied or not available.');
+                        console.warn('Mic error:', e);
+                    }
+                    try {
+                        rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack({
+                            encoderConfig: { width: 1280, height: 720, frameRate: 30, bitrateMax: 2000 }
+                        });
+                    } catch (e) {
+                        addChatSystemMessage('⚠️ Camera access denied. Check permissions and try again.');
+                        console.warn('Cam error:', e);
+                    }
+
+                    showVideoGrid(true);
+                    addVideoPlayer('local', true);
+
+                    if (rtc.localVideoTrack) {
+                        rtc.localVideoTrack.play('video-local');
+                    } else {
+                        // No camera — show black placeholder with label
+                        const placeholder = document.getElementById('video-local');
+                        if (placeholder) {
+                            placeholder.innerHTML = '<div class="w-full h-full flex items-center justify-center text-4xl">📷</div>';
+                        }
+                    }
+
+                    const tracksToPublish = [rtc.localAudioTrack, rtc.localVideoTrack].filter(Boolean);
+                    if (tracksToPublish.length > 0) {
+                        await rtc.client.publish(tracksToPublish);
+                        console.log('✅ Published tracks:', tracksToPublish.length);
+                    }
+
+                } else {
+                    // AUDIENCE — do NOT create / publish tracks. Just subscribe via events.
+                    // Controls: only show leave + request buttons (no mic/cam)
+                    console.log('✅ Joined as audience — waiting for host stream');
+                    addChatSystemMessage('👋 Welcome! You joined as a viewer.');
+                }
+
+            } catch (error) {
+                const code = error.code || '';
+                let msg = `Agora Error [${code}]: ${error.message || error}`;
+                
+                // Provide specific guidance for CAN_NOT_GET_GATEWAY_SERVER
+                if (code === 'CAN_NOT_GET_GATEWAY_SERVER' || error.message?.includes('CAN_NOT_GET_GATEWAY_SERVER')) {
+                    msg = '❌ Cannot connect to Agora gateway. Possible causes:\n' +
+                          '1. Invalid Agora App ID or token\n' +
+                          '2. Network firewall blocking Agora servers\n' +
+                          '3. Agora credentials not properly configured';
+                    console.error('Agora Gateway Error - Full error object:', error);
+                    console.error('Failed with options:', {
+                        appId: options.appId,
+                        channel: options.channel,
+                        uid: options.uid,
+                        token: options.token ? options.token.substring(0, 30) + '...' : null
+                    });
+                }
+                else if (code === 'PERMISSION_DENIED') msg = '❌ Camera/Mic permission denied. Please allow access in your browser.';
+                else if (code === 'DEVICE_NOT_FOUND') msg = '❌ No camera/microphone found.';
+                else if (code === 'NOT_SUPPORTED') msg = '❌ Your browser does not support this feature.';
+                
+                addChatSystemMessage(msg);
+                console.error('Agora join error:', error);
+            }
+        }
+
+        function showVideoGrid(show) {
+            const grid = document.getElementById('videoGrid');
+            const placeholder = document.getElementById('videoPlaceholder');
+            if (show) {
+                grid.classList.remove('hidden');
+                if (placeholder) placeholder.style.display = 'none';
+            } else {
+                grid.classList.add('hidden');
+                if (placeholder) placeholder.style.display = '';
+            }
+        }
+
+        function addVideoPlayer(uid, isLocal) {
+            const grid = document.getElementById('videoGrid');
+            let wrapper = document.getElementById(`video-wrapper-${uid}`);
+            if (wrapper) return wrapper;
+
+            wrapper = document.createElement('div');
+            // Google Meet style - uniform tiles with fixed aspect ratio
+            wrapper.className = 'bg-surface rounded-lg overflow-hidden relative shadow-lg border border-white/10';
+            wrapper.style.cssText = 'min-height: 240px; aspect-ratio: 4/3;';
+            wrapper.id = `video-wrapper-${uid}`;
+
+            const player = document.createElement('div');
+            player.id = `video-${uid}`;
+            player.style.cssText = 'width:100%;height:100%;';
+
+            const label = document.createElement('div');
+            label.className = 'absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded-md text-xs z-10 text-white font-medium whitespace-nowrap';
+            if (isLocal) {
+                label.innerText = '🔴 You (Host)';
+            } else {
+                // Get username from stored map if available, otherwise use uid
+                const username = rtc.remoteUsers?.[uid]?.username || `User ${uid}`;
+                label.innerText = `👤 ${username}`;
+            }
+
+            wrapper.appendChild(player);
+            wrapper.appendChild(label);
+            grid.appendChild(wrapper);
+            return wrapper;
+        }
+
+        // ============================================================
+        //  WebSocket Chat  (ws/live/{room_id}/)
+        // ============================================================
+        function openChatWebSocket(roomId, token) {
+            const wsBase = getWsBase();
+            const url = `${wsBase}/ws/live/${roomId}/?token=${token}`;
+
+            chatWs = new WebSocket(url);
+
+            chatWs.onopen = () => {
+                addChatSystemMessage('✅ Connected to live chat.');
+            };
+
+            chatWs.onmessage = (evt) => {
+                let msg;
+                try { msg = JSON.parse(evt.data); } catch { return; }
+                handleChatWsMessage(msg);
+            };
+
+            chatWs.onclose = () => {
+                addChatSystemMessage('⚡ Chat disconnected.');
+            };
+
+            chatWs.onerror = (e) => {
+                console.error('Chat WS error:', e);
+            };
+        }
+
+        function handleChatWsMessage(msg) {
+            switch (msg.type) {
+                case 'message':
+                    appendChatMessage(msg.username || 'User', msg.message || '', msg.profile_picture);
+                    break;
+                case 'like':
+                    addChatSystemMessage(`❤️ ${msg.username} liked the stream!`);
+                    break;
+                case 'gift':
+                    addChatSystemMessage(`🎁 ${msg.username} sent ${msg.quantity}x ${giftEmoji(msg.gift_type)}!`);
+                    break;
+                case 'member_action':
+                    addChatSystemMessage(`ℹ️ ${msg.message}`);
+                    break;
+                case 'typing':
+                    // Could show typing indicator — skip for now
+                    break;
+                case 'room_ended':
+                    addChatSystemMessage(`🔴 ${msg.message}`);
+                    // Disconnect and leave the room after a brief delay
+                    setTimeout(() => {
+                        leaveRoom();
+                        window.location.href = '/'; // Redirect to home
+                    }, 2000);
+                    break;
+                case 'stream_request':
+                    if (msg.action === 'approved') {
+                        addChatSystemMessage(`✅ Your stream request was approved!`);
+                        // Track the requester's username
+                        if (msg.requester_id) {
+                            rtc.remoteUsers[msg.requester_id] = { username: msg.requester_username || `User ${msg.requester_id}` };
+                        }
+                        // Viewer cannot upgrade - only host can stream
+                        handleStreamApproval();
+                    } else if (msg.action === 'rejected') {
+                        addChatSystemMessage(`❌ Stream request rejected: ${msg.reason || ''}`);
+                    } else if (msg.action === 'requested') {
+                        // Track the requester's username
+                        if (msg.requester_id) {
+                            rtc.remoteUsers[msg.requester_id] = { username: msg.requester_username || `User ${msg.requester_id}` };
+                        }
+                        // Show request with action buttons only for host
+                        if (currentUserRole === 'host') {
+                            addStreamRequestWithActions(msg.requester_username, msg.requester_id, msg.request_id);
+                        } else {
+                            addChatSystemMessage(`📨 ${msg.requester_username} wants to stream.`);
+                        }
+                    }
+                    break;
+                case 'join_request':
+                    // Show request with action buttons only for host
+                    if (currentUserRole === 'host') {
+                        addJoinRequestWithActions(msg.requester_username, msg.requester_id, msg.request_id);
+                    } else {
+                        addChatSystemMessage(`🔔 ${msg.requester_username} requests to join (private room).`);
+                    }
+                    break;
+            }
+        }
+
+        function giftEmoji(type) {
+            const map = { rose: '🌹', heart: '❤️', star: '⭐', fire: '🔥', diamond: '💎', crown: '👑', gem: '💍', galaxy: '🌌' };
+            return map[type] || '🎁';
+        }
+
+        // When stream request approved, get new token with publisher role and start streaming
+        async function handleStreamApproval() {
+            addChatSystemMessage('🎙️ Starting your stream…');
+            try {
+                // Call backend to mark stream as started
+                const res = await fetch(`${getBaseUrl()}/live/rooms/${currentRoomId}/start-cohost-stream/`, {
+                    method: 'PATCH',
+                    headers: getAuthHeader()
+                });
+                if (!res.ok) throw new Error(await res.text());
+
+                currentUserRole = 'host';
+                document.getElementById('micBtn').style.display = '';
+                document.getElementById('camBtn').style.display = '';
+                document.getElementById('viewerBadge').classList.add('hidden');
+
+                // Get new Agora token with publisher role
+                console.log('📡 Fetching new token with publisher role...');
+                const agoraData = await API_GetAgoraToken(currentRoomId);
+                console.log('🎫 New token received, role:', agoraData.role);
+
+                // Upgrade Agora role and publish tracks
+                if (rtc.client) {
+                    // First, unpublish any existing tracks if they exist
+                    if (rtc.localAudioTrack || rtc.localVideoTrack) {
+                        const existingTracks = [rtc.localAudioTrack, rtc.localVideoTrack].filter(Boolean);
+                        if (existingTracks.length) {
+                            try {
+                                await rtc.client.unpublish(existingTracks);
+                                console.log('📤 Unpublished existing tracks');
+                            } catch (e) {
+                                console.warn('Failed to unpublish existing tracks:', e);
+                            }
+                            rtc.localAudioTrack = null;
+                            rtc.localVideoTrack = null;
+                        }
+                    }
+                    
+                    // Leave and rejoin with new token
+                    try {
+                        await rtc.client.leave();
+                        console.log('👋 Left Agora channel');
+                    } catch (e) {
+                        console.warn('Failed to leave channel:', e);
+                    }
+                    
+                    // Rejoin with new token as publisher
+                    await rtc.client.join(agoraData.appId, agoraData.channel, agoraData.token, agoraData.uid);
+                    console.log('🔌 Rejoined Agora channel with publisher token');
+                    
+                    // Now create and publish tracks as publisher
+                    rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack().catch(() => null);
+                    rtc.localVideoTrack = await AgoraRTC.createCameraVideoTrack().catch(() => null);
+
+                    showVideoGrid(true);
+                    addVideoPlayer('local', true);
+                    if (rtc.localVideoTrack) rtc.localVideoTrack.play('video-local');
+
+                    // Publish the new tracks
+                    const tracks = [rtc.localAudioTrack, rtc.localVideoTrack].filter(Boolean);
+                    if (tracks.length) {
+                        await rtc.client.publish(tracks);
+                        console.log('📤 Published tracks as publisher');
+                    }
+                }
+                addChatSystemMessage('✅ You are now streaming!');
+            } catch (e) {
+                addChatSystemMessage('❌ Failed to start stream: ' + e.message);
+                console.error('Stream approval error:', e);
+            }
+        }
+
+        // ============================================================
+        //  Controls
+        // ============================================================
+        async function toggleMic() {
+            if (!rtc.localAudioTrack) return;
+            isMuted = !isMuted;
+            await rtc.localAudioTrack.setMuted(isMuted);
+            const btn = document.getElementById('micBtn');
+            btn.textContent = isMuted ? '🔇' : '🎤';
+            btn.classList.toggle('bg-red-500', isMuted);
+            btn.classList.toggle('border-red-500', isMuted);
+        }
+
+        async function toggleCamera() {
+            if (!rtc.localVideoTrack) return;
+            isCamOff = !isCamOff;
+            await rtc.localVideoTrack.setMuted(isCamOff);
+            const btn = document.getElementById('camBtn');
+            btn.textContent = isCamOff ? '📷🚫' : '📷';
+            btn.classList.toggle('bg-red-500', isCamOff);
+            btn.classList.toggle('border-red-500', isCamOff);
+        }
+
+        async function leaveRoom() {
+            if (rtc.localAudioTrack) { rtc.localAudioTrack.close(); rtc.localAudioTrack = null; }
+            if (rtc.localVideoTrack) { rtc.localVideoTrack.close(); rtc.localVideoTrack = null; }
+            if (rtc.client) { await rtc.client.leave(); rtc.client = null; }
+            if (chatWs) { chatWs.onclose = null; chatWs.close(); chatWs = null; }
+
+            // If host is leaving, end the entire stream (disconnect all members)
+            if (currentRoomId && currentUserRole === 'host') {
+                try {
+                    await fetch(`${getBaseUrl()}/live/rooms/${currentRoomId}/end/`, {
+                        method: 'PATCH',
+                        headers: getAuthHeader()
+                    });
+                } catch (e) {
+                    console.error('Failed to end stream:', e);
+                }
+            } else if (currentRoomId) {
+                // Member leaving
+                await API_LeaveRoom(currentRoomId).catch(() => { });
+            }
+
+            window.location.reload();
+        }
+
+        async function requestToStream() {
+            try {
+                const res = await API_RequestStream();
+                if (res.ok) {
+                    addChatSystemMessage('📨 Stream request sent! Waiting for host approval…');
+                    document.getElementById('reqStreamBtn').textContent = 'Requested ✓';
+                    document.getElementById('reqStreamBtn').disabled = true;
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    addChatSystemMessage('❌ Request failed: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                addChatSystemMessage('❌ Failed to send stream request.');
+            }
+        }
+
+        async function sendGift(type) {
+            if (!currentRoomId) { alert('Join a room first.'); return; }
+            try {
+                const data = await API_SendGift(type);
+                if (data.success) {
+                    const remaining = data.sender_remaining_tokens || data.remaining_coins || 0;
+                    addChatSystemMessage(`🎁 You sent ${giftEmoji(type)}! Remaining: ${remaining}🪙`);
+                    updateCoinsDisplay(remaining);
+                    // Also broadcast via WS so others see it
+                    if (chatWs && chatWs.readyState === WebSocket.OPEN) {
+                        chatWs.send(JSON.stringify({ action: 'gift', gift_type: type, quantity: 1 }));
+                    }
+                } else {
+                    alert(data.message || 'Failed to send gift — insufficient coins?');
+                }
+            } catch (e) {
+                alert('Failed to send gift.');
+            }
+        }
+
+        // ============================================================
+        //  Chat
+        // ============================================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('text-blue-500', 'border-blue-500');
+                b.classList.add('text-slate-400', 'border-transparent');
+            });
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById(`btn-${tabId}`).classList.remove('text-slate-400', 'border-transparent');
+            document.getElementById(`btn-${tabId}`).classList.add('text-blue-500', 'border-blue-500');
+            document.getElementById(tabId).style.display = 'flex';
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+
+            if (chatWs && chatWs.readyState === WebSocket.OPEN) {
+                // Fast path — send via WebSocket
+                chatWs.send(JSON.stringify({ action: 'message', message: text }));
+            } else {
+                // Fallback — HTTP POST
+                await API_SendMessage(text);
+                appendChatMessage('You', text, null);
+            }
+        }
+
+        function handleChatPress(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        function appendChatMessage(username, text, profilePic) {
+            const area = document.getElementById('chatArea');
+            const div = document.createElement('div');
+            div.className = 'bg-white/5 px-3 py-2.5 rounded-lg text-sm animate-fadeIn';
+
+            const sender = document.createElement('div');
+            sender.className = 'font-semibold text-indigo-400 mb-0.5 text-xs';
+            sender.textContent = username;
+
+            const cont = document.createElement('div');
+            cont.className = 'text-slate-200 leading-snug';
+            cont.textContent = text;
+
+            div.appendChild(sender);
+            div.appendChild(cont);
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function addChatSystemMessage(text) {
+            const area = document.getElementById('chatArea');
+            const div = document.createElement('div');
+            div.className = 'px-3 py-2 rounded-lg text-xs text-slate-400 italic animate-fadeIn bg-white/5';
+            div.textContent = text;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function addStreamRequestWithActions(username, userId, requestId) {
+            const area = document.getElementById('chatArea');
+            const div = document.createElement('div');
+            div.className = 'px-4 py-3 rounded-lg text-sm animate-fadeIn bg-blue-500/10 border border-blue-500/30 flex items-center justify-between gap-3';
+            
+            const textSpan = document.createElement('span');
+            textSpan.innerHTML = `📨 <strong>${username}</strong> wants to stream`;
+            textSpan.style.flex = '1';
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'flex gap-2 shrink-0';
+            
+            const acceptBtn = document.createElement('button');
+            acceptBtn.className = 'px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-md font-medium transition-colors';
+            acceptBtn.textContent = '✓ Accept';
+            acceptBtn.onclick = () => approveStreamRequest(requestId, div);
+            
+            const rejectBtn = document.createElement('button');
+            rejectBtn.className = 'px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-md font-medium transition-colors';
+            rejectBtn.textContent = '✕ Reject';
+            rejectBtn.onclick = () => rejectStreamRequest(requestId, div);
+            
+            buttonContainer.appendChild(acceptBtn);
+            buttonContainer.appendChild(rejectBtn);
+            
+            div.appendChild(textSpan);
+            div.appendChild(buttonContainer);
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function approveStreamRequest(requestId, messageEl) {
+            try {
+                const res = await fetch(
+                    `${getBaseUrl()}/live/rooms/${currentRoomId}/stream-requests/${requestId}/approve/`,
+                    {
+                        method: 'PUT',
+                        headers: getAuthHeader()
+                    }
+                );
+                
+                if (res.ok) {
+                    addChatSystemMessage('✅ Stream request approved!');
+                    messageEl.remove();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    addChatSystemMessage('❌ Failed to approve: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                addChatSystemMessage('❌ Error approving request: ' + e.message);
+            }
+        }
+
+        async function rejectStreamRequest(requestId, messageEl) {
+            const reason = prompt('Rejection reason (optional):');
+            if (reason === null) return; // User cancelled
+            
+            try {
+                const res = await fetch(
+                    `${getBaseUrl()}/live/rooms/${currentRoomId}/stream-requests/${requestId}/reject/`,
+                    {
+                        method: 'PUT',
+                        headers: getAuthHeader(),
+                        body: JSON.stringify({ reason: reason || '' })
+                    }
+                );
+                
+                if (res.ok) {
+                    addChatSystemMessage('❌ Stream request rejected.');
+                    messageEl.remove();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    addChatSystemMessage('❌ Failed to reject: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                addChatSystemMessage('❌ Error rejecting request: ' + e.message);
+            }
+        }
+
+        function addJoinRequestWithActions(username, userId, requestId) {
+            const area = document.getElementById('chatArea');
+            const div = document.createElement('div');
+            div.className = 'px-4 py-3 rounded-lg text-sm animate-fadeIn bg-purple-500/10 border border-purple-500/30 flex items-center justify-between gap-3';
+            
+            const textSpan = document.createElement('span');
+            textSpan.innerHTML = `🔔 <strong>${username}</strong> requests to join`;
+            textSpan.style.flex = '1';
+            
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'flex gap-2 shrink-0';
+            
+            const acceptBtn = document.createElement('button');
+            acceptBtn.className = 'px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-md font-medium transition-colors';
+            acceptBtn.textContent = '✓ Accept';
+            acceptBtn.onclick = () => approveJoinRequest(requestId, div);
+            
+            const rejectBtn = document.createElement('button');
+            rejectBtn.className = 'px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-md font-medium transition-colors';
+            rejectBtn.textContent = '✕ Reject';
+            rejectBtn.onclick = () => rejectJoinRequest(requestId, div);
+            
+            buttonContainer.appendChild(acceptBtn);
+            buttonContainer.appendChild(rejectBtn);
+            
+            div.appendChild(textSpan);
+            div.appendChild(buttonContainer);
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function approveJoinRequest(requestId, messageEl) {
+            try {
+                const res = await fetch(
+                    `${getBaseUrl()}/live/rooms/${currentRoomId}/join-requests/${requestId}/approve/`,
+                    {
+                        method: 'PUT',
+                        headers: getAuthHeader()
+                    }
+                );
+                
+                if (res.ok) {
+                    addChatSystemMessage('✅ Join request approved!');
+                    messageEl.remove();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    addChatSystemMessage('❌ Failed to approve: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                addChatSystemMessage('❌ Error approving request: ' + e.message);
+            }
+        }
+
+        async function rejectJoinRequest(requestId, messageEl) {
+            const reason = prompt('Rejection reason (optional):');
+            if (reason === null) return; // User cancelled
+            
+            try {
+                const res = await fetch(
+                    `${getBaseUrl()}/live/rooms/${currentRoomId}/join-requests/${requestId}/reject/`,
+                    {
+                        method: 'PUT',
+                        headers: getAuthHeader(),
+                        body: JSON.stringify({ reason: reason || '' })
+                    }
+                );
+                
+                if (res.ok) {
+                    addChatSystemMessage('❌ Join request rejected.');
+                    messageEl.remove();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    addChatSystemMessage('❌ Failed to reject: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                addChatSystemMessage('❌ Error rejecting request: ' + e.message);
+            }
+        }
+
+        // ============================================================
+        //  Page Unload - End stream if host leaves
+        // ============================================================
+        window.addEventListener('beforeunload', async (e) => {
+            // If user is a host with an active room, end the stream
+            if (currentRoomId && currentUserRole === 'host') {
+                // Attempt to end the stream (non-blocking)
+                try {
+                    await fetch(`${getBaseUrl()}/live/rooms/${currentRoomId}/end/`, {
+                        method: 'PATCH',
+                        headers: getAuthHeader(),
+                        keepalive: true  // Important: tells browser to complete request even if page closes
+                    });
+                } catch (e) {
+                    console.error('Failed to end stream on page close:', e);
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
