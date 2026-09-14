@@ -13,16 +13,20 @@ void main() async {
   await Get.putAsync(() => AuthService().init());
   Get.put(InteractionService());
   Get.put(PipService());
-  
-  runApp( 
+
+  runApp(
     ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return GetMaterialApp(
+        return 
+        
+        
+        
+        GetMaterialApp(
           title: "Application",
-          initialRoute: Routes.HOME,
+          initialRoute: Routes.SPLASH,
           getPages: AppPages.routes,
           debugShowCheckedModeBanner: false,
           theme: ThemeData(

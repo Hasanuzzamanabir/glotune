@@ -7,6 +7,7 @@ class LoggingClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    request.headers['ngrok-skip-browser-warning'] = 'true';
     if (kDebugMode) {
       print('================ HTTP REQUEST ================');
       print('${request.method} ${request.url}');

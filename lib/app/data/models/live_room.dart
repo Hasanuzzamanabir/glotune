@@ -50,7 +50,13 @@ class LiveRoom {
       id: json['id'] ?? 0,
       roomId: json['room_id'] ?? '',
       title: json['title'] ?? '',
-      host: HostUser.fromJson(json['host'] ?? {}),
+      host: json['host'] is Map<String, dynamic>
+          ? HostUser.fromJson(json['host'])
+          : HostUser(
+              id: json['host'] is int
+                  ? json['host']
+                  : (int.tryParse(json['host']?.toString() ?? '') ?? 0),
+            ),
       status: json['status'] ?? '',
       availability: json['availability'] ?? '',
       memberCount: json['member_count'] ?? 0,

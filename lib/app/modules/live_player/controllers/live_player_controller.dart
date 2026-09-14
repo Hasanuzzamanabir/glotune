@@ -70,7 +70,11 @@ class LivePlayerController extends GetxController {
       }
       
       if (agoraAppId.isEmpty) {
-        throw Exception("Agora App ID is empty");
+        if (agoraToken.startsWith('006') && agoraToken.length >= 35) {
+          agoraAppId = agoraToken.substring(3, 35);
+        } else {
+          agoraAppId = ApiConstants.agoraAppId;
+        }
       }
 
       // 3. Initialize Engine

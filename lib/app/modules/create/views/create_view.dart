@@ -626,6 +626,7 @@ Widget _buildLiveControls() {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: TextField(
+            controller: controller.liveTitleController,
             onChanged: (val) => controller.liveTitle.value = val,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
@@ -756,11 +757,13 @@ Widget _buildLiveControls() {
         SizedBox(height: 24.h),
 
         // Start Live Button
-        GestureDetector(
-          onTap: () => controller.startLiveRoom(),
-          child: Center(
-            child: Obx(
-              () => Container(
+        Obx(
+          () => GestureDetector(
+            onTap: controller.isPosting.value
+                ? null
+                : () => controller.startLiveRoom(),
+            child: Center(
+              child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 40.w, vertical: 15.h),
                 decoration: BoxDecoration(
                   color: AppColors.primary,

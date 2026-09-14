@@ -64,36 +64,57 @@ class LiveStreamView extends GetView<CreateController> {
       padding: EdgeInsets.all(16.w),
       child: Row(
         children: [
-          Obx(() => CircleAvatar(
-            radius: 18.r,
-            backgroundImage: controller.userProfile.value?.profilePictureUrl != null
-                ? NetworkImage(controller.userProfile.value!.profilePictureUrl!)
-                : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
-          )),
+          Obx(() {
+            final user = controller.userProfile.value;
+            final pic = user?.profilePictureUrl;
+            return CircleAvatar(
+              radius: 18.r,
+              backgroundImage: (pic != null && pic.isNotEmpty)
+                  ? NetworkImage(pic)
+                  : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+            );
+          }),
           SizedBox(width: 8.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(() => Text(
-                controller.userProfile.value?.fullName ?? "Creator", 
-                style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
-              )),
-              GestureDetector(
-                onTap: () => _showLiveMembersList(),
-                child: Row(
-                  children: [
-                    const Icon(Icons.group, color: Colors.white, size: 12),
-                    SizedBox(width: 4.w),
-                    Obx(() => Text(
-                      controller.liveMemberCount.value.toString(), 
-                      style: TextStyle(color: Colors.white, fontSize: 10.sp),
-                    )),
-                  ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Obx(() {
+                  final user = controller.userProfile.value;
+                  final name = (user?.fullName != null && user!.fullName!.isNotEmpty) ? user.fullName! : "Creator";
+                  return Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                  );
+                }),
+                Obx(() {
+                  final title = controller.liveTitle.value;
+                  if (title.isEmpty) return const SizedBox.shrink();
+                  return Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white70, fontSize: 11.sp),
+                  );
+                }),
+                GestureDetector(
+                  onTap: () => _showLiveMembersList(),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.group, color: Colors.white70, size: 12),
+                      SizedBox(width: 4.w),
+                      Obx(() => Text(
+                        "${controller.liveMemberCount.value} viewers",
+                        style: TextStyle(color: Colors.white70, fontSize: 10.sp),
+                      )),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const Spacer(),
           Obx(() {
             final seconds = controller.liveDurationSeconds.value;
             if (seconds == 0) return const SizedBox.shrink();
@@ -106,6 +127,7 @@ class LiveStreamView extends GetView<CreateController> {
                 : '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
             
             return Container(
+              margin: EdgeInsets.only(right: 8.w),
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.5),
@@ -123,13 +145,12 @@ class LiveStreamView extends GetView<CreateController> {
               ),
             );
           }),
-          const Spacer(),
           GestureDetector(
             onTap: () => _showEndStreamDialog(),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
+                color: Colors.red.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text("END", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold)),
@@ -147,23 +168,32 @@ class LiveStreamView extends GetView<CreateController> {
       padding: EdgeInsets.all(16.w),
       child: Column(
         children: [
-          // Comments
+          // Dynamic Comments
           SizedBox(
             height: 150.h,
             child: Obx(() {
+              if (controller.liveMessages.isEmpty) {
+                return Center(
+                  child: Text(
+                    "No messages yet. Say something!",
+                    style: TextStyle(color: Colors.white54, fontSize: 12.sp),
+                  ),
+                );
+              }
               return ListView.builder(
                 itemCount: controller.liveMessages.length,
-                reverse: true, // Show latest messages at the bottom if we reverse the list, or keep false
+                reverse: true,
                 itemBuilder: (context, index) {
                   final msg = controller.liveMessages[index];
-                  final username = msg['user']?['username'] ?? "User";
-                  final text = msg['message'] ?? "";
+                  final userObj = msg is Map ? (msg['user'] is Map ? msg['user'] : msg) : {};
+                  final username = userObj['username'] ?? userObj['full_name'] ?? userObj['name'] ?? "Viewer";
+                  final text = (msg is Map ? (msg['message'] ?? msg['content'] ?? msg['text']) : msg.toString()) ?? "";
                   return Padding(
                     padding: EdgeInsets.only(bottom: 8.h),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("$username: ", style: TextStyle(color: Colors.yellow, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+                        Text("$username: ", style: TextStyle(color: Colors.amberAccent, fontSize: 12.sp, fontWeight: FontWeight.bold)),
                         Expanded(
                           child: Text(text, style: TextStyle(color: Colors.white, fontSize: 12.sp)),
                         ),
@@ -175,7 +205,7 @@ class LiveStreamView extends GetView<CreateController> {
             }),
           ),
           
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
           
           // Bottom Controls
           Row(
@@ -213,7 +243,7 @@ class LiveStreamView extends GetView<CreateController> {
                     messageController.clear();
                   }
                 },
-                child: _buildRoundIcon(Icons.send),
+                child: _buildRoundIcon(Icons.send, color: AppColors.primary),
               ),
             ],
           ),
@@ -298,16 +328,30 @@ class LiveStreamView extends GetView<CreateController> {
               SizedBox(height: 16.h),
               Text("Layout", style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
               SizedBox(height: 12.h),
-              Row(
+              Obx(() => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ["Panel", "6/12", "Fixed panel", "Fixed grid"].map((l) => _buildLayoutChip(l)).toList(),
-              ),
+                children: ["Panel", "6/12", "Fixed panel", "Fixed grid"].map((l) {
+                  final isSelected = controller.selectedLayout.value == l;
+                  return GestureDetector(
+                    onTap: () => controller.setLayout(l),
+                    child: _buildLayoutChip(l, isSelected: isSelected),
+                  );
+                }).toList(),
+              )),
               SizedBox(height: 24.h),
               Text("Comment settings", style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
-              _buildSwitchSetting("Allow comments", true),
+              Obx(() => _buildSwitchSetting(
+                "Allow comments", 
+                controller.allowComments.value,
+                onChanged: (val) => controller.toggleComments(val),
+              )),
               _buildListSetting("Filter comments", Icons.chevron_right, onTap: () { Get.back(); controller.navigateTo("FilterComments"); }),
               _buildListSetting("Block keywords", Icons.chevron_right),
-              _buildSwitchSetting("Mute viewers", false, onTap: () { Get.back(); controller.navigateTo("MuteViewers"); }),
+              Obx(() => _buildSwitchSetting(
+                "Mute viewers", 
+                controller.isMuteViewers.value,
+                onChanged: (val) => controller.toggleMuteViewers(val),
+              )),
               SizedBox(height: 24.h),
               _buildListSetting(
                 "Delete stream", 
@@ -328,6 +372,9 @@ class LiveStreamView extends GetView<CreateController> {
   }
 
   void _showInviteGuests() {
+    final searchController = TextEditingController();
+    final searchQuery = "".obs;
+
     Get.bottomSheet(
       Container(
         height: Get.height * 0.6,
@@ -349,6 +396,8 @@ class LiveStreamView extends GetView<CreateController> {
             ),
             SizedBox(height: 16.h),
             TextField(
+              controller: searchController,
+              onChanged: (val) => searchQuery.value = val.trim().toLowerCase(),
               decoration: InputDecoration(
                 hintText: "Search viewers or followers...",
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -360,38 +409,66 @@ class LiveStreamView extends GetView<CreateController> {
             ),
             SizedBox(height: 16.h),
             Expanded(
-              child: controller.liveMembers.isEmpty
-                ? Center(
+              child: Obx(() {
+                final query = searchQuery.value;
+                final allMembers = controller.liveMembers;
+                final filtered = allMembers.where((m) {
+                  if (query.isEmpty) return true;
+                  final user = m is Map && m['user'] is Map ? m['user'] : (m is Map ? m : {});
+                  final name = (user['full_name'] ?? user['username'] ?? user['name'] ?? '').toString().toLowerCase();
+                  final username = (user['username'] ?? '').toString().toLowerCase();
+                  return name.contains(query) || username.contains(query);
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.person_add_disabled, size: 50.sp, color: Colors.grey[300]),
                         SizedBox(height: 10.h),
-                        Text("No one is here yet", style: TextStyle(color: Colors.grey, fontSize: 16.sp)),
+                        Text(
+                          allMembers.isEmpty ? "No one is here yet" : "No matching viewers found",
+                          style: TextStyle(color: Colors.grey, fontSize: 16.sp),
+                        ),
                       ],
                     ),
-                  )
-                : Obx(() => ListView.builder(
-                    itemCount: controller.liveMembers.length,
-                    itemBuilder: (context, index) {
-                      final member = controller.liveMembers[index];
-                      final user = member['user'];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: user['avatar'] != null ? NetworkImage(user['avatar']) : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final member = filtered[index];
+                    final user = member is Map && member['user'] is Map ? member['user'] : (member is Map ? member : {});
+                    final name = user['full_name'] ?? user['username'] ?? user['name'] ?? 'Unknown User';
+                    final username = user['username'] != null ? '@${user['username']}' : '';
+                    final avatar = user['profile_picture'] ?? user['avatar'];
+                    final userId = user['id'] ?? (member is Map ? member['id'] : null);
+
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: (avatar != null && avatar.toString().isNotEmpty)
+                            ? NetworkImage(avatar.toString())
+                            : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+                      ),
+                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(username),
+                      trailing: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
                         ),
-                        title: Text(user['full_name'] ?? 'Unknown User', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(user['username'] ?? ''),
-                        trailing: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r))),
-                          onPressed: () {
-                            Get.snackbar("Invitation Sent", "Invited ${user['full_name']} to co-host!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black);
-                          },
-                          child: const Text("Invite", style: TextStyle(color: Colors.white)),
-                        ),
-                      );
-                    },
-                  )),
+                        onPressed: () {
+                          print("[DEBUG LIVE] Inviting guest: $name (id: $userId)");
+                          controller.inviteGuest(userId);
+                        },
+                        child: const Text("Invite", style: TextStyle(color: Colors.white)),
+                      ),
+                    );
+                  },
+                );
+              }),
             ),
           ],
         ),
@@ -409,23 +486,35 @@ class LiveStreamView extends GetView<CreateController> {
     );
   }
 
-  Widget _buildSwitchSetting(String label, bool value, {VoidCallback? onTap}) {
+  Widget _buildSwitchSetting(String label, bool value, {ValueChanged<bool>? onChanged, VoidCallback? onTap}) {
     return ListTile(
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
       title: Text(label, style: TextStyle(fontSize: 14.sp)),
-      trailing: Switch(value: value, onChanged: (_) {}, activeThumbColor: AppColors.primary),
+      trailing: Switch(
+        value: value, 
+        onChanged: onChanged, 
+        activeThumbColor: AppColors.primary,
+      ),
     );
   }
 
-  Widget _buildLayoutChip(String label) {
+  Widget _buildLayoutChip(String label, {bool isSelected = false}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: AppColors.border.withOpacity(0.1),
+        color: isSelected ? AppColors.primary : AppColors.border.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8.r),
+        border: isSelected ? Border.all(color: AppColors.primary) : null,
       ),
-      child: Text(label, style: TextStyle(fontSize: 10.sp)),
+      child: Text(
+        label, 
+        style: TextStyle(
+          fontSize: 10.sp,
+          color: isSelected ? Colors.white : Colors.black87,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
     );
   }
 
@@ -573,15 +662,43 @@ class LiveStreamView extends GetView<CreateController> {
                   itemCount: controller.liveMembers.length,
                   itemBuilder: (context, index) {
                     final member = controller.liveMembers[index];
-                    // Example of parsing member details depending on backend structure
-                    final name = member['user']?['full_name'] ?? member['username'] ?? "Unknown Viewer";
-                    final avatar = member['user']?['profile_picture'] ?? member['avatar'];
+                    final user = member is Map && member['user'] is Map ? member['user'] : (member is Map ? member : {});
+                    final name = user['full_name'] ?? user['username'] ?? user['name'] ?? "Viewer";
+                    final username = user['username'] != null ? '@${user['username']}' : '';
+                    final avatar = user['profile_picture'] ?? user['avatar'];
+                    final role = (member is Map ? (member['role'] ?? member['current_user_role']) : null) ?? "Viewer";
+
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: avatar != null ? NetworkImage(avatar) : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+                        backgroundImage: (avatar != null && avatar.toString().isNotEmpty)
+                            ? NetworkImage(avatar.toString())
+                            : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
                       ),
                       title: Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
-                      subtitle: Text("Viewer", style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                      subtitle: Text(username.isNotEmpty ? username : role, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                      trailing: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: role.toString().toLowerCase() == "host"
+                              ? Colors.amber.withOpacity(0.2)
+                              : (role.toString().toLowerCase() == "moderator"
+                                  ? Colors.blue.withOpacity(0.2)
+                                  : Colors.grey.withOpacity(0.1)),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          role.toString().toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                            color: role.toString().toLowerCase() == "host"
+                                ? Colors.orange[800]
+                                : (role.toString().toLowerCase() == "moderator"
+                                    ? Colors.blue[800]
+                                    : Colors.grey[700]),
+                          ),
+                        ),
+                      ),
                     );
                   },
                 );

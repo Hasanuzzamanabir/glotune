@@ -40,20 +40,34 @@ class LiveBattle2v2View extends GetView<CreateController> {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 14.r,
-                      backgroundImage: const AssetImage('assets/images/user_avatar.png'),
-                    ),
+                    Obx(() {
+                      final pic = controller.userProfile.value?.profilePictureUrl;
+                      return CircleAvatar(
+                        radius: 14.r,
+                        backgroundImage: (pic != null && pic.isNotEmpty)
+                            ? NetworkImage(pic)
+                            : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+                      );
+                    }),
                     SizedBox(width: 6.w),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Angelina M", style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+                        Obx(() {
+                          final user = controller.userProfile.value;
+                          final name = (user?.fullName != null && user!.fullName!.isNotEmpty)
+                              ? user.fullName!
+                              : (controller.liveTitle.value.isNotEmpty ? controller.liveTitle.value : "Host");
+                          return Text(name, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold));
+                        }),
                         Row(
                           children: [
                             const Icon(Icons.favorite, color: Colors.pinkAccent, size: 10),
                             SizedBox(width: 2.w),
-                            Text("283k", style: TextStyle(color: Colors.white70, fontSize: 9.sp)),
+                            Obx(() => Text(
+                              controller.liveMemberCount.value > 0 ? "${controller.liveMemberCount.value}" : "Live",
+                              style: TextStyle(color: Colors.white70, fontSize: 9.sp),
+                            )),
                           ],
                         ),
                       ],
@@ -86,7 +100,7 @@ class LiveBattle2v2View extends GetView<CreateController> {
               ),
               SizedBox(width: 6.w),
               GestureDetector(
-                onTap: () => controller.navigateTo("Camera"),
+                onTap: () => controller.navigateTo(controller.isLiveEngineInitialized.value ? "LiveStream" : "Camera"),
                 child: CircleAvatar(
                   radius: 14.r,
                   backgroundColor: Colors.black45,
