@@ -25,16 +25,18 @@ class AllProfilesView extends GetView<ProfileController> {
         return ListView.separated(
           padding: EdgeInsets.all(16.w),
           itemCount: controller.allProfiles.length,
-          separatorBuilder: (context, index) => Divider(color: Colors.grey[200]),
+          separatorBuilder: (context, index) =>
+              Divider(color: Colors.grey[200]),
           itemBuilder: (context, index) {
             final profile = controller.allProfiles[index];
             final isActive = controller.activeProfile.value.id == profile.id;
-            
+
             return ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.grey[200],
                 backgroundImage: profile.avatarUrl.startsWith('http')
-                    ? CachedNetworkImageProvider(profile.avatarUrl) as ImageProvider
+                    ? CachedNetworkImageProvider(profile.avatarUrl)
+                          as ImageProvider
                     : AssetImage(profile.avatarUrl) as ImageProvider,
                 radius: 24.r,
               ),
@@ -43,15 +45,21 @@ class AllProfilesView extends GetView<ProfileController> {
                   Flexible(
                     child: Text(
                       profile.name,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.sp,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   SizedBox(width: 8.w),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 2.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Text(
@@ -66,9 +74,9 @@ class AllProfilesView extends GetView<ProfileController> {
                 ],
               ),
               subtitle: Text(profile.handle),
-              trailing: isActive 
-                ? Icon(Icons.check_circle, color: AppColors.primary) 
-                : const Icon(Icons.chevron_right, color: Colors.grey),
+              trailing: isActive
+                  ? Icon(Icons.check_circle, color: AppColors.primary)
+                  : const Icon(Icons.chevron_right, color: Colors.grey),
               onTap: () {
                 Get.toNamed(profile.route);
               },
@@ -82,7 +90,10 @@ class AllProfilesView extends GetView<ProfileController> {
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Add Profile", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          "Add Profile",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

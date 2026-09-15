@@ -150,7 +150,9 @@ class MerchantShopView extends GetView<MerchantProfileController> {
   Widget _buildShopGrid() {
     return Obx(() {
       if (controller.isProductsLoading.value) {
-        return const Center(child: CircularProgressIndicator(color: Color(0xFF8B1D1D)));
+        return const Center(
+          child: CircularProgressIndicator(color: Color(0xFF8B1D1D)),
+        );
       }
       final items = controller.filteredShopItems;
       if (items.isEmpty) {
@@ -164,7 +166,8 @@ class MerchantShopView extends GetView<MerchantProfileController> {
       return NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
           if (!controller.isFetchingMore.value &&
-              scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
             controller.fetchShopItems();
           }
           return false;
@@ -181,7 +184,10 @@ class MerchantShopView extends GetView<MerchantProfileController> {
                     child: Column(
                       children: [
                         for (int i = 0; i < items.length; i += 2)
-                          _buildShopItemCard(items[i], i % 4 == 0 ? 250.h : 200.h),
+                          _buildShopItemCard(
+                            items[i],
+                            i % 4 == 0 ? 250.h : 200.h,
+                          ),
                       ],
                     ),
                   ),
@@ -191,7 +197,10 @@ class MerchantShopView extends GetView<MerchantProfileController> {
                     child: Column(
                       children: [
                         for (int i = 1; i < items.length; i += 2)
-                          _buildShopItemCard(items[i], i % 4 == 1 ? 200.h : 250.h),
+                          _buildShopItemCard(
+                            items[i],
+                            i % 4 == 1 ? 200.h : 250.h,
+                          ),
                       ],
                     ),
                   ),
@@ -200,7 +209,9 @@ class MerchantShopView extends GetView<MerchantProfileController> {
               if (controller.isFetchingMore.value)
                 Padding(
                   padding: EdgeInsets.all(16.h),
-                  child: const CircularProgressIndicator(color: Color(0xFF8B1D1D)),
+                  child: const CircularProgressIndicator(
+                    color: Color(0xFF8B1D1D),
+                  ),
                 ),
             ],
           ),
@@ -275,10 +286,14 @@ class MerchantShopView extends GetView<MerchantProfileController> {
 
     String tempSortBy = controller.sortBy.value;
     bool tempOnSaleOnly = controller.onSaleOnly.value;
-    
+
     // We can use TextEditingControllers to manage text input state inside the bottom sheet
-    TextEditingController countyController = TextEditingController(text: controller.countyFilter.value);
-    TextEditingController cityController = TextEditingController(text: controller.cityFilter.value);
+    TextEditingController countyController = TextEditingController(
+      text: controller.countyFilter.value,
+    );
+    TextEditingController cityController = TextEditingController(
+      text: controller.cityFilter.value,
+    );
 
     Get.bottomSheet(
       StatefulBuilder(
@@ -340,7 +355,9 @@ class MerchantShopView extends GetView<MerchantProfileController> {
                               tempSortBy = sortOption;
                             });
                           },
-                          selectedColor: const Color(0xFF8B1D1D).withOpacity(0.2),
+                          selectedColor: const Color(
+                            0xFF8B1D1D,
+                          ).withValues(alpha: 0.2),
                           labelStyle: TextStyle(
                             color: tempSortBy == sortOption
                                 ? const Color(0xFF8B1D1D)
@@ -416,8 +433,13 @@ class MerchantShopView extends GetView<MerchantProfileController> {
                   controller: countyController,
                   decoration: InputDecoration(
                     labelText: "County",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                   ),
                 ),
                 SizedBox(height: 12.h),
@@ -425,8 +447,13 @@ class MerchantShopView extends GetView<MerchantProfileController> {
                   controller: cityController,
                   decoration: InputDecoration(
                     labelText: "City",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                   ),
                 ),
                 SizedBox(height: 30.h),

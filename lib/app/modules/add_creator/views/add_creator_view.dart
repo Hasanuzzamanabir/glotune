@@ -15,7 +15,11 @@ class AddCreatorView extends GetView<AddCreatorController> {
       appBar: AppBar(
         title: Text(
           'Add Creator',
-          style: TextStyle(color: Colors.black, fontSize: 20.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -72,24 +76,37 @@ class AddCreatorView extends GetView<AddCreatorController> {
               maxLines: 3,
             ),
             SizedBox(height: 32.h),
-            Obx(() => ElevatedButton(
-              onPressed: controller.isLoading.value ? null : controller.submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: EdgeInsets.symmetric(vertical: 16.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+            Obx(
+              () => ElevatedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : controller.submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                ),
+                child: controller.isLoading.value
+                    ? SizedBox(
+                        height: 20.h,
+                        width: 20.h,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'Add Creator',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
-              child: controller.isLoading.value
-                  ? SizedBox(
-                      height: 20.h,
-                      width: 20.h,
-                      child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text(
-                      'Add Creator',
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-            )),
+            ),
             SizedBox(height: 32.h),
           ],
         ),
@@ -122,18 +139,28 @@ class AddCreatorView extends GetView<AddCreatorController> {
     required RxString value,
     required List<String> items,
   }) {
-    return Obx(() => DropdownButtonFormField<String>(
-      value: value.value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+    return Obx(
+      () => DropdownButtonFormField<String>(
+        initialValue: value.value,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 12.h,
+          ),
+        ),
+        items: items
+            .map(
+              (e) =>
+                  DropdownMenuItem(value: e, child: Text(e.capitalizeFirst!)),
+            )
+            .toList(),
+        onChanged: (v) {
+          if (v != null) value.value = v;
+        },
       ),
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e.capitalizeFirst!))).toList(),
-      onChanged: (v) {
-        if (v != null) value.value = v;
-      },
-    ));
+    );
   }
 
   Widget _buildDatePicker(BuildContext context) {
@@ -148,15 +175,19 @@ class AddCreatorView extends GetView<AddCreatorController> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Obx(() => Text(
-              controller.managementStartDate.value == null
-                  ? 'Management Start Date'
-                  : 'Start Date: ${DateFormat('yyyy-MM-dd').format(controller.managementStartDate.value!)}',
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: controller.managementStartDate.value == null ? Colors.grey[700] : Colors.black,
+            Obx(
+              () => Text(
+                controller.managementStartDate.value == null
+                    ? 'Management Start Date'
+                    : 'Start Date: ${DateFormat('yyyy-MM-dd').format(controller.managementStartDate.value!)}',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: controller.managementStartDate.value == null
+                      ? Colors.grey[700]
+                      : Colors.black,
+                ),
               ),
-            )),
+            ),
             Icon(Icons.calendar_today, color: Colors.grey[600]),
           ],
         ),

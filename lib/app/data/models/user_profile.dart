@@ -58,7 +58,7 @@ class UserProfile {
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    int _parseInt(dynamic value) {
+    int parseInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
       if (value is double) return value.toInt();
@@ -67,7 +67,7 @@ class UserProfile {
     }
 
     return UserProfile(
-      id: _parseInt(json['id']),
+      id: parseInt(json['id']),
       email: json['email']?.toString(),
       fullName: json['full_name']?.toString(),
       userType: json['user_type']?.toString(),
@@ -75,10 +75,10 @@ class UserProfile {
       city: json['city']?.toString(),
       profilePictureUrl: json['profile_picture_url']?.toString(),
       coverPhotoUrl: json['cover_photo_url']?.toString(),
-      subscriberCount: _parseInt(json['suscriber_count']),
-      followerCount: _parseInt(json['follower_count']),
-      followingCount: _parseInt(json['following_count']),
-      yourCoins: _parseInt(json['your_coins']),
+      subscriberCount: parseInt(json['suscriber_count']),
+      followerCount: parseInt(json['follower_count']),
+      followingCount: parseInt(json['following_count']),
+      yourCoins: parseInt(json['your_coins']),
     );
   }
 }

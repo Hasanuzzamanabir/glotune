@@ -182,7 +182,7 @@ class EarningsView extends GetView<EarningsController> {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.1)),
+            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
           ),
         ),
         child: Row(
@@ -190,7 +190,7 @@ class EarningsView extends GetView<EarningsController> {
             Container(
               padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
+                color: AppColors.primary.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -239,7 +239,7 @@ class EarningsView extends GetView<EarningsController> {
                       vertical: 2.h,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.05),
+                      color: AppColors.primary.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(4.r),
                     ),
                     child: Row(
@@ -300,7 +300,7 @@ class EarningsView extends GetView<EarningsController> {
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
     );
   }
 
@@ -336,7 +336,7 @@ class EarningsView extends GetView<EarningsController> {
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
     );
   }
 
@@ -367,7 +367,7 @@ class EarningsView extends GetView<EarningsController> {
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
     );
   }
 
@@ -390,7 +390,7 @@ class EarningsView extends GetView<EarningsController> {
               width: 50.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),

@@ -40,39 +40,88 @@ class PerformanceLogView extends GetView<PerformanceLogController> {
             children: [
               Text(
                 "Video Performance",
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 16.h),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Obx(() {
                   return DataTable(
-                    headingRowColor: WidgetStateProperty.all(Colors.transparent),
+                    headingRowColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
                     dataRowMinHeight: 60.h,
                     dataRowMaxHeight: 60.h,
                     horizontalMargin: 12.w,
                     columnSpacing: 30.w,
                     dividerThickness: 1,
                     border: TableBorder(
-                      top: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      bottom: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      left: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      right: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      horizontalInside: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      top: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      bottom: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      left: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      right: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      horizontalInside: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
                       verticalInside: BorderSide.none,
                     ),
                     columns: const [
-                      DataColumn(label: Text("Video Title", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Views", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Watch Time", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Likes", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Comments", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Engagement Rate", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Shares", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Earnings", style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                        label: Text(
+                          "Video Title",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Views",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Watch Time",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Likes",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Comments",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Engagement Rate",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Shares",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Earnings",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ],
                     rows: controller.performances.map((perf) {
                       return DataRow(

@@ -23,7 +23,7 @@ class LoginOptionsView extends GetView<LoginOptionsController> {
           ),
           // Dark Overlay for better contrast
           Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.3)),
+            child: Container(color: Colors.black.withValues(alpha: 0.3)),
           ),
           // Content
           Padding(

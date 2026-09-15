@@ -15,7 +15,11 @@ class OrderManagementView extends GetView<OrderManagementController> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -68,7 +72,9 @@ class OrderManagementView extends GetView<OrderManagementController> {
                         ),
                       ),
                       SizedBox(width: 16.w),
-                      Expanded(child: SizedBox()), // Empty space to match grid layout
+                      Expanded(
+                        child: SizedBox(),
+                      ), // Empty space to match grid layout
                     ],
                   ),
                 ],
@@ -138,7 +144,11 @@ class OrderManagementView extends GetView<OrderManagementController> {
     );
   }
 
-  Widget _buildStatCard({required IconData icon, required String title, required String value}) {
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -146,7 +156,7 @@ class OrderManagementView extends GetView<OrderManagementController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -253,30 +263,21 @@ class OrderManagementView extends GetView<OrderManagementController> {
               flex: 3,
               child: Text(
                 data['orderId']!,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
               ),
             ),
             Expanded(
               flex: 2,
               child: Text(
                 data['buyer']!,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
               ),
             ),
             Expanded(
               flex: 2,
               child: Text(
                 data['product']!,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
               ),
             ),
             Expanded(
@@ -289,9 +290,9 @@ class OrderManagementView extends GetView<OrderManagementController> {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 

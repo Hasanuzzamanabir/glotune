@@ -49,7 +49,7 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
                 ElevatedButton(
                   onPressed: controller.fetchCreators,
                   child: const Text('Retry'),
-                )
+                ),
               ],
             ),
           );
@@ -67,7 +67,12 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
         return RefreshIndicator(
           onRefresh: controller.fetchCreators,
           child: ListView.separated(
-            padding: EdgeInsets.fromLTRB(16.w, 16.w, 16.w, 80.h), // Bottom padding for FAB
+            padding: EdgeInsets.fromLTRB(
+              16.w,
+              16.w,
+              16.w,
+              80.h,
+            ), // Bottom padding for FAB
             itemCount: controller.creators.length,
             separatorBuilder: (context, index) => SizedBox(height: 12.h),
             itemBuilder: (context, index) {
@@ -88,17 +93,21 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
     );
   }
 
-  Widget _buildCreatorCard(BuildContext context, ContentCreator creator, int index) {
+  Widget _buildCreatorCard(
+    BuildContext context,
+    ContentCreator creator,
+    int index,
+  ) {
     final dateFormat = DateFormat('MMM dd, yyyy');
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -111,9 +120,13 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFF8B1D1D).withOpacity(0.1),
+                backgroundColor: const Color(0xFF8B1D1D).withValues(alpha: 0.1),
                 radius: 24.r,
-                child: Icon(Icons.person, color: const Color(0xFF8B1D1D), size: 24.sp),
+                child: Icon(
+                  Icons.person,
+                  color: const Color(0xFF8B1D1D),
+                  size: 24.sp,
+                ),
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -147,15 +160,24 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
             ],
           ),
           SizedBox(height: 16.h),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
           SizedBox(height: 16.h),
           _buildInfoRow('Talent Type', creator.talentType.toUpperCase()),
           SizedBox(height: 8.h),
-          _buildInfoRow('Company Type', creator.companyType.capitalizeFirst ?? ''),
+          _buildInfoRow(
+            'Company Type',
+            creator.companyType.capitalizeFirst ?? '',
+          ),
           SizedBox(height: 8.h),
-          _buildInfoRow('Management', creator.managementType.replaceAll('_', ' ').capitalizeFirst ?? ''),
+          _buildInfoRow(
+            'Management',
+            creator.managementType.replaceAll('_', ' ').capitalizeFirst ?? '',
+          ),
           SizedBox(height: 8.h),
-          _buildInfoRow('Start Date', dateFormat.format(creator.managementStartDate)),
+          _buildInfoRow(
+            'Start Date',
+            dateFormat.format(creator.managementStartDate),
+          ),
           if (creator.addComments.isNotEmpty) ...[
             SizedBox(height: 8.h),
             _buildInfoRow('Comments', creator.addComments),
@@ -173,19 +195,13 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
           width: 120.w,
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -216,10 +232,7 @@ class ManageCreatorsView extends GetView<ManageCreatorsController> {
               SizedBox(height: 20.h),
               Text(
                 'Manage creators',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20.h),
               ListTile(

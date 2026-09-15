@@ -33,7 +33,7 @@ class SubscribersView extends GetView<SubscribersController> {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (controller.errorMessage.value != null) {
           return Center(
             child: Text(
@@ -47,10 +47,7 @@ class SubscribersView extends GetView<SubscribersController> {
           return Center(
             child: Text(
               'No subscribers yet',
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 16.sp, color: AppColors.textSecondary),
             ),
           );
         }
@@ -67,23 +64,31 @@ class SubscribersView extends GetView<SubscribersController> {
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: ListTile(
-                contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 8.h,
+                ),
                 leading: CircleAvatar(
                   radius: 25.r,
                   backgroundColor: Colors.grey[300],
-                  backgroundImage: subscriber.profilePicture != null && subscriber.profilePicture!.isNotEmpty
+                  backgroundImage:
+                      subscriber.profilePicture != null &&
+                          subscriber.profilePicture!.isNotEmpty
                       ? CachedNetworkImageProvider(subscriber.profilePicture!)
-                      : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+                      : const AssetImage('assets/images/user_avatar.png')
+                            as ImageProvider,
                 ),
                 title: Text(
-                  subscriber.fullName.isNotEmpty ? subscriber.fullName : subscriber.username,
+                  subscriber.fullName.isNotEmpty
+                      ? subscriber.fullName
+                      : subscriber.username,
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,

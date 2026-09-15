@@ -16,7 +16,11 @@ class PlaylistView extends GetView<PlaylistController> {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
@@ -53,11 +57,7 @@ class PlaylistCard extends StatelessWidget {
   final PlaylistItem item;
   final VoidCallback onTap;
 
-  const PlaylistCard({
-    super.key,
-    required this.item,
-    required this.onTap,
-  });
+  const PlaylistCard({super.key, required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -91,11 +91,20 @@ class PlaylistCard extends StatelessWidget {
                       left: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                        color: Colors.black.withOpacity(0.6), // Semi-transparent black overlay
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4.0,
+                          horizontal: 8.0,
+                        ),
+                        color: Colors.black.withValues(
+                          alpha: 0.6,
+                        ), // Semi-transparent black overlay
                         child: Row(
                           children: [
-                            const Icon(Icons.playlist_play, color: Colors.white, size: 16),
+                            const Icon(
+                              Icons.playlist_play,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -120,7 +129,12 @@ class PlaylistCard extends StatelessWidget {
             // Element 2 & 3: Metadata
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0, bottom: 8.0),
+                padding: const EdgeInsets.only(
+                  top: 8.0,
+                  left: 8.0,
+                  right: 8.0,
+                  bottom: 8.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -139,10 +153,7 @@ class PlaylistCard extends StatelessWidget {
                       item.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),

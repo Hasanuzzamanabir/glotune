@@ -20,12 +20,20 @@ class AddNewProductView extends GetView<AddNewProductController> {
         ),
         title: Text(
           'Add New Product',
-          style: TextStyle(color: Colors.black, fontSize: 20.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: false,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: Colors.grey.withOpacity(0.2)),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey.withValues(alpha: 0.2),
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -35,7 +43,7 @@ class AddNewProductView extends GetView<AddNewProductController> {
           children: [
             _buildLabel("Product Name"),
             _buildTextField("Your Product Name"),
-            
+
             SizedBox(height: 16.h),
             _buildLabel("Product Description"),
             _buildTextField("Compact and powerful......", maxLines: 4),
@@ -43,16 +51,28 @@ class AddNewProductView extends GetView<AddNewProductController> {
             SizedBox(height: 16.h),
             _buildLabel("Product Tag"),
             _buildWrapChips([
-              "Brand New", "Limited Edition", "Discounted Sales", "Quality & Affordable"
+              "Brand New",
+              "Limited Edition",
+              "Discounted Sales",
+              "Quality & Affordable",
             ], "Limited Edition"),
 
             SizedBox(height: 16.h),
             _buildLabel("Product Category"),
             _buildWrapChips([
-              "Electronics", "Clothings", "Watches", "Stationeries",
-              "Shoes", "Beverages", "Medicine", "Bags",
-              "Furniture", "Phone & Accessories", "Book & Courses",
-              "Construction Materials", "Others"
+              "Electronics",
+              "Clothings",
+              "Watches",
+              "Stationeries",
+              "Shoes",
+              "Beverages",
+              "Medicine",
+              "Bags",
+              "Furniture",
+              "Phone & Accessories",
+              "Book & Courses",
+              "Construction Materials",
+              "Others",
             ], "Beverages"),
 
             SizedBox(height: 16.h),
@@ -61,10 +81,7 @@ class AddNewProductView extends GetView<AddNewProductController> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel("Price"),
-                      _buildTextField("\$0.00"),
-                    ],
+                    children: [_buildLabel("Price"), _buildTextField("\$0.00")],
                   ),
                 ),
                 SizedBox(width: 16.w),
@@ -90,7 +107,11 @@ class AddNewProductView extends GetView<AddNewProductController> {
 
             SizedBox(height: 16.h),
             _buildLabel("Shipping Details"),
-            _buildWrapChips(["Free Shipment", "Paid Shipment", "No Shipment"], "Paid Shipment"),
+            _buildWrapChips([
+              "Free Shipment",
+              "Paid Shipment",
+              "No Shipment",
+            ], "Paid Shipment"),
 
             SizedBox(height: 16.h),
             Row(
@@ -100,7 +121,7 @@ class AddNewProductView extends GetView<AddNewProductController> {
                 Transform.scale(
                   scale: 0.8,
                   child: CupertinoSwitch(
-                    value: true, 
+                    value: true,
                     onChanged: (v) {},
                     activeTrackColor: const Color(0xFF8B1D1D),
                   ),
@@ -135,12 +156,18 @@ class AddNewProductView extends GetView<AddNewProductController> {
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B1D1D),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.r)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.r),
+                  ),
                   elevation: 0,
                 ),
                 child: Text(
                   "Publish",
-                  style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -174,11 +201,11 @@ class AddNewProductView extends GetView<AddNewProductController> {
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.r),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.r),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.r),
@@ -192,14 +219,21 @@ class AddNewProductView extends GetView<AddNewProductController> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           isExpanded: true,
-          hint: Text(hint, style: TextStyle(color: Colors.grey[400], fontSize: 14.sp)),
-          icon: Icon(Icons.keyboard_arrow_down, color: Colors.black54, size: 24.sp),
+          hint: Text(
+            hint,
+            style: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
+          ),
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            color: Colors.black54,
+            size: 24.sp,
+          ),
           items: const [],
           onChanged: (val) {},
         ),
@@ -212,7 +246,7 @@ class AddNewProductView extends GetView<AddNewProductController> {
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 16.h),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Row(
@@ -239,7 +273,11 @@ class AddNewProductView extends GetView<AddNewProductController> {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF8B1D1D) : Colors.white,
-            border: Border.all(color: isSelected ? const Color(0xFF8B1D1D) : Colors.grey.withOpacity(0.2)),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF8B1D1D)
+                  : Colors.grey.withValues(alpha: 0.2),
+            ),
             borderRadius: BorderRadius.circular(20.r),
           ),
           child: Text(
@@ -260,8 +298,10 @@ class AddNewProductView extends GetView<AddNewProductController> {
       onPressed: () {},
       style: OutlinedButton.styleFrom(
         padding: EdgeInsets.symmetric(vertical: 12.h),
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.r)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25.r),
+        ),
       ),
       child: Text(
         text,

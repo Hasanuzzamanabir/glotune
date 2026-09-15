@@ -20,9 +20,11 @@ class SubscriptionsView extends GetView<SubscriptionsController> {
       backgroundColor: AppColors.background,
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
         }
-        
+
         return CustomScrollView(
           slivers: [
             // Subscriptions Header
@@ -34,77 +36,100 @@ class SubscriptionsView extends GetView<SubscriptionsController> {
                   children: [
                     Text(
                       'Subscriptions',
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     GestureDetector(
-                      onTap: () => Get.snackbar("Info", "See all subscriptions feature coming soon"),
+                      onTap: () => Get.snackbar(
+                        "Info",
+                        "See all subscriptions feature coming soon",
+                      ),
                       child: Text(
                         'See all',
-                        style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             // Horizontal Channel List
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 100.h,
-                child: controller.subscriptions.isEmpty 
-                  ? Center(child: Text("No subscriptions yet.", style: TextStyle(color: AppColors.textSecondary)))
-                  : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  itemCount: controller.subscriptions.length,
-                  itemBuilder: (context, index) {
-                    final sub = controller.subscriptions[index];
-                    final avatarUrl = sub['profile_picture'] as String?;
-                    final name = sub['full_name'] ?? sub['username'] ?? 'User';
+                child: controller.subscriptions.isEmpty
+                    ? Center(
+                        child: Text(
+                          "No subscriptions yet.",
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      )
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        itemCount: controller.subscriptions.length,
+                        itemBuilder: (context, index) {
+                          final sub = controller.subscriptions[index];
+                          final avatarUrl = sub['profile_picture'] as String?;
+                          final name =
+                              sub['full_name'] ?? sub['username'] ?? 'User';
 
-                    return GestureDetector(
-                      onTap: () => Get.toNamed(Routes.CREATOR_CHANNEL, arguments: sub),
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 16.w),
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 30.r,
-                              backgroundColor: Colors.grey[200],
-                              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                                  ? CachedNetworkImageProvider(avatarUrl) as ImageProvider
-                                  : const AssetImage('assets/images/user_avatar.png'),
+                          return GestureDetector(
+                            onTap: () => Get.toNamed(
+                              Routes.CREATOR_CHANNEL,
+                              arguments: sub,
                             ),
-                            SizedBox(height: 8.h),
-                            SizedBox(
-                              width: 60.r,
-                              child: Text(
-                                name,
-                                style: TextStyle(fontSize: 12.sp, color: AppColors.textPrimary),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
+                            child: Padding(
+                              padding: EdgeInsets.only(right: 16.w),
+                              child: Column(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 30.r,
+                                    backgroundColor: Colors.grey[200],
+                                    backgroundImage:
+                                        (avatarUrl != null &&
+                                            avatarUrl.isNotEmpty)
+                                        ? CachedNetworkImageProvider(avatarUrl)
+                                              as ImageProvider
+                                        : const AssetImage(
+                                            'assets/images/user_avatar.png',
+                                          ),
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  SizedBox(
+                                    width: 60.r,
+                                    child: Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ),
-            
+
             // Subscription List with Details
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final sub = controller.subscriptions[index];
-                  return _buildSubscriptionItem(sub);
-                },
-                childCount: controller.subscriptions.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final sub = controller.subscriptions[index];
+                return _buildSubscriptionItem(sub);
+              }, childCount: controller.subscriptions.length),
             ),
           ],
         );
@@ -140,8 +165,16 @@ class SubscriptionsView extends GetView<SubscriptionsController> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.notifications_none, color: AppColors.textSecondary, size: 20.sp),
-            Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary, size: 20.sp),
+            Icon(
+              Icons.notifications_none,
+              color: AppColors.textSecondary,
+              size: 20.sp,
+            ),
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: AppColors.textSecondary,
+              size: 20.sp,
+            ),
           ],
         ),
       ),
@@ -166,7 +199,7 @@ class SubscriptionsView extends GetView<SubscriptionsController> {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
@@ -208,17 +241,24 @@ void showManagementBottomSheet() {
             width: 40.w,
             height: 4.h,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(2.r),
             ),
           ),
           SizedBox(height: 20.h),
-          _buildManagementItem(Icons.watch_later_outlined, "Save to watch later"),
+          _buildManagementItem(
+            Icons.watch_later_outlined,
+            "Save to watch later",
+          ),
           _buildManagementItem(Icons.playlist_add, "Save playlist"),
           _buildManagementItem(Icons.person_remove_outlined, "Unsubscribe"),
           _buildManagementItem(Icons.tv, "Link TV"),
           _buildManagementItem(Icons.share_outlined, "Share"),
-          _buildManagementItem(Icons.info_outline, "Report", isDestructive: true),
+          _buildManagementItem(
+            Icons.info_outline,
+            "Report",
+            isDestructive: true,
+          ),
           SizedBox(height: 20.h),
         ],
       ),
@@ -227,7 +267,11 @@ void showManagementBottomSheet() {
   );
 }
 
-Widget _buildManagementItem(IconData icon, String label, {bool isDestructive = false}) {
+Widget _buildManagementItem(
+  IconData icon,
+  String label, {
+  bool isDestructive = false,
+}) {
   return ListTile(
     leading: Icon(
       icon,

@@ -82,7 +82,7 @@ class OnboardingView extends GetView<OnboardingController> {
           width: double.infinity,
           margin: EdgeInsets.symmetric(horizontal: 24.w),
           decoration: BoxDecoration(
-            color: AppColors.border.withOpacity(0.3),
+            color: AppColors.border.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(2.r),
           ),
           child: FractionallySizedBox(
@@ -130,12 +130,16 @@ class OnboardingView extends GetView<OnboardingController> {
           SizedBox(height: 32.h),
           ...children,
           SizedBox(height: 40.h),
-          Obx(() => controller.isLoading.value
-              ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-              : CustomButton(
-                  text: 'Next',
-                  onPressed: onNext,
-                ).animate().fadeIn(delay: 400.ms).scale()),
+          Obx(
+            () => controller.isLoading.value
+                ? Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                : CustomButton(
+                    text: 'Next',
+                    onPressed: onNext,
+                  ).animate().fadeIn(delay: 400.ms).scale(),
+          ),
         ],
       ),
     );
@@ -304,14 +308,14 @@ class OnboardingView extends GetView<OnboardingController> {
       onNext: controller.nextStep,
       children: [
         _buildDropdown(
-          label: "Country", 
+          label: "Country",
           hint: "Choose where you are from",
           selectedValue: controller.selectedCountry,
           itemsMap: controller.availableCountries,
         ),
         SizedBox(height: 20.h),
         _buildDropdown(
-          label: "City", 
+          label: "City",
           hint: "Choose where you are from",
           selectedValue: controller.selectedCity,
           itemsMap: controller.availableCities,
@@ -320,7 +324,12 @@ class OnboardingView extends GetView<OnboardingController> {
     );
   }
 
-  Widget _buildDropdown({required String label, required String hint, required Rxn<String> selectedValue, required RxMap<String, int> itemsMap}) {
+  Widget _buildDropdown({
+    required String label,
+    required String hint,
+    required Rxn<String> selectedValue,
+    required RxMap<String, int> itemsMap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -340,23 +349,27 @@ class OnboardingView extends GetView<OnboardingController> {
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: DropdownButtonHideUnderline(
-            child: Obx(() => DropdownButton<String>(
-              isExpanded: true,
-              value: selectedValue.value,
-              hint: Text(
-                hint,
-                style: TextStyle(
-                  color: AppColors.textSecondary.withOpacity(0.5),
-                  fontSize: 14.sp,
+            child: Obx(
+              () => DropdownButton<String>(
+                isExpanded: true,
+                value: selectedValue.value,
+                hint: Text(
+                  hint,
+                  style: TextStyle(
+                    color: AppColors.textSecondary.withValues(alpha: 0.5),
+                    fontSize: 14.sp,
+                  ),
                 ),
+                items: itemsMap.keys
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    selectedValue.value = val;
+                  }
+                },
               ),
-              items: itemsMap.keys.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  selectedValue.value = val;
-                }
-              },
-            )),
+            ),
           ),
         ),
       ],
@@ -381,7 +394,7 @@ class OnboardingView extends GetView<OnboardingController> {
                     width: 150.w,
                     height: 150.w,
                     decoration: BoxDecoration(
-                      color: AppColors.border.withOpacity(0.3),
+                      color: AppColors.border.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                       image: imageFile != null
                           ? DecorationImage(
@@ -395,28 +408,29 @@ class OnboardingView extends GetView<OnboardingController> {
                         : null,
                   );
                 }),
-              Positioned(
-                bottom: 5,
-                right: 5,
-                child: Container(
-                  padding: EdgeInsets.all(8.w),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 4),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.camera_alt,
-                    size: 20.w,
-                    color: AppColors.primary,
+                Positioned(
+                  bottom: 5,
+                  right: 5,
+                  child: Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Colors.black12, blurRadius: 4),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      size: 20.w,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),),
+        ),
       ],
     );
   }

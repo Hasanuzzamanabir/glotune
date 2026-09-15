@@ -11,8 +11,10 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
   const MediaNetworkProfileView({super.key});
 
   String _formatStatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    if (count >= 1000)
+      return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
     return count.toString();
   }
 
@@ -34,12 +36,12 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
               _buildUserInfo(profile),
               _buildStatsDashboard(profile),
               _buildVerificationBanner(),
-            SizedBox(height: 10.h),
-            _buildMenuSection(),
-            SizedBox(height: 30.h),
-          ],
-        ),
-      );
+              SizedBox(height: 10.h),
+              _buildMenuSection(),
+              SizedBox(height: 30.h),
+            ],
+          ),
+        );
       }),
     );
   }
@@ -61,8 +63,8 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
             ),
           ),
           child: Container(
-            color: Colors.black.withOpacity(
-              0.2,
+            color: Colors.black.withValues(
+              alpha: 0.2,
             ), // Darken slightly for readability
             child: SafeArea(
               child: Padding(
@@ -93,7 +95,9 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
             children: [
               GestureDetector(
                 onTap: () {
-                  Share.share('Check out this media network profile on Glotune!');
+                  Share.share(
+                    'Check out this media network profile on Glotune!',
+                  );
                 },
                 child: Row(
                   children: [
@@ -150,7 +154,8 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
               radius: 50.r,
               backgroundColor: Colors.white,
               backgroundImage: profile.avatarUrl.startsWith('http')
-                  ? CachedNetworkImageProvider(profile.avatarUrl) as ImageProvider
+                  ? CachedNetworkImageProvider(profile.avatarUrl)
+                        as ImageProvider
                   : AssetImage(profile.avatarUrl) as ImageProvider,
             ),
           ),
@@ -200,7 +205,7 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
                   'Global',
                   style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                 ),
-              ]
+              ],
             ],
           ),
         ],
@@ -223,7 +228,10 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.followingCount), "Following"),
           _buildStatDivider(),
-          _buildStatItem(_formatStatCount(profile.subscribersCount), "Subscribers"),
+          _buildStatItem(
+            _formatStatCount(profile.subscribersCount),
+            "Subscribers",
+          ),
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.videosCount), "Videos"),
         ],
@@ -251,7 +259,7 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
     return Container(
       height: 30.h,
       width: 1,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
     );
   }
 
@@ -268,56 +276,56 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-      borderRadius: BorderRadius.circular(12.r),
-    ),
-    child: GestureDetector(
-      onTap: () => Get.toNamed(Routes.MANAGER_VERIFICATION),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Complete Your Verification",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Row(
-                children: [
-                  Text(
-                    "Verify",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(width: 4.w),
-                  Icon(Icons.arrow_forward, color: Colors.white, size: 16.sp),
-                ],
-              ),
-            ],
-          ),
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.assignment,
-              color: const Color(0xFF7B2CBF),
-              size: 28.sp,
-            ),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12.r),
       ),
-    ),
+      child: GestureDetector(
+        onTap: () => Get.toNamed(Routes.MANAGER_VERIFICATION),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Complete Your Verification",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Row(
+                  children: [
+                    Text(
+                      "Verify",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Icon(Icons.arrow_forward, color: Colors.white, size: 16.sp),
+                  ],
+                ),
+              ],
+            ),
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.assignment,
+                color: const Color(0xFF7B2CBF),
+                size: 28.sp,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -354,17 +362,22 @@ class MediaNetworkProfileView extends GetView<MediaNetworkProfileController> {
       thickness: 1,
       indent: 16.w,
       endIndent: 16.w,
-      color: Colors.grey.withOpacity(0.1),
+      color: Colors.grey.withValues(alpha: 0.1),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+  Widget _buildMenuItem(
+    IconData icon,
+    String title,
+    String subtitle, {
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       leading: Container(
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(
-          color: const Color(0xFF8B1D1D).withOpacity(0.05),
+          color: const Color(0xFF8B1D1D).withValues(alpha: 0.05),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: const Color(0xFF8B1D1D), size: 22.sp),

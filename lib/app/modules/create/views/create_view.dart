@@ -18,7 +18,7 @@ import '../controllers/create_controller.dart';
 class CreateView extends GetView<CreateController> {
   const CreateView({super.key});
 
-@override
+  @override
   Widget build(BuildContext context) {
     return GetBuilder<CreateController>(
       dispose: (_) {
@@ -29,7 +29,7 @@ class CreateView extends GetView<CreateController> {
       },
       builder: (_) {
         return Obx(() {
-    switch (controller.currentStep.value) {
+          switch (controller.currentStep.value) {
             case "EditPost":
               return const EditPostView();
             case "UploadVideo":
@@ -113,7 +113,7 @@ class CreateView extends GetView<CreateController> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Container(color: Colors.black.withOpacity(0.2)),
+        child: Container(color: Colors.black.withValues(alpha: 0.2)),
       );
     });
   }
@@ -175,7 +175,7 @@ class CreateView extends GetView<CreateController> {
       case "Neon":
         return ColorFiltered(
           colorFilter: ColorFilter.mode(
-            Colors.pinkAccent.withOpacity(0.5),
+            Colors.pinkAccent.withValues(alpha: 0.5),
             BlendMode.colorBurn,
           ),
           child: child,
@@ -183,7 +183,7 @@ class CreateView extends GetView<CreateController> {
       case "Sparkles":
         return ColorFiltered(
           colorFilter: ColorFilter.mode(
-            Colors.amber.withOpacity(0.3),
+            Colors.amber.withValues(alpha: 0.3),
             BlendMode.hardLight,
           ),
           child: child,
@@ -223,7 +223,7 @@ class CreateView extends GetView<CreateController> {
                       vertical: 8.h,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(25.r),
                     ),
                     child: Obx(
@@ -240,7 +240,7 @@ class CreateView extends GetView<CreateController> {
                                 style: TextStyle(
                                   color: isSelected
                                       ? Colors.white
-                                      : Colors.white.withOpacity(0.5),
+                                      : Colors.white.withValues(alpha: 0.5),
                                   fontWeight: isSelected
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -326,7 +326,7 @@ class CreateView extends GetView<CreateController> {
               decoration: BoxDecoration(
                 color: isActive
                     ? AppColors.primary
-                    : Colors.black.withOpacity(0.3),
+                    : Colors.black.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: Colors.white, size: 24.sp),
@@ -368,7 +368,7 @@ class CreateView extends GetView<CreateController> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
+                color: Colors.red.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
@@ -392,7 +392,7 @@ class CreateView extends GetView<CreateController> {
                       Container(
                         padding: EdgeInsets.all(12.w),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -440,7 +440,7 @@ class CreateView extends GetView<CreateController> {
                       Container(
                         padding: EdgeInsets.all(12.w),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -619,7 +619,7 @@ class CreateView extends GetView<CreateController> {
   //     ],
   //   );
   // }
-Widget _buildLiveControls() {
+  Widget _buildLiveControls() {
     return Column(
       children: [
         // Live Title Input
@@ -633,7 +633,7 @@ Widget _buildLiveControls() {
               hintText: "Add a title for your live stream...",
               hintStyle: const TextStyle(color: Colors.white54),
               filled: true,
-              fillColor: Colors.black.withOpacity(0.5),
+              fillColor: Colors.black.withValues(alpha: 0.5),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: BorderSide.none,
@@ -653,10 +653,10 @@ Widget _buildLiveControls() {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(
-                color: Colors.white.withOpacity(0.85),
+                color: Colors.white.withValues(alpha: 0.85),
                 width: 1.5,
               ),
             ),
@@ -677,7 +677,8 @@ Widget _buildLiveControls() {
                   _buildLiveActionButton(
                     Icons.person_add_alt_1_outlined,
                     "Add Guest",
-                    isActive: controller.selectedLiveAction.value == "Add Guest",
+                    isActive:
+                        controller.selectedLiveAction.value == "Add Guest",
                     onTap: () {
                       controller.showGameOptions.value = false;
                       controller.selectedLiveAction.value = "Add Guest";
@@ -687,7 +688,8 @@ Widget _buildLiveControls() {
                   _buildLiveActionButton(
                     Icons.sports_esports_outlined,
                     "Game",
-                    isActive: controller.showGameOptions.value ||
+                    isActive:
+                        controller.showGameOptions.value ||
                         controller.selectedLiveAction.value == "Game",
                     onTap: controller.toggleGameMenu,
                   ),
@@ -709,20 +711,20 @@ Widget _buildLiveControls() {
                 children: controller.gameOptionsList.map((game) {
                   final isSelected = controller.selectedGameType.value == game;
                   return GestureDetector(
-              onTap: () {
-  controller.selectedGameType.value = game;
-  if (game == "Box battle") {
-    controller.navigateTo("LiveBoxBattle");
-  } else if (game == "1v1") {
-    controller.navigateTo("LiveBattle1v1");
-  } else if (game == "Quiz") {
-    controller.navigateTo("LiveQuiz");
-  } else if (game == "2v2 battle") {
-    controller.navigateTo("LiveBattle2v2");
-  } else if (game == "Karaoke") {
-    controller.navigateTo("LiveKaraoke");
-  }
-},
+                    onTap: () {
+                      controller.selectedGameType.value = game;
+                      if (game == "Box battle") {
+                        controller.navigateTo("LiveBoxBattle");
+                      } else if (game == "1v1") {
+                        controller.navigateTo("LiveBattle1v1");
+                      } else if (game == "Quiz") {
+                        controller.navigateTo("LiveQuiz");
+                      } else if (game == "2v2 battle") {
+                        controller.navigateTo("LiveBattle2v2");
+                      } else if (game == "Karaoke") {
+                        controller.navigateTo("LiveKaraoke");
+                      }
+                    },
                     child: Container(
                       margin: EdgeInsets.only(right: 8.w),
                       padding: EdgeInsets.symmetric(
@@ -733,7 +735,7 @@ Widget _buildLiveControls() {
                         color: isSelected ? Colors.white : Colors.transparent,
                         borderRadius: BorderRadius.circular(10.r),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           width: 1.5,
                         ),
                       ),
@@ -742,8 +744,9 @@ Widget _buildLiveControls() {
                         style: TextStyle(
                           color: isSelected ? Colors.black : Colors.white,
                           fontSize: 13.sp,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                         ),
                       ),
                     ),
@@ -793,6 +796,7 @@ Widget _buildLiveControls() {
       ],
     );
   }
+
   // Widget _buildLiveActionButton(
   //   IconData icon,
   //   String label, {
@@ -850,7 +854,7 @@ Widget _buildLiveControls() {
       Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.85),
+          color: Colors.black.withValues(alpha: 0.85),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.r),
             topRight: Radius.circular(20.r),
@@ -943,7 +947,7 @@ Widget _buildLiveControls() {
       Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.85),
+          color: Colors.black.withValues(alpha: 0.85),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.r),
             topRight: Radius.circular(20.r),
@@ -1012,7 +1016,7 @@ Widget _buildLiveControls() {
       Container(
         padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.85),
+          color: Colors.black.withValues(alpha: 0.85),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.r),
             topRight: Radius.circular(20.r),
@@ -1079,7 +1083,7 @@ Widget _buildLiveControls() {
         padding: EdgeInsets.all(20.w),
         height: 400.h,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.85),
+          color: Colors.black.withValues(alpha: 0.85),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.r),
             topRight: Radius.circular(20.r),
@@ -1172,7 +1176,7 @@ Widget _buildLiveControls() {
         height: 180.h,
         padding: EdgeInsets.symmetric(vertical: 20.h),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
+          color: Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.r),
             topRight: Radius.circular(20.r),
@@ -1217,8 +1221,8 @@ Widget _buildLiveControls() {
                               width: 60.w,
                               height: 60.w,
                               decoration: BoxDecoration(
-                                color: (effect['color'] as Color).withOpacity(
-                                  0.3,
+                                color: (effect['color'] as Color).withValues(
+                                  alpha: 0.3,
                                 ),
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -1280,7 +1284,7 @@ Widget _buildLiveControls() {
         height: 400.h,
         padding: EdgeInsets.symmetric(vertical: 20.h),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.85),
+          color: Colors.black.withValues(alpha: 0.85),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.r),
             topRight: Radius.circular(20.r),

@@ -34,18 +34,20 @@ class LiveKaraokeView extends GetView<CreateController> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Row(
                   children: [
                     Obx(() {
-                      final pic = controller.userProfile.value?.profilePictureUrl;
+                      final pic =
+                          controller.userProfile.value?.profilePictureUrl;
                       return CircleAvatar(
                         radius: 14.r,
                         backgroundImage: (pic != null && pic.isNotEmpty)
                             ? NetworkImage(pic)
-                            : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
+                            : const AssetImage('assets/images/user_avatar.png')
+                                  as ImageProvider,
                       );
                     }),
                     SizedBox(width: 6.w),
@@ -54,42 +56,82 @@ class LiveKaraokeView extends GetView<CreateController> {
                       children: [
                         Obx(() {
                           final user = controller.userProfile.value;
-                          final name = (user?.fullName != null && user!.fullName!.isNotEmpty)
+                          final name =
+                              (user?.fullName != null &&
+                                  user!.fullName!.isNotEmpty)
                               ? user.fullName!
-                              : (controller.liveTitle.value.isNotEmpty ? controller.liveTitle.value : "Host");
-                          return Text(name, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold));
+                              : (controller.liveTitle.value.isNotEmpty
+                                    ? controller.liveTitle.value
+                                    : "Host");
+                          return Text(
+                            name,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
                         }),
                         Row(
                           children: [
-                            const Icon(Icons.favorite, color: Colors.pinkAccent, size: 10),
+                            const Icon(
+                              Icons.favorite,
+                              color: Colors.pinkAccent,
+                              size: 10,
+                            ),
                             SizedBox(width: 2.w),
-                            Obx(() => Text(
-                              controller.liveMemberCount.value > 0 ? "${controller.liveMemberCount.value}" : "Live",
-                              style: TextStyle(color: Colors.white70, fontSize: 9.sp),
-                            )),
+                            Obx(
+                              () => Text(
+                                controller.liveMemberCount.value > 0
+                                    ? "${controller.liveMemberCount.value}"
+                                    : "Live",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 9.sp,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],
                     ),
                     SizedBox(width: 8.w),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.pinkAccent,
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      child: Text("+ Follow", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        "+ Follow",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
               const Spacer(),
-              CircleAvatar(radius: 12.r, backgroundImage: const AssetImage('assets/images/user_avatar.png')),
+              CircleAvatar(
+                radius: 12.r,
+                backgroundImage: const AssetImage(
+                  'assets/images/user_avatar.png',
+                ),
+              ),
               SizedBox(width: 4.w),
               CircleAvatar(
                 radius: 12.r,
                 backgroundColor: Colors.black45,
-                child: Text("387", style: TextStyle(color: Colors.white, fontSize: 9.sp)),
+                child: Text(
+                  "387",
+                  style: TextStyle(color: Colors.white, fontSize: 9.sp),
+                ),
               ),
               SizedBox(width: 8.w),
               CircleAvatar(
@@ -99,7 +141,11 @@ class LiveKaraokeView extends GetView<CreateController> {
               ),
               SizedBox(width: 6.w),
               GestureDetector(
-                onTap: () => controller.navigateTo(controller.isLiveEngineInitialized.value ? "LiveStream" : "Camera"),
+                onTap: () => controller.navigateTo(
+                  controller.isLiveEngineInitialized.value
+                      ? "LiveStream"
+                      : "Camera",
+                ),
                 child: CircleAvatar(
                   radius: 14.r,
                   backgroundColor: Colors.black45,
@@ -116,12 +162,18 @@ class LiveKaraokeView extends GetView<CreateController> {
                   height: 32.h,
                   padding: EdgeInsets.symmetric(horizontal: 10.w),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   child: Row(
                     children: [
-                      Text("@username", style: TextStyle(color: Colors.white54, fontSize: 11.sp)),
+                      Text(
+                        "@username",
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 11.sp,
+                        ),
+                      ),
                       const Spacer(),
                       const Icon(Icons.search, color: Colors.white54, size: 16),
                     ],
@@ -129,17 +181,28 @@ class LiveKaraokeView extends GetView<CreateController> {
                 ),
               ),
               SizedBox(width: 8.w),
-              Icon(Icons.cloud_upload_outlined, color: Colors.white70, size: 20.sp),
+              Icon(
+                Icons.cloud_upload_outlined,
+                color: Colors.white70,
+                size: 20.sp,
+              ),
               SizedBox(width: 8.w),
               Icon(Icons.flag_outlined, color: Colors.white70, size: 20.sp),
               SizedBox(width: 8.w),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.deepOrange.withOpacity(0.8),
+                  color: Colors.deepOrange.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
-                child: Text("⚡ GloTune #1", style: TextStyle(color: Colors.white, fontSize: 9.sp, fontWeight: FontWeight.bold)),
+                child: Text(
+                  "⚡ GloTune #1",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -171,15 +234,25 @@ class LiveKaraokeView extends GetView<CreateController> {
                   top: 8.h,
                   left: 8.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 2.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.85),
+                      color: Colors.amber.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.bolt, color: Colors.black, size: 12),
-                        Text("Host", style: TextStyle(color: Colors.black, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                        Text(
+                          "Host",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -188,12 +261,22 @@ class LiveKaraokeView extends GetView<CreateController> {
                   top: 8.h,
                   right: 8.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(6.r),
                     ),
-                    child: Text("VS 01:45", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      "VS 01:45",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -208,19 +291,41 @@ class LiveKaraokeView extends GetView<CreateController> {
                           children: [
                             TextSpan(
                               text: "GUEST: ",
-                              style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             TextSpan(
                               text: "@sam",
-                              style: TextStyle(color: Colors.pinkAccent, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.pinkAccent,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       SizedBox(height: 2.h),
-                      Text("SONG TITLE: My Love", style: TextStyle(color: Colors.white, fontSize: 9.sp, fontWeight: FontWeight.w600)),
+                      Text(
+                        "SONG TITLE: My Love",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       SizedBox(height: 2.h),
-                      Text("ARTIST: Young Doe", style: TextStyle(color: Colors.white, fontSize: 9.sp, fontWeight: FontWeight.w600)),
+                      Text(
+                        "ARTIST: Young Doe",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -269,10 +374,17 @@ class LiveKaraokeView extends GetView<CreateController> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4.r),
               ),
-              child: Text(score, style: TextStyle(color: Colors.cyanAccent, fontSize: 7.sp, fontWeight: FontWeight.bold)),
+              child: Text(
+                score,
+                style: TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 7.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -281,14 +393,25 @@ class LiveKaraokeView extends GetView<CreateController> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(6.r),
               ),
               child: Row(
                 children: [
-                  Text(name, style: TextStyle(color: Colors.white, fontSize: 7.sp, fontWeight: FontWeight.bold)),
+                  Text(
+                    name,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 7.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   SizedBox(width: 2.w),
-                  const Icon(Icons.add_circle, color: Colors.pinkAccent, size: 8),
+                  const Icon(
+                    Icons.add_circle,
+                    color: Colors.pinkAccent,
+                    size: 8,
+                  ),
                 ],
               ),
             ),
@@ -340,7 +463,7 @@ class LiveKaraokeView extends GetView<CreateController> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(14.r),
               ),
               child: Row(
@@ -348,7 +471,9 @@ class LiveKaraokeView extends GetView<CreateController> {
                 children: [
                   CircleAvatar(
                     radius: 9.r,
-                    backgroundImage: const AssetImage('assets/images/user_avatar.png'),
+                    backgroundImage: const AssetImage(
+                      'assets/images/user_avatar.png',
+                    ),
                   ),
                   SizedBox(width: 6.w),
                   RichText(
@@ -356,12 +481,18 @@ class LiveKaraokeView extends GetView<CreateController> {
                       children: [
                         TextSpan(
                           text: "${item['user']} ",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10.sp),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10.sp,
+                          ),
                         ),
                         TextSpan(
                           text: item['text'] as String,
                           style: TextStyle(
-                            color: item['isAction'] == true ? Colors.orangeAccent : Colors.white70,
+                            color: item['isAction'] == true
+                                ? Colors.orangeAccent
+                                : Colors.white70,
                             fontSize: 10.sp,
                           ),
                         ),
@@ -382,16 +513,23 @@ class LiveKaraokeView extends GetView<CreateController> {
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.4),
+        color: Colors.black.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: Colors.white.withOpacity(0.85), width: 1.5),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.85),
+          width: 1.5,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildActionItem(Icons.settings_outlined, "Settings"),
           _buildActionItem(Icons.person_add_alt_1_outlined, "Add Guest"),
-          _buildActionItem(Icons.cached_outlined, "Switch Game", onTap: () => controller.navigateTo("Camera")),
+          _buildActionItem(
+            Icons.cached_outlined,
+            "Switch Game",
+            onTap: () => controller.navigateTo("Camera"),
+          ),
           _buildActionItem(Icons.chat_bubble_outline, "Comments"),
           _buildActionItem(Icons.pause, "Pause Live"),
           _buildActionItem(Icons.more_vert, "Category"),
@@ -408,7 +546,10 @@ class LiveKaraokeView extends GetView<CreateController> {
         children: [
           Icon(icon, color: Colors.white, size: 22.sp),
           SizedBox(height: 4.h),
-          Text(label, style: TextStyle(color: Colors.white, fontSize: 9.sp)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white, fontSize: 9.sp),
+          ),
         ],
       ),
     );

@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import '../modules/active_listings/bindings/active_listings_binding.dart';
 import '../modules/active_listings/views/active_listings_view.dart';
 import '../modules/add_creator/bindings/add_creator_binding.dart';
-import '../modules/add_creator/bindings/add_creator_binding.dart';
-import '../modules/add_creator/views/add_creator_view.dart';
 import '../modules/add_creator/views/add_creator_view.dart';
 import '../modules/add_new_product/bindings/add_new_product_binding.dart';
 import '../modules/add_new_product/views/add_new_product_view.dart';

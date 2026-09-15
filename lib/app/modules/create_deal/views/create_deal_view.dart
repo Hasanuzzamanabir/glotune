@@ -102,7 +102,7 @@ class CreateDealView extends GetView<CreateDealController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -110,7 +110,10 @@ class CreateDealView extends GetView<CreateDealController> {
       ),
       child: DropdownButtonFormField<String>(
         decoration: const InputDecoration(border: InputBorder.none),
-        hint: Text(hint, style: TextStyle(color: Colors.grey, fontSize: 14.sp)),
+        hint: Text(
+          hint,
+          style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+        ),
         items: const [], // Empty for UI purposes
         onChanged: (val) {},
         icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 24.sp),
@@ -126,7 +129,7 @@ class CreateDealView extends GetView<CreateDealController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -150,7 +153,7 @@ class CreateDealView extends GetView<CreateDealController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -162,13 +165,20 @@ class CreateDealView extends GetView<CreateDealController> {
           border: InputBorder.none,
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey, fontSize: 14.sp),
-          suffixIcon: Icon(Icons.calendar_today, color: Colors.black87, size: 20.sp),
+          suffixIcon: Icon(
+            Icons.calendar_today,
+            color: Colors.black87,
+            size: 20.sp,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildChecklistSection({required String title, required List<String> items}) {
+  Widget _buildChecklistSection({
+    required String title,
+    required List<String> items,
+  }) {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -176,7 +186,7 @@ class CreateDealView extends GetView<CreateDealController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -187,30 +197,36 @@ class CreateDealView extends GetView<CreateDealController> {
         children: [
           Text(
             title,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp, color: Colors.black),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16.sp,
+              color: Colors.black,
+            ),
           ),
           SizedBox(height: 16.h),
-          ...items.map((item) => Padding(
-            padding: EdgeInsets.only(bottom: 12.h),
-            child: Row(
-              children: [
-                Container(
-                  width: 20.w,
-                  height: 20.w,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF22C55E),
-                    shape: BoxShape.circle,
+          ...items.map(
+            (item) => Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: Row(
+                children: [
+                  Container(
+                    width: 20.w,
+                    height: 20.w,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF22C55E),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.check, color: Colors.white, size: 14.sp),
                   ),
-                  child: Icon(Icons.check, color: Colors.white, size: 14.sp),
-                ),
-                SizedBox(width: 12.w),
-                Text(
-                  item,
-                  style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
-                ),
-              ],
+                  SizedBox(width: 12.w),
+                  Text(
+                    item,
+                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

@@ -14,10 +14,12 @@ class ContentCreatorProfileView
   const ContentCreatorProfileView({super.key});
 
   String _formatStatCount(int count) {
-    if (count >= 1000000)
+    if (count >= 1000000) {
       return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000)
+    }
+    if (count >= 1000) {
       return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    }
     return count.toString();
   }
 
@@ -66,7 +68,7 @@ class ContentCreatorProfileView
             ),
           ),
           child: Container(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -246,7 +248,7 @@ class ContentCreatorProfileView
                   'Global',
                   style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                 ),
-              ]
+              ],
             ],
           ),
         ],
@@ -300,7 +302,7 @@ class ContentCreatorProfileView
     return Container(
       height: 30.h,
       width: 1,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
     );
   }
 
@@ -352,7 +354,7 @@ class ContentCreatorProfileView
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -425,7 +427,7 @@ class ContentCreatorProfileView
       thickness: 1,
       indent: 16.w,
       endIndent: 16.w,
-      color: Colors.grey.withOpacity(0.1),
+      color: Colors.grey.withValues(alpha: 0.1),
     );
   }
 
@@ -443,7 +445,7 @@ class ContentCreatorProfileView
       leading: Container(
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(
-          color: const Color(0xFF8B1D1D).withOpacity(0.05),
+          color: const Color(0xFF8B1D1D).withValues(alpha: 0.05),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: const Color(0xFF8B1D1D), size: 22.sp),

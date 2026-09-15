@@ -46,12 +46,20 @@ class InventoryStatsTableLayout extends StatelessWidget {
                 children: [
                   _buildStatCard(Icons.local_offer, "Total Products", "1200"),
                   _buildStatCard(Icons.inventory_2, "Top Selling Items", "120"),
-                  _buildStatCard(Icons.notifications_active, "Inventory Alerts", "100"),
-                  _buildStatCard(Icons.account_balance_wallet, "Total Revenue", "\$4,000"),
+                  _buildStatCard(
+                    Icons.notifications_active,
+                    "Inventory Alerts",
+                    "100",
+                  ),
+                  _buildStatCard(
+                    Icons.account_balance_wallet,
+                    "Total Revenue",
+                    "\$4,000",
+                  ),
                 ],
               ),
             ),
-            
+
             // Table Section
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
@@ -86,7 +94,7 @@ class InventoryStatsTableLayout extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -100,7 +108,7 @@ class InventoryStatsTableLayout extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(
-              color: const Color(0xFF8B1D1D).withOpacity(0.1),
+              color: const Color(0xFF8B1D1D).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(icon, color: const Color(0xFF8B1D1D), size: 20.sp),
@@ -132,7 +140,7 @@ class InventoryStatsTableLayout extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: SingleChildScrollView(
@@ -170,7 +178,13 @@ class InventoryStatsTableLayout extends StatelessWidget {
     );
   }
 
-  DataRow _buildDataRow(String sn, String name, String sku, String stock, String price) {
+  DataRow _buildDataRow(
+    String sn,
+    String name,
+    String sku,
+    String stock,
+    String price,
+  ) {
     return DataRow(
       cells: [
         DataCell(Text(sn, style: _rowTextStyle())),
@@ -183,9 +197,6 @@ class InventoryStatsTableLayout extends StatelessWidget {
   }
 
   TextStyle _rowTextStyle() {
-    return TextStyle(
-      fontSize: 13.sp,
-      color: Colors.black54,
-    );
+    return TextStyle(fontSize: 13.sp, color: Colors.black54);
   }
 }

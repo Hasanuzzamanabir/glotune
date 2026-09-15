@@ -11,8 +11,10 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
   const ViewerProfileView({super.key});
 
   String _formatStatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    if (count >= 1000)
+      return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
     return count.toString();
   }
 
@@ -34,14 +36,14 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
               _buildUserInfo(profile),
               _buildStatsDashboard(profile),
               _buildPrimaryActions(),
-            _buildSectionHeader("Watchlist"),
-            _buildHorizontalCarousel(isWatchlist: true),
-            _buildSectionHeader("Continue from playing"),
-            _buildHorizontalCarousel(isWatchlist: false),
-            SizedBox(height: 30.h),
-          ],
-        ),
-      );
+              _buildSectionHeader("Watchlist"),
+              _buildHorizontalCarousel(isWatchlist: true),
+              _buildSectionHeader("Continue from playing"),
+              _buildHorizontalCarousel(isWatchlist: false),
+              SizedBox(height: 30.h),
+            ],
+          ),
+        );
       }),
     );
   }
@@ -55,9 +57,7 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
         Container(
           height: 180.h,
           width: double.infinity,
-          decoration: const BoxDecoration(
-            color: Color(0xFFD9D9D9),
-          ),
+          decoration: const BoxDecoration(color: Color(0xFFD9D9D9)),
           child: SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -81,7 +81,11 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () {},
-                    icon: const Icon(Icons.edit_note, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.edit_note,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ],
               ),
@@ -100,7 +104,8 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
             child: CircleAvatar(
               radius: 50.r,
               backgroundImage: profile.avatarUrl.startsWith('http')
-                  ? CachedNetworkImageProvider(profile.avatarUrl) as ImageProvider
+                  ? CachedNetworkImageProvider(profile.avatarUrl)
+                        as ImageProvider
                   : AssetImage(profile.avatarUrl) as ImageProvider,
             ),
           ),
@@ -132,10 +137,7 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
           SizedBox(height: 4.h),
           Text(
             profile.handle,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
           ),
           SizedBox(height: 8.h),
           Row(
@@ -157,7 +159,7 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
                   'Global',
                   style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                 ),
-              ]
+              ],
             ],
           ),
         ],
@@ -180,7 +182,10 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.followingCount), "Following"),
           _buildStatDivider(),
-          _buildStatItem(_formatStatCount(profile.subscribersCount), "Subscribers"),
+          _buildStatItem(
+            _formatStatCount(profile.subscribersCount),
+            "Subscribers",
+          ),
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.videosCount), "Videos"),
         ],
@@ -202,10 +207,7 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
         SizedBox(height: 4.h),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 10.sp,
-            color: Colors.grey,
-          ),
+          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
         ),
       ],
     );
@@ -215,7 +217,7 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
     return Container(
       height: 30.h,
       width: 1,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
     );
   }
 
@@ -224,7 +226,10 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
-          _buildActionButton("Engagement history", onTap: () => Get.toNamed(Routes.ENGAGEMENT_HISTORY)),
+          _buildActionButton(
+            "Engagement history",
+            onTap: () => Get.toNamed(Routes.ENGAGEMENT_HISTORY),
+          ),
           SizedBox(width: 12.w),
           _buildActionButton("Switch account", onTap: () {}),
         ],
@@ -292,7 +297,9 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12.r),
                   child: Image.asset(
-                    isWatchlist ? 'assets/images/video_thumb_1.png' : 'assets/images/video_thumb_2.png',
+                    isWatchlist
+                        ? 'assets/images/video_thumb_1.png'
+                        : 'assets/images/video_thumb_2.png',
                     height: 110.h,
                     width: 200.w,
                     fit: BoxFit.cover,
@@ -311,10 +318,7 @@ class ViewerProfileView extends GetView<ViewerProfileController> {
                 ),
                 Text(
                   "Golden Myron",
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 11.sp, color: Colors.grey),
                 ),
               ],
             ),

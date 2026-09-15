@@ -28,7 +28,11 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
         actions: [
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.shopping_cart_outlined, color: Colors.black, size: 24.sp),
+            icon: Icon(
+              Icons.shopping_cart_outlined,
+              color: Colors.black,
+              size: 24.sp,
+            ),
           ),
           IconButton(
             onPressed: () {},
@@ -77,11 +81,10 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
           ),
         ),
         SizedBox(height: 12.h),
-        Obx(() => Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            controller.imageUrls.length,
-            (index) {
+        Obx(
+          () => Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(controller.imageUrls.length, (index) {
               final isActive = controller.currentImageIndex.value == index;
               return Container(
                 margin: EdgeInsets.symmetric(horizontal: 2.w),
@@ -92,9 +95,9 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
                   borderRadius: BorderRadius.circular(2.r),
                 ),
               );
-            },
+            }),
           ),
-        )),
+        ),
         SizedBox(height: 16.h),
       ],
     );
@@ -112,19 +115,26 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
         }
 
         final details = controller.productDetails;
-        
+
         final priceStr = details['price']?.toString();
         final discountStr = details['discount_price']?.toString();
-        
-        final hasDiscount = discountStr != null && discountStr.isNotEmpty && double.tryParse(discountStr) != null && double.parse(discountStr) > 0;
-        
+
+        final hasDiscount =
+            discountStr != null &&
+            discountStr.isNotEmpty &&
+            double.tryParse(discountStr) != null &&
+            double.parse(discountStr) > 0;
+
         final mainPriceStr = hasDiscount ? discountStr : priceStr;
         final originalPriceStr = hasDiscount ? priceStr : null;
 
         final title = details['name'] as String? ?? controller.item.title;
-        final price = mainPriceStr ?? controller.item.price.replaceAll('\$', '');
-        final originalPrice = originalPriceStr ?? controller.item.originalPrice?.replaceAll('\$', '');
-        
+        final price =
+            mainPriceStr ?? controller.item.price.replaceAll('\$', '');
+        final originalPrice =
+            originalPriceStr ??
+            controller.item.originalPrice?.replaceAll('\$', '');
+
         final status = details['product_status'] as String?;
         final sku = details['sku'] as String?;
 
@@ -145,9 +155,18 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
                   children: [
                     Icon(Icons.star, color: Colors.orange, size: 16.sp),
                     SizedBox(width: 4.w),
-                    Text("4.5 ratings", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
+                    Text(
+                      "4.5 ratings",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.sp,
+                      ),
+                    ),
                     SizedBox(width: 4.w),
-                    Text("(102 Sold)", style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                    Text(
+                      "(102 Sold)",
+                      style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                    ),
                     Icon(Icons.chevron_right, color: Colors.grey, size: 16.sp),
                   ],
                 ),
@@ -158,13 +177,20 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
               children: [
                 Text(
                   "\$$price",
-                  style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 if (originalPrice != null && originalPrice.isNotEmpty) ...[
                   SizedBox(width: 8.w),
                   Text(
                     "\$$originalPrice",
-                    style: TextStyle(fontSize: 16.sp, color: Colors.grey, decoration: TextDecoration.lineThrough),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: Colors.grey,
+                      decoration: TextDecoration.lineThrough,
+                    ),
                   ),
                 ],
               ],
@@ -187,7 +213,8 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
                 style: TextStyle(fontSize: 12.sp, color: Colors.grey),
               ),
             ],
-            if (details['description'] != null && details['description'].toString().isNotEmpty) ...[
+            if (details['description'] != null &&
+                details['description'].toString().isNotEmpty) ...[
               Padding(
                 padding: EdgeInsets.only(top: 16.h),
                 child: Text(
@@ -214,13 +241,21 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
           height: 50.h,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isOutOfStock ? Colors.grey : const Color(0xFF8B1D1D),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.r)),
+              backgroundColor: isOutOfStock
+                  ? Colors.grey
+                  : const Color(0xFF8B1D1D),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.r),
+              ),
             ),
             onPressed: isOutOfStock ? null : () {},
             child: Text(
-              isOutOfStock ? "Out of Stock" : "Buy Now", 
-              style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)
+              isOutOfStock ? "Out of Stock" : "Buy Now",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         );
@@ -229,7 +264,11 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: Colors.grey.withOpacity(0.1));
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.grey.withValues(alpha: 0.1),
+    );
   }
 
   Widget _buildSizeSelection() {
@@ -239,33 +278,49 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Size", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          Text(
+            "Size",
+            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 12.h),
-          Obx(() => Wrap(
-            spacing: 12.w,
-            children: sizes.map((size) {
-              final isSelected = controller.selectedSize.value == size;
-              return GestureDetector(
-                onTap: () => controller.selectSize(size),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.grey[200] : const Color(0xFFF8F8F8),
-                    borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: isSelected ? Colors.grey[400]! : Colors.transparent),
-                  ),
-                  child: Text(
-                    size,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14.sp,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          Obx(
+            () => Wrap(
+              spacing: 12.w,
+              children: sizes.map((size) {
+                final isSelected = controller.selectedSize.value == size;
+                return GestureDetector(
+                  onTap: () => controller.selectSize(size),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.grey[200]
+                          : const Color(0xFFF8F8F8),
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.grey[400]!
+                            : Colors.transparent,
+                      ),
+                    ),
+                    child: Text(
+                      size,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14.sp,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          )),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -283,26 +338,33 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Color", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          Text(
+            "Color",
+            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 12.h),
-          Obx(() => Row(
-            children: List.generate(colors.length, (index) {
-              final isSelected = controller.selectedColorIndex.value == index;
-              return GestureDetector(
-                onTap: () => controller.selectColor(index),
-                child: Container(
-                  margin: EdgeInsets.only(right: 12.w),
-                  width: 32.w,
-                  height: 32.w,
-                  decoration: BoxDecoration(
-                    color: colors[index],
-                    borderRadius: BorderRadius.circular(6.r),
-                    border: isSelected ? Border.all(color: Colors.orange, width: 2) : null,
+          Obx(
+            () => Row(
+              children: List.generate(colors.length, (index) {
+                final isSelected = controller.selectedColorIndex.value == index;
+                return GestureDetector(
+                  onTap: () => controller.selectColor(index),
+                  child: Container(
+                    margin: EdgeInsets.only(right: 12.w),
+                    width: 32.w,
+                    height: 32.w,
+                    decoration: BoxDecoration(
+                      color: colors[index],
+                      borderRadius: BorderRadius.circular(6.r),
+                      border: isSelected
+                          ? Border.all(color: Colors.orange, width: 2)
+                          : null,
+                    ),
                   ),
-                ),
-              );
-            }),
-          )),
+                );
+              }),
+            ),
+          ),
           SizedBox(height: 16.h),
         ],
       ),
@@ -316,7 +378,7 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
       if (shipping == 'free_shipment') displayShipping = "Free Shipping";
       if (shipping == 'paid_shipment') displayShipping = "Paid Shipping";
       if (shipping == 'no_shipment') displayShipping = "No Shipping";
-      
+
       return ListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
         title: Text(
@@ -327,7 +389,11 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
           "Shipping details",
           style: TextStyle(color: Colors.grey, fontSize: 12.sp),
         ),
-        trailing: Icon(Icons.local_shipping_outlined, color: Colors.black, size: 20.sp),
+        trailing: Icon(
+          Icons.local_shipping_outlined,
+          color: Colors.black,
+          size: 20.sp,
+        ),
         onTap: () {},
       );
     });
@@ -341,7 +407,10 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Text("You may also like", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+            child: Text(
+              "You may also like",
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
           ),
           SizedBox(height: 16.h),
           SizedBox(
@@ -364,13 +433,28 @@ class ProductDetailsView extends GetView<ProductDetailsController> {
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Center(
-                          child: Image.network("https://picsum.photos/150/150?random=${index + 20}", fit: BoxFit.cover),
+                          child: Image.network(
+                            "https://picsum.photos/150/150?random=${index + 20}",
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       SizedBox(height: 8.h),
-                      Text("T-shirt", style: TextStyle(fontSize: 12.sp, color: Colors.grey[600])),
+                      Text(
+                        "T-shirt",
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey[600],
+                        ),
+                      ),
                       SizedBox(height: 4.h),
-                      Text("\$14", style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                      Text(
+                        "\$14",
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 );

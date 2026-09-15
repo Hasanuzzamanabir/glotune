@@ -7,7 +7,7 @@ import 'create_ads_campaign_step2_view.dart';
 
 class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
   const CreateAdsCampaignStep1View({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,19 +36,22 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLabel('Ads Campaign Name'),
-              _buildTextField('Your campaign name', controller: controller.titleController),
+              _buildTextField(
+                'Your campaign name',
+                controller: controller.titleController,
+              ),
               SizedBox(height: 16.h),
-              
+
               _buildLabel('Choose Ad Campaign Type'),
               _buildDropdown(),
-              
+
               SizedBox(height: 24.h),
               _buildLabel('Upload Proposal'),
               _buildUploadBox(),
-              
+
               SizedBox(height: 24.h),
               _buildSpecsTable(),
-              
+
               SizedBox(height: 32.h),
               _buildProceedButton(),
               SizedBox(height: 20.h),
@@ -109,7 +112,10 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
               child: Obx(() {
                 final selected = controller.selectedCampaignType.value;
                 if (selected == null) {
-                  return Text('Choose', style: TextStyle(color: Colors.grey[400], fontSize: 14.sp));
+                  return Text(
+                    'Choose',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
+                  );
                 } else {
                   return Text(
                     selected.split('\n').first,
@@ -133,7 +139,7 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
         decoration: BoxDecoration(
           color: const Color(0xFFF7FBFF), // very light blue tint
           borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-          border: Border.all(color: Colors.blue.withOpacity(0.1)),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -155,7 +161,7 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
                 separatorBuilder: (context, index) => Divider(
                   height: 1,
                   thickness: 1,
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                 ),
                 itemBuilder: (context, index) {
                   final type = controller.campaignTypes[index];
@@ -164,24 +170,32 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
                     onTap: () {
                       // Update both for UI compatibility and API payload
                       controller.selectedCampaignType.value = type;
-                      if (type.toLowerCase().contains("splash") || type.toLowerCase().contains("awareness")) {
+                      if (type.toLowerCase().contains("splash") ||
+                          type.toLowerCase().contains("awareness")) {
                         controller.selectedCampaignTypeEnum.value = "awareness";
-                      } else if (type.toLowerCase().contains("roll") || type.toLowerCase().contains("display") || type.toLowerCase().contains("engagement")) {
-                        controller.selectedCampaignTypeEnum.value = "engagement";
+                      } else if (type.toLowerCase().contains("roll") ||
+                          type.toLowerCase().contains("display") ||
+                          type.toLowerCase().contains("engagement")) {
+                        controller.selectedCampaignTypeEnum.value =
+                            "engagement";
                       } else {
-                        controller.selectedCampaignTypeEnum.value = "conversion";
+                        controller.selectedCampaignTypeEnum.value =
+                            "conversion";
                       }
                       Get.back();
                     },
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 14.h,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             parts[0],
                             style: TextStyle(
-                              color: Colors.black87.withOpacity(0.7),
+                              color: Colors.black87.withValues(alpha: 0.7),
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
@@ -195,7 +209,7 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
                                 fontSize: 13.sp,
                               ),
                             ),
-                          ]
+                          ],
                         ],
                       ),
                     ),
@@ -223,14 +237,20 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.cloud_upload_rounded, color: Colors.grey[800], size: 24.sp),
+            Icon(
+              Icons.cloud_upload_rounded,
+              color: Colors.grey[800],
+              size: 24.sp,
+            ),
             SizedBox(width: 8.w),
             Flexible(
               child: Obx(
                 () => Text(
                   controller.selectedFileName.value ?? 'MP4, JPG, PNG, WEBP',
                   style: TextStyle(
-                    color: controller.selectedFileName.value == null ? Colors.grey[400] : Colors.black87,
+                    color: controller.selectedFileName.value == null
+                        ? Colors.grey[400]
+                        : Colors.black87,
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
                   ),
@@ -252,22 +272,70 @@ class CreateAdsCampaignStep1View extends GetView<AdsCampaignController> {
       ),
       child: Column(
         children: [
-          _buildTableRow(['Ads', 'Dimension', 'Size', 'Format', 'Ratio'], isHeader: true),
-          _buildTableRow(['Pre, mid\nPost-roll', '1920 x 1080px', '50mb', 'Mp4', '16:9']),
-          _buildTableRow(['Splash', '1080 x 1920px', '5-10mb', 'Mp4/Img', '9:16']),
-          _buildTableRow(['Masthead', '1920 x 400px', '20-50mb', 'Mp4/Img', '4:8:1']),
-          _buildTableRow(['Overlays\nfor shorts', '1920 x 1080px', '500kb-1mb', 'Png', '9:16']),
-          _buildTableRow(['Landscape\nOverlays', '1920 x 1080px', '500kb-1mb', 'Png', '16:9']),
-          _buildTableRow(['Display for\nLandscape', '728 x 90px', '500kb-1mb', 'Static\nImg', 'Standard\nAB Size'], isLast: true),
+          _buildTableRow([
+            'Ads',
+            'Dimension',
+            'Size',
+            'Format',
+            'Ratio',
+          ], isHeader: true),
+          _buildTableRow([
+            'Pre, mid\nPost-roll',
+            '1920 x 1080px',
+            '50mb',
+            'Mp4',
+            '16:9',
+          ]),
+          _buildTableRow([
+            'Splash',
+            '1080 x 1920px',
+            '5-10mb',
+            'Mp4/Img',
+            '9:16',
+          ]),
+          _buildTableRow([
+            'Masthead',
+            '1920 x 400px',
+            '20-50mb',
+            'Mp4/Img',
+            '4:8:1',
+          ]),
+          _buildTableRow([
+            'Overlays\nfor shorts',
+            '1920 x 1080px',
+            '500kb-1mb',
+            'Png',
+            '9:16',
+          ]),
+          _buildTableRow([
+            'Landscape\nOverlays',
+            '1920 x 1080px',
+            '500kb-1mb',
+            'Png',
+            '16:9',
+          ]),
+          _buildTableRow([
+            'Display for\nLandscape',
+            '728 x 90px',
+            '500kb-1mb',
+            'Static\nImg',
+            'Standard\nAB Size',
+          ], isLast: true),
         ],
       ),
     );
   }
 
-  Widget _buildTableRow(List<String> cells, {bool isHeader = false, bool isLast = false}) {
+  Widget _buildTableRow(
+    List<String> cells, {
+    bool isHeader = false,
+    bool isLast = false,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        border: isLast ? null : Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
       child: Row(

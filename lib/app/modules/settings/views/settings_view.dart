@@ -127,7 +127,9 @@ class SettingsView extends GetView<SettingsController> {
                     icon: Icons.ios_share_rounded,
                     title: 'Invite a friend',
                     onTap: () {
-                      Share.share('Check out GloTune! The best app for creators and merchants. Download it now at: https://glotune.com');
+                      Share.share(
+                        'Check out GloTune! The best app for creators and merchants. Download it now at: https://glotune.com',
+                      );
                     },
                   ),
                   _buildSettingsItem(
@@ -160,14 +162,17 @@ class SettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildSettingsCard({required String title, required List<Widget> items}) {
+  Widget _buildSettingsCard({
+    required String title,
+    required List<Widget> items,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -206,11 +211,7 @@ class SettingsView extends GetView<SettingsController> {
         child: Row(
           children: [
             if (icon != null)
-              Icon(
-                icon,
-                color: AppColors.primary,
-                size: 22.sp,
-              )
+              Icon(icon, color: AppColors.primary, size: 22.sp)
             else
               SizedBox(width: 22.sp),
             SizedBox(width: 12.w),
@@ -218,7 +219,7 @@ class SettingsView extends GetView<SettingsController> {
               child: Text(
                 title,
                 style: TextStyle(
-                  color: Colors.black.withOpacity(0.8),
+                  color: Colors.black.withValues(alpha: 0.8),
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w500,
                 ),
@@ -238,10 +239,7 @@ class SettingsView extends GetView<SettingsController> {
           'Are you sure you want to delete your account? This action cannot be undone.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               controller.deleteAccount();

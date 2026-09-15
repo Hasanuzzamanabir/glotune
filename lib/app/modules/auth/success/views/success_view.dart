@@ -22,7 +22,11 @@ class SuccessView extends GetView<SuccessController> {
         automaticallyImplyLeading: false,
         title: Text(
           isRegister ? 'ACCOUNT CREATION' : 'FORGOT PASSWORD',
-          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -32,7 +36,7 @@ class SuccessView extends GetView<SuccessController> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 60.h),
-              
+
               // Success Icon
               Container(
                 width: 120.w,
@@ -42,7 +46,7 @@ class SuccessView extends GetView<SuccessController> {
                   borderRadius: BorderRadius.circular(20.r),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -56,7 +60,7 @@ class SuccessView extends GetView<SuccessController> {
                   ),
                 ),
               ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
-              
+
               SizedBox(height: 32.h),
               Text(
                 'Success',
@@ -68,9 +72,9 @@ class SuccessView extends GetView<SuccessController> {
               ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
               SizedBox(height: 8.h),
               Text(
-                isRegister 
-                  ? 'Your account has been successfully created'
-                  : 'Your password has been reset. Login to continue exploring',
+                isRegister
+                    ? 'Your account has been successfully created'
+                    : 'Your password has been reset. Login to continue exploring',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14.sp,

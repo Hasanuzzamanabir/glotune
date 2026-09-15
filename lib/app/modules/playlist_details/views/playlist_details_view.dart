@@ -15,7 +15,11 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
@@ -41,17 +45,12 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
         final info = controller.playlistInfo.value;
         return CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
-              child: _buildHeader(context, info),
-            ),
+            SliverToBoxAdapter(child: _buildHeader(context, info)),
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final video = controller.videos[index];
-                  return _buildVideoItem(video, index + 1);
-                },
-                childCount: controller.videos.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final video = controller.videos[index];
+                return _buildVideoItem(video, index + 1);
+              }, childCount: controller.videos.length),
             ),
             const SliverPadding(padding: EdgeInsets.only(bottom: 30)),
           ],
@@ -78,7 +77,7 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -119,10 +118,7 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
           const SizedBox(height: 4),
           Text(
             '${info.videoCount} videos • ${info.updateTime}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 16),
           // Action Buttons
@@ -134,7 +130,13 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
                 child: ElevatedButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.play_arrow, color: Colors.white),
-                  label: const Text('Play all', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'Play all',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF800000), // App theme red
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -150,9 +152,18 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
                 child: OutlinedButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.shuffle, color: Color(0xFF800000)),
-                  label: const Text('Shuffle', style: TextStyle(color: Color(0xFF800000), fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'Shuffle',
+                    style: TextStyle(
+                      color: Color(0xFF800000),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF800000), width: 1.5),
+                    side: const BorderSide(
+                      color: Color(0xFF800000),
+                      width: 1.5,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
@@ -227,21 +238,29 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
                     child: Image.network(
                       video.thumbnailUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox(),
                     ),
                   ),
                   Positioned(
                     bottom: 4,
                     right: 4,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         video.duration,
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -270,10 +289,7 @@ class PlaylistDetailsView extends GetView<PlaylistDetailsController> {
                     '${video.channelName} • ${video.views} • ${video.timeAgo}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),

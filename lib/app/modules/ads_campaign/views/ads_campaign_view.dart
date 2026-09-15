@@ -34,15 +34,20 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
             child: ElevatedButton.icon(
               onPressed: () => Get.to(() => const CreateAdsCampaignStep1View()),
               icon: Icon(Icons.add, size: 16.sp, color: Colors.white),
-              label: Text('Add Campaign', style: TextStyle(color: Colors.white, fontSize: 12.sp)),
+              label: Text(
+                'Add Campaign',
+                style: TextStyle(color: Colors.white, fontSize: 12.sp),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2),
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
                 elevation: 0,
                 padding: EdgeInsets.symmetric(horizontal: 12.w),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
               ),
             ),
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -60,16 +65,16 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
                 ),
               ),
               SizedBox(height: 16.h),
-              
+
               // Campaign Management Table
               _buildCampaignTable(),
-              
+
               SizedBox(height: 32.h),
 
               // Notifications and Exports (Stacked for mobile)
               _buildNotificationsCard(),
               SizedBox(height: 24.h),
-              
+
               Row(
                 children: [
                   Expanded(child: _buildExportButton('Export as CSV')),
@@ -89,9 +94,7 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-        ),
+        decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!)),
         child: Obx(() {
           if (controller.isCampaignsLoading.value) {
             return Container(
@@ -114,17 +117,72 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
             dataRowMaxHeight: 50.h,
             dataRowMinHeight: 40.h,
             columns: const [
-              DataColumn(label: Text('SN', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Campaign Name', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Campaign ID', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Impression', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('CTR', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Conversions', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Cost', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('ROI', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  'SN',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Campaign Name',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Campaign ID',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Type',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Impression',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'CTR',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Conversions',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Cost',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Revenue',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'ROI',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Status',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             rows: controller.campaignList.asMap().entries.map((entry) {
               final index = entry.key;
@@ -135,9 +193,13 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
                   DataCell(Text(campaign.title)),
                   DataCell(Text(campaign.id.toString())),
                   DataCell(Text(campaign.campaignType)),
-                  DataCell(Text(campaign.analytics?.impressions.toString() ?? '0')),
+                  DataCell(
+                    Text(campaign.analytics?.impressions.toString() ?? '0'),
+                  ),
                   DataCell(Text(campaign.analytics?.ctr ?? '0%')),
-                  DataCell(Text(campaign.analytics?.conversions.toString() ?? '0')),
+                  DataCell(
+                    Text(campaign.analytics?.conversions.toString() ?? '0'),
+                  ),
                   DataCell(Text('\$${campaign.campaignCost}')),
                   DataCell(Text('\$${campaign.analytics?.revenue ?? '0'}')),
                   DataCell(Text(campaign.analytics?.roi ?? '0%')),
@@ -168,7 +230,7 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Row(
@@ -176,7 +238,14 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
         children: [
           Icon(icon, color: color, size: 8.sp),
           SizedBox(width: 4.w),
-          Text(status, style: TextStyle(color: color, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+          Text(
+            status,
+            style: TextStyle(
+              color: color,
+              fontSize: 10.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -196,14 +265,33 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
         children: [
           Text(
             'Notifications & Alerts',
-            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           SizedBox(height: 12.h),
-          _buildNotificationItem('Notify when budget is 80% or 100% spent', true),
-          _buildNotificationItem('Alert when click through rate crosses 5%', false),
-          _buildNotificationItem('Alert when paused, completed or rejected', true),
-          _buildNotificationItem('Notify for failed or pending payments', false),
-          _buildNotificationItem('Notify when invoice is ready for download', true),
+          _buildNotificationItem(
+            'Notify when budget is 80% or 100% spent',
+            true,
+          ),
+          _buildNotificationItem(
+            'Alert when click through rate crosses 5%',
+            false,
+          ),
+          _buildNotificationItem(
+            'Alert when paused, completed or rejected',
+            true,
+          ),
+          _buildNotificationItem(
+            'Notify for failed or pending payments',
+            false,
+          ),
+          _buildNotificationItem(
+            'Notify when invoice is ready for download',
+            true,
+          ),
         ],
       ),
     );
@@ -223,10 +311,7 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
             ),
           ),
         ],
@@ -240,14 +325,16 @@ class AdsCampaignView extends GetView<AdsCampaignController> {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         padding: EdgeInsets.symmetric(vertical: 14.h),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4.r),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
         elevation: 0,
       ),
       child: Text(
         label,
-        style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

@@ -22,7 +22,11 @@ class UploadVideoView extends GetView<CreateController> {
         ),
         title: Text(
           'Upload Video',
-          style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -36,51 +40,77 @@ class UploadVideoView extends GetView<CreateController> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Obx(() => controller.selectedMediaPath.value.isNotEmpty
-                      ? ClipRect(child: _VideoPreviewWidget(path: controller.selectedMediaPath.value))
-                      : Container()),
+                  Obx(
+                    () => controller.selectedMediaPath.value.isNotEmpty
+                        ? ClipRect(
+                            child: _VideoPreviewWidget(
+                              path: controller.selectedMediaPath.value,
+                            ),
+                          )
+                        : Container(),
+                  ),
                   Container(
                     padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.play_arrow, color: Colors.white, size: 40.sp),
+                    child: Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 40.sp,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             // Custom Thumbnail Selection
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               child: Row(
                 children: [
-                  Obx(() => Container(
-                    height: 60.h,
-                    width: 60.h,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8.r),
-                      image: controller.selectedThumbnailPath.value.isNotEmpty
-                          ? DecorationImage(
-                              image: FileImage(File(controller.selectedThumbnailPath.value)),
-                              fit: BoxFit.cover,
-                            )
+                  Obx(
+                    () => Container(
+                      height: 60.h,
+                      width: 60.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8.r),
+                        image: controller.selectedThumbnailPath.value.isNotEmpty
+                            ? DecorationImage(
+                                image: FileImage(
+                                  File(controller.selectedThumbnailPath.value),
+                                ),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: controller.selectedThumbnailPath.value.isEmpty
+                          ? Icon(Icons.image, color: Colors.grey[500])
                           : null,
                     ),
-                    child: controller.selectedThumbnailPath.value.isEmpty
-                        ? Icon(Icons.image, color: Colors.grey[500])
-                        : null,
-                  )),
+                  ),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Custom Thumbnail", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                        Text(
+                          "Custom Thumbnail",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
+                          ),
+                        ),
                         SizedBox(height: 4.h),
-                        Text("Upload a picture that shows what's in your video", style: TextStyle(fontSize: 12.sp, color: Colors.grey[600])),
+                        Text(
+                          "Upload a picture that shows what's in your video",
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -91,7 +121,7 @@ class UploadVideoView extends GetView<CreateController> {
                 ],
               ),
             ),
-            
+
             // Upload Form
             Padding(
               padding: EdgeInsets.all(16.w),
@@ -105,11 +135,13 @@ class UploadVideoView extends GetView<CreateController> {
                     decoration: InputDecoration(
                       labelText: "Title",
                       hintText: "Enter a title for your video",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  
+
                   // Description Input
                   TextField(
                     onChanged: (val) => controller.videoDescription.value = val,
@@ -118,11 +150,13 @@ class UploadVideoView extends GetView<CreateController> {
                     decoration: InputDecoration(
                       labelText: "Description",
                       hintText: "Tell viewers about your video",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  
+
                   // Privacy Settings
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -167,24 +201,41 @@ class UploadVideoView extends GetView<CreateController> {
                       );
                     },
                   ),
-                  
+
                   SizedBox(height: 32.h),
                   // Upload Button
                   SizedBox(
                     width: double.infinity,
-                    child: Obx(() => ElevatedButton(
-                      onPressed: controller.isPosting.value
-                          ? null
-                          : () => controller.submitPost(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: EdgeInsets.symmetric(vertical: 16.h),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
+                    child: Obx(
+                      () => ElevatedButton(
+                        onPressed: controller.isPosting.value
+                            ? null
+                            : () => controller.submitPost(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                        ),
+                        child: controller.isPosting.value
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Upload",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
-                      child: controller.isPosting.value
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text("Upload", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    )),
+                    ),
                   ),
                   SizedBox(height: 40.h),
                 ],
@@ -240,4 +291,3 @@ class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
     );
   }
 }
-

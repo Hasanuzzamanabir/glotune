@@ -122,8 +122,9 @@ class EditPostView extends GetView<CreateController> {
                               );
                             }).toList(),
                             onChanged: (val) {
-                              if (val != null)
+                              if (val != null) {
                                 controller.postCategory.value = val;
+                              }
                             },
                           ),
                           // Row(

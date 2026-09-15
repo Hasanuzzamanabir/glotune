@@ -61,15 +61,31 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
                   physics: const NeverScrollableScrollPhysics(),
                   childAspectRatio: 1.15,
                   children: [
-                    _buildStatCard(Icons.assignment_turned_in_outlined, "Status", data.isActive ? "Enrolled" : "Not Enrolled"),
-                    _buildStatCard(Icons.hub, "Affiliate Tier", data.planStatus ?? "None"),
-                    _buildStatCard(Icons.account_balance_wallet_outlined, "Commission Earned", "\$${data.commissionEarned}"),
-                    _buildStatCard(Icons.campaign_outlined, "Referral Count", data.referralsCount.toString()),
+                    _buildStatCard(
+                      Icons.assignment_turned_in_outlined,
+                      "Status",
+                      data.isActive ? "Enrolled" : "Not Enrolled",
+                    ),
+                    _buildStatCard(
+                      Icons.hub,
+                      "Affiliate Tier",
+                      data.planStatus ?? "None",
+                    ),
+                    _buildStatCard(
+                      Icons.account_balance_wallet_outlined,
+                      "Commission Earned",
+                      "\$${data.commissionEarned}",
+                    ),
+                    _buildStatCard(
+                      Icons.campaign_outlined,
+                      "Referral Count",
+                      data.referralsCount.toString(),
+                    ),
                   ],
                 ),
               );
             }),
-            
+
             // Upgrade Section
             Padding(
               padding: EdgeInsets.all(16.w),
@@ -82,7 +98,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
                 ),
               ),
             ),
-            
+
             SizedBox(
               height: 420.h,
               child: ListView(
@@ -96,7 +112,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
                     features: [
                       "Access to exclusive dashboard",
                       "5% commission per referral",
-                      "Affiliate badge on profile"
+                      "Affiliate badge on profile",
                     ],
                     onTap: () => controller.upgradeToTier("Bronze"),
                   ),
@@ -109,7 +125,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
                       "Access to exclusive dashboard",
                       "10% commission per referral",
                       "Affiliate badge on profile",
-                      "Discounted merchandise"
+                      "Discounted merchandise",
                     ],
                     onTap: () => controller.upgradeToTier("Silver"),
                   ),
@@ -117,7 +133,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
               ),
             ),
             SizedBox(height: 30.h),
-            
+
             // New Table Section
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -149,28 +165,95 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
                   columnSpacing: 40.w,
                   dividerThickness: 1,
                   border: TableBorder(
-                    top: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                    bottom: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                    left: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                    right: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                    horizontalInside: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                    top: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                    bottom: BorderSide(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
+                    left: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                    right: BorderSide(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
+                    horizontalInside: BorderSide(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
                     verticalInside: BorderSide.none,
                   ),
                   columns: [
-                    DataColumn(label: Text("S/N", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp))),
-                    DataColumn(label: Text("Company Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp))),
-                    DataColumn(label: Text("Campaign Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp))),
-                    DataColumn(label: Text("Commission", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp))),
+                    DataColumn(
+                      label: Text(
+                        "S/N",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Company Name",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Campaign Name",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Commission",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
                   ],
                   rows: data.affiliateTable.asMap().entries.map((entry) {
                     final index = entry.key;
                     final company = entry.value;
                     return DataRow(
                       cells: [
-                        DataCell(Text("${index + 1}", style: TextStyle(fontSize: 14.sp))),
-                        DataCell(Text(company.companyName, style: TextStyle(fontSize: 14.sp, color: Colors.black87))),
-                        DataCell(Text(company.campaignName, style: TextStyle(fontSize: 14.sp, color: Colors.black87))),
-                        DataCell(Text("\$${company.commission}", style: TextStyle(fontSize: 14.sp, color: Colors.black87))),
+                        DataCell(
+                          Text(
+                            "${index + 1}",
+                            style: TextStyle(fontSize: 14.sp),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            company.companyName,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            company.campaignName,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            "\$${company.commission}",
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
                       ],
                     );
                   }).toList(),
@@ -192,7 +275,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -205,7 +288,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
           Container(
             padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(
-              color: const Color(0xFF8B1D1D).withOpacity(0.05),
+              color: const Color(0xFF8B1D1D).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(icon, color: const Color(0xFF8B1D1D), size: 24.sp),
@@ -213,10 +296,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
           SizedBox(height: 12.h),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: Colors.blueGrey[400],
-            ),
+            style: TextStyle(fontSize: 13.sp, color: Colors.blueGrey[400]),
           ),
           SizedBox(height: 4.h),
           Text(
@@ -244,7 +324,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +340,10 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 6.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20.r),
@@ -332,7 +415,7 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
               ],
             ),
           ),
-          Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+          Divider(color: Colors.grey.withValues(alpha: 0.2), height: 1),
           Padding(
             padding: EdgeInsets.all(16.w),
             child: Column(
@@ -348,7 +431,11 @@ class AffiliateProgramView extends GetView<AffiliateProgramController> {
                           color: const Color(0xFF8B1D1D),
                           borderRadius: BorderRadius.circular(4.r),
                         ),
-                        child: Icon(Icons.check, color: Colors.white, size: 12.sp),
+                        child: Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 12.sp,
+                        ),
                       ),
                       SizedBox(width: 10.w),
                       Expanded(

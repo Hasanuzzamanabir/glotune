@@ -35,7 +35,11 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
               alignment: Alignment.center,
               children: [
                 IconButton(
-                  icon: Icon(Icons.notifications_none, color: Colors.black, size: 24.sp),
+                  icon: Icon(
+                    Icons.notifications_none,
+                    color: Colors.black,
+                    size: 24.sp,
+                  ),
                   onPressed: () {},
                 ),
                 Positioned(
@@ -66,12 +70,7 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildProposalsTab(),
-            _buildGlotuneTab(),
-          ],
-        ),
+        body: TabBarView(children: [_buildProposalsTab(), _buildGlotuneTab()]),
       ),
     );
   }
@@ -121,7 +120,7 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -138,7 +137,9 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
                   children: [
                     CircleAvatar(
                       radius: 20.r,
-                      backgroundImage: CachedNetworkImageProvider("https://picsum.photos/100/100?random=$imageIndex"),
+                      backgroundImage: CachedNetworkImageProvider(
+                        "https://picsum.photos/100/100?random=$imageIndex",
+                      ),
                     ),
                     SizedBox(width: 12.w),
                     Column(
@@ -146,12 +147,25 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
                       children: [
                         Row(
                           children: [
-                            Text("Cameron Williamson", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
+                            Text(
+                              "Cameron Williamson",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.sp,
+                              ),
+                            ),
                             SizedBox(width: 4.w),
-                            Icon(Icons.military_tech, color: Colors.orange, size: 16.sp),
+                            Icon(
+                              Icons.military_tech,
+                              color: Colors.orange,
+                              size: 16.sp,
+                            ),
                           ],
                         ),
-                        Text("@camwils34", style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                        Text(
+                          "@camwils34",
+                          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                        ),
                       ],
                     ),
                   ],
@@ -159,8 +173,17 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(budget, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                    Text("Budget", style: TextStyle(color: Colors.grey, fontSize: 11.sp)),
+                    Text(
+                      budget,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                    Text(
+                      "Budget",
+                      style: TextStyle(color: Colors.grey, fontSize: 11.sp),
+                    ),
                   ],
                 ),
               ],
@@ -175,29 +198,78 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: Colors.black87)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: Colors.black87,
+                    ),
+                  ),
                   SizedBox(height: 16.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Target Creator", style: TextStyle(color: Colors.blueGrey[300], fontSize: 12.sp, fontWeight: FontWeight.w500)),
-                      Text(targetCreator, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, color: Colors.black87)),
+                      Text(
+                        "Target Creator",
+                        style: TextStyle(
+                          color: Colors.blueGrey[300],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        targetCreator,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 12.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Genre", style: TextStyle(color: Colors.blueGrey[300], fontSize: 12.sp, fontWeight: FontWeight.w500)),
-                      Text(genre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, color: Colors.black87)),
+                      Text(
+                        "Genre",
+                        style: TextStyle(
+                          color: Colors.blueGrey[300],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        genre,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 12.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Duration", style: TextStyle(color: Colors.blueGrey[300], fontSize: 12.sp, fontWeight: FontWeight.w500)),
-                      Text(duration, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, color: Colors.black87)),
+                      Text(
+                        "Duration",
+                        style: TextStyle(
+                          color: Colors.blueGrey[300],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        duration,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -306,7 +378,7 @@ class ScoutingToolsView extends GetView<ScoutingToolsController> {
     return Divider(
       height: 1,
       thickness: 1,
-      color: Colors.grey.withOpacity(0.1),
+      color: Colors.grey.withValues(alpha: 0.1),
     );
   }
 }

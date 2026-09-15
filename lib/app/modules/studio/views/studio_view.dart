@@ -20,10 +20,10 @@ class StudioView extends GetView<StudioController> {
         children: [
           // Header
           _buildHeader(),
-          
+
           // Tab Toggle
           _buildTabToggle(),
-          
+
           // Content
           Expanded(
             child: Obx(() {
@@ -40,7 +40,12 @@ class StudioView extends GetView<StudioController> {
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.only(top: ScreenUtil().statusBarHeight + 10.h, bottom: 20.h, left: 16.w, right: 16.w),
+      padding: EdgeInsets.only(
+        top: ScreenUtil().statusBarHeight + 10.h,
+        bottom: 20.h,
+        left: 16.w,
+        right: 16.w,
+      ),
       color: const Color(0xFF8B1D1D),
       child: Row(
         children: [
@@ -48,12 +53,17 @@ class StudioView extends GetView<StudioController> {
             onTap: () => Get.toNamed(Routes.VIEWER_PROFILE),
             child: CircleAvatar(
               radius: 18.r,
-              backgroundImage: const AssetImage('assets/images/user_avatar.png'),
+              backgroundImage: const AssetImage(
+                'assets/images/user_avatar.png',
+              ),
             ),
           ),
           const Spacer(),
           _buildHeaderIcon(Icons.history),
-          _buildHeaderIcon(Icons.settings_outlined, onTap: () => Get.toNamed(Routes.SETTINGS)),
+          _buildHeaderIcon(
+            Icons.settings_outlined,
+            onTap: () => Get.toNamed(Routes.SETTINGS),
+          ),
           _buildHeaderIcon(Icons.search),
         ],
       ),
@@ -83,9 +93,13 @@ class StudioView extends GetView<StudioController> {
               color: const Color(0xFFF8F8F8),
               borderRadius: BorderRadius.circular(12.r),
             ),
-            child: Obx(() => Row(
-              children: controller.tabs.map((tab) => _buildTabItem(tab)).toList(),
-            )),
+            child: Obx(
+              () => Row(
+                children: controller.tabs
+                    .map((tab) => _buildTabItem(tab))
+                    .toList(),
+              ),
+            ),
           ),
         ],
       ),
@@ -120,14 +134,17 @@ class StudioView extends GetView<StudioController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Create content", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          Text(
+            "Create content",
+            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 16.h),
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
@@ -142,9 +159,16 @@ class StudioView extends GetView<StudioController> {
                 SizedBox(height: 16.h),
                 Row(
                   children: [
-                    _buildSmallActionBtn(Icons.image_outlined, "Gallery", onTap: () => controller.pickVideoAndEdit()),
+                    _buildSmallActionBtn(
+                      Icons.image_outlined,
+                      "Gallery",
+                      onTap: () => controller.pickVideoAndEdit(),
+                    ),
                     SizedBox(width: 12.w),
-                    _buildSmallActionBtn(Icons.keyboard_arrow_down, "Convert to"),
+                    _buildSmallActionBtn(
+                      Icons.keyboard_arrow_down,
+                      "Convert to",
+                    ),
                   ],
                 ),
               ],
@@ -161,13 +185,25 @@ class StudioView extends GetView<StudioController> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildToolIcon(Icons.crop_rotate, onTap: () => controller.pickVideoAndEdit()),
+                _buildToolIcon(
+                  Icons.crop_rotate,
+                  onTap: () => controller.pickVideoAndEdit(),
+                ),
                 _buildToolDivider(),
-                _buildToolIcon(Icons.account_tree_outlined, onTap: () => controller.pickVideoAndEdit()),
+                _buildToolIcon(
+                  Icons.account_tree_outlined,
+                  onTap: () => controller.pickVideoAndEdit(),
+                ),
                 _buildToolDivider(),
-                _buildToolIcon(Icons.layers_outlined, onTap: () => controller.pickVideoAndEdit()),
+                _buildToolIcon(
+                  Icons.layers_outlined,
+                  onTap: () => controller.pickVideoAndEdit(),
+                ),
                 _buildToolDivider(),
-                _buildToolIcon(Icons.palette_outlined, onTap: () => controller.pickVideoAndEdit()),
+                _buildToolIcon(
+                  Icons.palette_outlined,
+                  onTap: () => controller.pickVideoAndEdit(),
+                ),
               ],
             ),
           ),
@@ -175,9 +211,17 @@ class StudioView extends GetView<StudioController> {
           // Action Footer
           Row(
             children: [
-              _buildLargeActionBtn("Download", const Color(0xFFF1F1F1), Colors.black87),
+              _buildLargeActionBtn(
+                "Download",
+                const Color(0xFFF1F1F1),
+                Colors.black87,
+              ),
               SizedBox(width: 12.w),
-              _buildLargeActionBtn("Post content", const Color(0xFF8B1D1D), Colors.white),
+              _buildLargeActionBtn(
+                "Post content",
+                const Color(0xFF8B1D1D),
+                Colors.white,
+              ),
               SizedBox(width: 12.w),
               _buildSaveIconButton(),
             ],
@@ -190,7 +234,11 @@ class StudioView extends GetView<StudioController> {
   Widget _buildToolIcon(IconData icon, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Icon(icon, color: Colors.black.withOpacity(0.7), size: 24.sp),
+      child: Icon(
+        icon,
+        color: Colors.black.withValues(alpha: 0.7),
+        size: 24.sp,
+      ),
     );
   }
 
@@ -198,7 +246,7 @@ class StudioView extends GetView<StudioController> {
     return Container(
       height: 20.h,
       width: 1,
-      color: Colors.blueGrey.withOpacity(0.1),
+      color: Colors.blueGrey.withValues(alpha: 0.1),
     );
   }
 
@@ -234,7 +282,11 @@ class StudioView extends GetView<StudioController> {
           color: const Color(0xFFF8F8F8),
           borderRadius: BorderRadius.circular(12.r),
         ),
-        child: Icon(Icons.save, color: Colors.black.withOpacity(0.7), size: 24.sp),
+        child: Icon(
+          Icons.save,
+          color: Colors.black.withValues(alpha: 0.7),
+          size: 24.sp,
+        ),
       ),
     );
   }
@@ -247,13 +299,18 @@ class StudioView extends GetView<StudioController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Merge content", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+              Text(
+                "Merge content",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 16.h),
               // Workflow Menu
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: controller.mergeSteps.map((step) => _buildMergeStepItem(step)).toList(),
+                  children: controller.mergeSteps
+                      .map((step) => _buildMergeStepItem(step))
+                      .toList(),
                 ),
               ),
             ],
@@ -264,17 +321,20 @@ class StudioView extends GetView<StudioController> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: Row(
-            children: List.generate(3, (index) => Expanded(
-              child: Container(
-                height: 100.h,
-                margin: EdgeInsets.only(right: index == 2 ? 0 : 12.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F1F1),
-                  borderRadius: BorderRadius.circular(12.r),
+            children: List.generate(
+              3,
+              (index) => Expanded(
+                child: Container(
+                  height: 100.h,
+                  margin: EdgeInsets.only(right: index == 2 ? 0 : 12.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F1F1),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(Icons.add, color: Colors.grey, size: 30.sp),
                 ),
-                child: Icon(Icons.add, color: Colors.grey, size: 30.sp),
               ),
-            )),
+            ),
           ),
         ),
         const Spacer(),
@@ -288,9 +348,18 @@ class StudioView extends GetView<StudioController> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8B1D1D),
                 padding: EdgeInsets.symmetric(vertical: 16.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
               ),
-              child: Text("Proceed", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+              child: Text(
+                "Proceed",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.sp,
+                ),
+              ),
             ),
           ),
         ),
@@ -308,7 +377,9 @@ class StudioView extends GetView<StudioController> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF8B1D1D) : Colors.transparent,
+                color: isSelected
+                    ? const Color(0xFF8B1D1D)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
@@ -328,7 +399,11 @@ class StudioView extends GetView<StudioController> {
     });
   }
 
-  Widget _buildSmallActionBtn(IconData icon, String label, {VoidCallback? onTap}) {
+  Widget _buildSmallActionBtn(
+    IconData icon,
+    String label, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -341,7 +416,10 @@ class StudioView extends GetView<StudioController> {
           children: [
             Icon(icon, size: 16.sp, color: Colors.black54),
             SizedBox(width: 4.w),
-            Text(label, style: TextStyle(fontSize: 11.sp, color: Colors.black54)),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11.sp, color: Colors.black54),
+            ),
           ],
         ),
       ),
@@ -356,16 +434,16 @@ class StudioView extends GetView<StudioController> {
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(30.r),
-          border: label == "Download" 
-            ? Border.all(color: const Color(0xFFD8D8D8), width: 1) 
-            : null,
+          border: label == "Download"
+              ? Border.all(color: const Color(0xFFD8D8D8), width: 1)
+              : null,
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: text, 
-              fontWeight: FontWeight.bold, 
+              color: text,
+              fontWeight: FontWeight.bold,
               fontSize: 14.sp,
             ),
           ),
@@ -380,15 +458,30 @@ class StudioView extends GetView<StudioController> {
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(30.r), topRight: Radius.circular(30.r)),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30.r),
+            topRight: Radius.circular(30.r),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
             SizedBox(height: 24.h),
-            Text("Save", style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+            Text(
+              "Save",
+              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 20.h),
             _buildSaveItem(Icons.folder_open, "Save to file folder"),
             _buildSaveItem(Icons.perm_media_outlined, "Save to media folder"),
@@ -403,7 +496,10 @@ class StudioView extends GetView<StudioController> {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: const Color(0xFF8B1D1D)),
-      title: Text(label, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+      title: Text(
+        label,
+        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+      ),
       onTap: () => Get.back(),
     );
   }

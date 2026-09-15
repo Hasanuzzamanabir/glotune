@@ -22,10 +22,16 @@ class LivePlayerView extends GetView<LivePlayerController> {
                 return const CircularProgressIndicator();
               }
               if (controller.errorMessage.value.isNotEmpty) {
-                return Text('Error: ${controller.errorMessage.value}', style: const TextStyle(color: Colors.white));
+                return Text(
+                  'Error: ${controller.errorMessage.value}',
+                  style: const TextStyle(color: Colors.white),
+                );
               }
               if (!controller.isEngineInitialized.value) {
-                return const Text('Initializing...', style: TextStyle(color: Colors.white));
+                return const Text(
+                  'Initializing...',
+                  style: TextStyle(color: Colors.white),
+                );
               }
               if (controller.remoteUids.isEmpty) {
                 return const Text(
@@ -44,19 +50,19 @@ class LivePlayerView extends GetView<LivePlayerController> {
               );
             }),
           ),
-          
+
           // Overlays
           SafeArea(
             child: Column(
               children: [
                 // Header
                 _buildHeader(),
-                
+
                 const Spacer(),
-                
+
                 // Comments
                 _buildMessageList(),
-                
+
                 // Bottom interactions
                 _buildInteractionArea(),
               ],
@@ -77,28 +83,42 @@ class LivePlayerView extends GetView<LivePlayerController> {
       padding: EdgeInsets.all(16.w),
       child: Row(
         children: [
-          Obx(() => CircleAvatar(
-            radius: 18.r,
-            backgroundImage: controller.hostProfilePic.value.isNotEmpty
-                ? CachedNetworkImageProvider(controller.hostProfilePic.value) as ImageProvider
-                : const AssetImage('assets/images/user_avatar.png'),
-          )),
+          Obx(
+            () => CircleAvatar(
+              radius: 18.r,
+              backgroundImage: controller.hostProfilePic.value.isNotEmpty
+                  ? CachedNetworkImageProvider(controller.hostProfilePic.value)
+                        as ImageProvider
+                  : const AssetImage('assets/images/user_avatar.png'),
+            ),
+          ),
           SizedBox(width: 8.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Obx(() => Text(
-                  controller.title.value, 
-                  style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                )),
+                Obx(
+                  () => Text(
+                    controller.title.value,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 Row(
                   children: [
                     const Icon(Icons.group, color: Colors.white, size: 12),
                     SizedBox(width: 4.w),
-                    Obx(() => Text("${controller.memberCount.value}", style: TextStyle(color: Colors.white, fontSize: 10.sp))),
+                    Obx(
+                      () => Text(
+                        "${controller.memberCount.value}",
+                        style: TextStyle(color: Colors.white, fontSize: 10.sp),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -131,9 +151,19 @@ class LivePlayerView extends GetView<LivePlayerController> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("$username: ", style: TextStyle(color: Colors.yellow, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+                    Text(
+                      "$username: ",
+                      style: TextStyle(
+                        color: Colors.yellow,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Expanded(
-                      child: Text(text, style: TextStyle(color: Colors.white, fontSize: 12.sp)),
+                      child: Text(
+                        text,
+                        style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                      ),
                     ),
                   ],
                 ),
@@ -147,15 +177,15 @@ class LivePlayerView extends GetView<LivePlayerController> {
 
   Widget _buildInteractionArea() {
     final messageController = TextEditingController();
-    
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-        )
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+        ),
       ),
       child: Row(
         children: [
@@ -164,7 +194,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
               height: 40.h,
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: TextField(
@@ -196,7 +226,11 @@ class LivePlayerView extends GetView<LivePlayerController> {
           SizedBox(width: 8.w),
           GestureDetector(
             onTap: () => controller.sendReaction('like'),
-            child: Icon(Icons.thumb_up_alt_outlined, color: Colors.white, size: 24.sp),
+            child: Icon(
+              Icons.thumb_up_alt_outlined,
+              color: Colors.white,
+              size: 24.sp,
+            ),
           ),
           SizedBox(width: 12.w),
           GestureDetector(
@@ -206,7 +240,11 @@ class LivePlayerView extends GetView<LivePlayerController> {
           SizedBox(width: 12.w),
           GestureDetector(
             onTap: () => controller.sendReaction('heart'),
-            child: Icon(Icons.favorite_border, color: Colors.white, size: 24.sp),
+            child: Icon(
+              Icons.favorite_border,
+              color: Colors.white,
+              size: 24.sp,
+            ),
           ),
           SizedBox(width: 12.w),
           GestureDetector(
@@ -241,21 +279,54 @@ class LivePlayerView extends GetView<LivePlayerController> {
               ),
             ),
             SizedBox(height: 20.h),
-            Text("Send a Gift", style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+            Text(
+              "Send a Gift",
+              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 16.h),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildGiftOption("Heart", "heart", 5, Icons.favorite, Colors.red),
+                  _buildGiftOption(
+                    "Heart",
+                    "heart",
+                    5,
+                    Icons.favorite,
+                    Colors.red,
+                  ),
                   SizedBox(width: 16.w),
-                  _buildGiftOption("Rose", "rose", 10, Icons.local_florist, Colors.pink),
+                  _buildGiftOption(
+                    "Rose",
+                    "rose",
+                    10,
+                    Icons.local_florist,
+                    Colors.pink,
+                  ),
                   SizedBox(width: 16.w),
-                  _buildGiftOption("Galaxy", "galaxy", 25, Icons.brightness_3, Colors.deepPurple),
+                  _buildGiftOption(
+                    "Galaxy",
+                    "galaxy",
+                    25,
+                    Icons.brightness_3,
+                    Colors.deepPurple,
+                  ),
                   SizedBox(width: 16.w),
-                  _buildGiftOption("Diamond", "diamond", 50, Icons.diamond, Colors.blue),
+                  _buildGiftOption(
+                    "Diamond",
+                    "diamond",
+                    50,
+                    Icons.diamond,
+                    Colors.blue,
+                  ),
                   SizedBox(width: 16.w),
-                  _buildGiftOption("Crown", "crown", 100, Icons.workspace_premium, Colors.amber),
+                  _buildGiftOption(
+                    "Crown",
+                    "crown",
+                    100,
+                    Icons.workspace_premium,
+                    Colors.amber,
+                  ),
                 ],
               ),
             ),
@@ -266,7 +337,13 @@ class LivePlayerView extends GetView<LivePlayerController> {
     );
   }
 
-  Widget _buildGiftOption(String label, String giftType, int cost, IconData icon, Color color) {
+  Widget _buildGiftOption(
+    String label,
+    String giftType,
+    int cost,
+    IconData icon,
+    Color color,
+  ) {
     return GestureDetector(
       onTap: () => controller.sendGift(giftType),
       child: Column(
@@ -275,21 +352,27 @@ class LivePlayerView extends GetView<LivePlayerController> {
           Container(
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 32.sp),
           ),
           SizedBox(height: 8.h),
-          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp)),
+          Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp),
+          ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.monetization_on, color: Colors.orange, size: 12.sp),
               SizedBox(width: 2.w),
-              Text("$cost", style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+              Text(
+                "$cost",
+                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );

@@ -59,7 +59,11 @@ class HomeView extends GetView<HomeController> {
                   return const StudioView();
                 } else if (controller.currentIndex.value == 4) {
                   if (controller.isProfileLoading.value) {
-                    return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
                   }
                   final type = controller.userType.value;
                   if (type == 'Creator') {
@@ -72,12 +76,14 @@ class HomeView extends GetView<HomeController> {
                       Get.put(MerchantProfileController());
                     }
                     return const MerchantProfileView();
-                  } else if (type == 'TalentManager' || type == 'Talent Manager') {
+                  } else if (type == 'TalentManager' ||
+                      type == 'Talent Manager') {
                     if (!Get.isRegistered<TalentManagerProfileController>()) {
                       Get.put(TalentManagerProfileController());
                     }
                     return const TalentManagerProfileView();
-                  } else if (type == 'MediaNetwork' || type == 'Media Network') {
+                  } else if (type == 'MediaNetwork' ||
+                      type == 'Media Network') {
                     if (!Get.isRegistered<MediaNetworkProfileController>()) {
                       Get.put(MediaNetworkProfileController());
                     }
@@ -120,12 +126,15 @@ class HomeView extends GetView<HomeController> {
               const Spacer(),
               GestureDetector(
                 onTap: () => Get.to(() => const ProfileView()),
-                child: Obx(() => CircleAvatar(
-                  radius: 16.r,
-                  backgroundImage: controller.userAvatarUrl.value.isNotEmpty
-                      ? NetworkImage(controller.userAvatarUrl.value)
-                      : const AssetImage('assets/images/user_avatar.png') as ImageProvider,
-                )),
+                child: Obx(
+                  () => CircleAvatar(
+                    radius: 16.r,
+                    backgroundImage: controller.userAvatarUrl.value.isNotEmpty
+                        ? NetworkImage(controller.userAvatarUrl.value)
+                        : const AssetImage('assets/images/user_avatar.png')
+                              as ImageProvider,
+                  ),
+                ),
               ),
               SizedBox(width: 12.w),
               GestureDetector(
@@ -322,7 +331,7 @@ class HomeView extends GetView<HomeController> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white
-                        : Colors.white.withOpacity(0.2),
+                        : Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
@@ -365,9 +374,10 @@ class HomeView extends GetView<HomeController> {
             itemCount: rooms.length,
             itemBuilder: (context, index) {
               final room = rooms[index];
-              
+
               String avatarUrl = "";
-              if (room.host.profilePicture != null && room.host.profilePicture!.isNotEmpty) {
+              if (room.host.profilePicture != null &&
+                  room.host.profilePicture!.isNotEmpty) {
                 avatarUrl = room.host.profilePicture!;
               }
 
@@ -379,7 +389,9 @@ class HomeView extends GetView<HomeController> {
                   title: room.title,
                   creator: room.host.username ?? "Unknown Host",
                   views: "${room.memberCount} watching",
-                  time: room.startedAt != null ? "Started recently" : "Unknown time",
+                  time: room.startedAt != null
+                      ? "Started recently"
+                      : "Unknown time",
                   duration: "LIVE",
                   thumbnailUrl: avatarUrl,
                   creatorAvatarUrl: avatarUrl,
@@ -408,42 +420,47 @@ class HomeView extends GetView<HomeController> {
         color: AppColors.primary,
         child: ListView.builder(
           padding: EdgeInsets.zero,
-          physics: const AlwaysScrollableScrollPhysics(), // Ensures it can be pulled even if not overflowing
+          physics:
+              const AlwaysScrollableScrollPhysics(), // Ensures it can be pulled even if not overflowing
           itemCount: videos.length,
           itemBuilder: (context, index) {
-          final video = videos[index];
-          
-          // Map properties
-          String thumbUrl = "";
-          if (video.thumbnail != null && video.thumbnail!.isNotEmpty) {
-            thumbUrl = video.thumbnail!;
-          } else if (video.video != null && video.video!.isNotEmpty) {
-            // No thumbnail provided
-            thumbUrl = "";
-          }
+            final video = videos[index];
 
-          String avatarUrl = "";
-          if (video.authorProfile != null && video.authorProfile!.isNotEmpty) {
-            avatarUrl = video.authorProfile!;
-          }
+            // Map properties
+            String thumbUrl = "";
+            if (video.thumbnail != null && video.thumbnail!.isNotEmpty) {
+              thumbUrl = video.thumbnail!;
+            } else if (video.video != null && video.video!.isNotEmpty) {
+              // No thumbnail provided
+              thumbUrl = "";
+            }
 
-          return _buildHomeVideoCard(
-            title: video.title,
-            creator: video.authorName,
-            views: "${video.viewsCount} views",
-            time: video.createdAtAgoTime ?? "",
-            duration: video.contentType == "shorts" ? "Short" : (video.categoryName?.contains("Live") == true ? "LIVE" : "10:00"),
-            thumbnailUrl: thumbUrl,
-            creatorAvatarUrl: avatarUrl,
-            videoData: video,
-            onAvatarTap: () {
-              if (video.author != null) {
+            String avatarUrl = "";
+            if (video.authorProfile != null &&
+                video.authorProfile!.isNotEmpty) {
+              avatarUrl = video.authorProfile!;
+            }
+
+            return _buildHomeVideoCard(
+              title: video.title,
+              creator: video.authorName,
+              views: "${video.viewsCount} views",
+              time: video.createdAtAgoTime ?? "",
+              duration: video.contentType == "shorts"
+                  ? "Short"
+                  : (video.categoryName?.contains("Live") == true
+                        ? "LIVE"
+                        : "10:00"),
+              thumbnailUrl: thumbUrl,
+              creatorAvatarUrl: avatarUrl,
+              videoData: video,
+              onAvatarTap: () {
                 Get.toNamed(Routes.OTHER_PROFILE, arguments: video.author);
-              }
-            },
-          );
-        },
-      ));
+              },
+            );
+          },
+        ),
+      );
     });
   }
 
@@ -500,13 +517,13 @@ class HomeView extends GetView<HomeController> {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
             SizedBox(height: 20.h),
             _buildOptionItem(
-              Icons.monetization_on_outlined, 
+              Icons.monetization_on_outlined,
               "Donate",
               onTap: () {
                 Get.back();
@@ -556,30 +573,58 @@ class HomeView extends GetView<HomeController> {
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r), topRight: Radius.circular(20.r)),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20.r),
+            topRight: Radius.circular(20.r),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Center(child: Container(width: 40.w, height: 4.h, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
             SizedBox(height: 20.h),
             Row(
               children: [
                 const Icon(Icons.cast, color: Colors.black87),
                 SizedBox(width: 12.w),
-                Text("Cast to a device", style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text(
+                  "Cast to a device",
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
               ],
             ),
             SizedBox(height: 30.h),
             const CircularProgressIndicator(color: AppColors.primary),
             SizedBox(height: 16.h),
-            Text("Searching for devices on your network...", style: TextStyle(color: Colors.grey[600], fontSize: 14.sp)),
+            Text(
+              "Searching for devices on your network...",
+              style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
+            ),
             SizedBox(height: 30.h),
             SizedBox(
               width: double.infinity,
               child: TextButton(
                 onPressed: () => Get.back(),
-                child: const Text("Cancel", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           ],
@@ -614,7 +659,7 @@ class HomeView extends GetView<HomeController> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.textSecondary.withOpacity(0.5),
+                  color: AppColors.textSecondary.withValues(alpha: 0.5),
                   width: 1.5,
                 ),
               ),
@@ -758,7 +803,9 @@ class HomeView extends GetView<HomeController> {
   Widget _buildShopGrid() {
     return Obx(() {
       if (controller.isShopItemsLoading.value) {
-        return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
       }
       final items = controller.filteredShopItems;
       if (items.isEmpty) {
@@ -767,7 +814,8 @@ class HomeView extends GetView<HomeController> {
       return NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
           if (!controller.isFetchingMore.value &&
-              scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
             controller.fetchShopItems();
           }
           return false;
@@ -784,7 +832,10 @@ class HomeView extends GetView<HomeController> {
                     child: Column(
                       children: [
                         for (int i = 0; i < items.length; i += 2)
-                          _buildShopItemCard(items[i], i % 4 == 0 ? 250.h : 200.h),
+                          _buildShopItemCard(
+                            items[i],
+                            i % 4 == 0 ? 250.h : 200.h,
+                          ),
                       ],
                     ),
                   ),
@@ -794,7 +845,10 @@ class HomeView extends GetView<HomeController> {
                     child: Column(
                       children: [
                         for (int i = 1; i < items.length; i += 2)
-                          _buildShopItemCard(items[i], i % 4 == 1 ? 200.h : 250.h),
+                          _buildShopItemCard(
+                            items[i],
+                            i % 4 == 1 ? 200.h : 250.h,
+                          ),
                       ],
                     ),
                   ),
@@ -803,7 +857,9 @@ class HomeView extends GetView<HomeController> {
               if (controller.isFetchingMore.value)
                 Padding(
                   padding: EdgeInsets.all(16.h),
-                  child: const CircularProgressIndicator(color: AppColors.primary),
+                  child: const CircularProgressIndicator(
+                    color: AppColors.primary,
+                  ),
                 ),
             ],
           ),
@@ -822,52 +878,53 @@ class HomeView extends GetView<HomeController> {
           children: [
             Container(
               height: imageHeight,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            child: Center(
-              child: Image.network(
-                item.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    Icon(Icons.image_not_supported, color: Colors.grey),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F8F8),
+                borderRadius: BorderRadius.circular(16.r),
               ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            item.title,
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
-          ),
-          SizedBox(height: 4.h),
-          Row(
-            children: [
-              Text(
-                item.price,
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              child: Center(
+                child: Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.image_not_supported, color: Colors.grey),
                 ),
               ),
-              if (item.originalPrice != null) ...[
-                SizedBox(width: 8.w),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              item.title,
+              style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 4.h),
+            Row(
+              children: [
                 Text(
-                  item.originalPrice!,
+                  item.price,
                   style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.grey,
-                    decoration: TextDecoration.lineThrough,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
+                if (item.originalPrice != null) ...[
+                  SizedBox(width: 8.w),
+                  Text(
+                    item.originalPrice!,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-    ),);
+    );
   }
 
   void _showFilterBottomSheet(BuildContext context) {
@@ -877,9 +934,13 @@ class HomeView extends GetView<HomeController> {
 
     String tempSortBy = controller.sortBy.value;
     bool tempOnSaleOnly = controller.onSaleOnly.value;
-    
-    TextEditingController countyController = TextEditingController(text: controller.countyFilter.value);
-    TextEditingController cityController = TextEditingController(text: controller.cityFilter.value);
+
+    TextEditingController countyController = TextEditingController(
+      text: controller.countyFilter.value,
+    );
+    TextEditingController cityController = TextEditingController(
+      text: controller.cityFilter.value,
+    );
 
     Get.bottomSheet(
       StatefulBuilder(
@@ -941,7 +1002,9 @@ class HomeView extends GetView<HomeController> {
                               tempSortBy = sortOption;
                             });
                           },
-                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          selectedColor: AppColors.primary.withValues(
+                            alpha: 0.2,
+                          ),
                           labelStyle: TextStyle(
                             color: tempSortBy == sortOption
                                 ? AppColors.primary
@@ -1017,8 +1080,13 @@ class HomeView extends GetView<HomeController> {
                   controller: countyController,
                   decoration: InputDecoration(
                     labelText: "County",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                   ),
                 ),
                 SizedBox(height: 12.h),
@@ -1026,8 +1094,13 @@ class HomeView extends GetView<HomeController> {
                   controller: cityController,
                   decoration: InputDecoration(
                     labelText: "City",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 12.h,
+                    ),
                   ),
                 ),
                 SizedBox(height: 30.h),

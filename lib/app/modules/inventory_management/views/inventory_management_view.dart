@@ -29,7 +29,11 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
         centerTitle: false,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: Colors.grey.withOpacity(0.2)),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey.withValues(alpha: 0.2),
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -58,7 +62,7 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 5),
@@ -68,11 +72,23 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem("12", "Total Products", onTap: () => Get.toNamed(Routes.TOTAL_PRODUCTS)),
+          _buildStatItem(
+            "12",
+            "Total Products",
+            onTap: () => Get.toNamed(Routes.TOTAL_PRODUCTS),
+          ),
           _buildStatDivider(),
-          _buildStatItem("4", "Sold", onTap: () => Get.toNamed(Routes.SOLD_PRODUCTS)),
+          _buildStatItem(
+            "4",
+            "Sold",
+            onTap: () => Get.toNamed(Routes.SOLD_PRODUCTS),
+          ),
           _buildStatDivider(),
-          _buildStatItem("8", "Active Listings", onTap: () => Get.toNamed(Routes.ACTIVE_LISTINGS)),
+          _buildStatItem(
+            "8",
+            "Active Listings",
+            onTap: () => Get.toNamed(Routes.ACTIVE_LISTINGS),
+          ),
         ],
       ),
     );
@@ -85,7 +101,11 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
         children: [
           Text(
             value,
-            style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold, color: const Color(0xFF1E232C)),
+            style: TextStyle(
+              fontSize: 22.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E232C),
+            ),
           ),
           SizedBox(height: 4.h),
           Text(
@@ -101,7 +121,7 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
     return Container(
       height: 40.h,
       width: 1,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
     );
   }
 
@@ -112,42 +132,42 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
         "desc": "Crunchy, tasty snack made from toasted grains and seeds......",
         "price": "\$250.00",
         "stock": "In Stock",
-        "img": "https://picsum.photos/100/100?random=1"
+        "img": "https://picsum.photos/100/100?random=1",
       },
       {
         "name": "Headset",
         "desc": "High-quality headset with clear sound and comfortable fit....",
         "price": "\$250.00",
         "stock": "Sold Out",
-        "img": "https://picsum.photos/100/100?random=2"
+        "img": "https://picsum.photos/100/100?random=2",
       },
       {
         "name": "Macbook 2025",
         "desc": "Compact and powerful laptop with fast performance and....",
         "price": "\$250.00",
         "stock": "Sold Out",
-        "img": "https://picsum.photos/100/100?random=3"
+        "img": "https://picsum.photos/100/100?random=3",
       },
       {
         "name": "Macbook 2025",
         "desc": "Compact and powerful laptop with fast performance and....",
         "price": "\$250.00",
         "stock": "In Stock",
-        "img": "https://picsum.photos/100/100?random=4"
+        "img": "https://picsum.photos/100/100?random=4",
       },
       {
         "name": "Headset",
         "desc": "High-quality headset with clear sound and comfortable fit....",
         "price": "\$250.00",
         "stock": "In Stock",
-        "img": "https://picsum.photos/100/100?random=5"
+        "img": "https://picsum.photos/100/100?random=5",
       },
       {
         "name": "Headset",
         "desc": "High-quality headset with clear sound and comfortable fit....",
         "price": "\$250.00",
         "stock": "In Stock",
-        "img": "https://picsum.photos/100/100?random=6"
+        "img": "https://picsum.photos/100/100?random=6",
       },
     ];
 
@@ -177,16 +197,16 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
     required String imageUrl,
   }) {
     bool inStock = status == "In Stock";
-    
+
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -249,7 +269,9 @@ class InventoryManagementView extends GetView<InventoryManagementController> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: inStock ? Colors.grey.withOpacity(0.1) : Colors.red.withOpacity(0.05),
+                  color: inStock
+                      ? Colors.grey.withValues(alpha: 0.1)
+                      : Colors.red.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(

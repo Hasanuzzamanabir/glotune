@@ -17,7 +17,11 @@ class SearchView extends GetView<sc.SearchController> {
         leading: const BackButton(color: Colors.white),
         title: const Text(
           'Search',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Column(
@@ -31,19 +35,26 @@ class SearchView extends GetView<sc.SearchController> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
               ),
               child: TextField(
                 decoration: InputDecoration(
-                  icon: const Icon(Icons.search, color: AppColors.textSecondary),
+                  icon: const Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                  ),
                   hintText: 'Search',
-                  hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5)),
+                  hintStyle: TextStyle(
+                    color: AppColors.textSecondary.withValues(alpha: 0.5),
+                  ),
                   border: InputBorder.none,
                 ),
               ),
             ),
           ),
-          
+
           // Recent Search Section
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -56,7 +67,7 @@ class SearchView extends GetView<sc.SearchController> {
               ),
             ),
           ),
-          
+
           Expanded(
             child: ListView.builder(
               itemCount: controller.recentSearches.length,
@@ -76,7 +87,7 @@ class SearchView extends GetView<sc.SearchController> {
       title: Text(
         query,
         style: TextStyle(
-          color: AppColors.textPrimary.withOpacity(0.7),
+          color: AppColors.textPrimary.withValues(alpha: 0.7),
           fontSize: 14.sp,
         ),
       ),

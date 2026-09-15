@@ -36,7 +36,12 @@ class AffiliateToolsView extends GetView<AffiliateToolsController> {
             _buildSection(
               title: "Your referral links",
               child: Container(
-                padding: EdgeInsets.only(left: 16.w, right: 6.w, top: 6.h, bottom: 6.h),
+                padding: EdgeInsets.only(
+                  left: 16.w,
+                  right: 6.w,
+                  top: 6.h,
+                  bottom: 6.h,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F5),
                   borderRadius: BorderRadius.circular(12.r),
@@ -60,7 +65,10 @@ class AffiliateToolsView extends GetView<AffiliateToolsController> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.r),
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20.w,
+                          vertical: 10.h,
+                        ),
                         elevation: 0,
                       ),
                       child: Text(
@@ -91,10 +99,7 @@ class AffiliateToolsView extends GetView<AffiliateToolsController> {
               title: "QR Code generator",
               child: _buildOutlinedButton("Create QR code", () {}),
             ),
-            Container(
-              height: 100.h,
-              color: const Color(0xFFF9F9F9),
-            ),
+            Container(height: 100.h, color: const Color(0xFFF9F9F9)),
           ],
         ),
       ),
@@ -123,11 +128,7 @@ class AffiliateToolsView extends GetView<AffiliateToolsController> {
   }
 
   Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      thickness: 4.h,
-      color: const Color(0xFFF9F9F9),
-    );
+    return Divider(height: 1, thickness: 4.h, color: const Color(0xFFF9F9F9));
   }
 
   Widget _buildOutlinedButton(String text, VoidCallback onPressed) {
@@ -159,10 +160,7 @@ class AffiliateToolsView extends GetView<AffiliateToolsController> {
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF5B00F8),
-            Color(0xFFEE8775),
-          ],
+          colors: [Color(0xFF5B00F8), Color(0xFFEE8775)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -204,7 +202,7 @@ class AffiliateToolsView extends GetView<AffiliateToolsController> {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: Icon(

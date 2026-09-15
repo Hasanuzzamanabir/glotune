@@ -55,7 +55,8 @@ class PremiumSubscriptionInvitationView
                   CircleAvatar(
                     radius: 14.r,
                     backgroundImage: const CachedNetworkImageProvider(
-                        'https://i.pravatar.cc/150?img=12'), // Mock avatar
+                      'https://i.pravatar.cc/150?img=12',
+                    ), // Mock avatar
                   ),
                   SizedBox(width: 12.w),
                   Text(
@@ -134,7 +135,7 @@ class PremiumSubscriptionInvitationView
                 onPressed: () {},
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
@@ -157,7 +158,7 @@ class PremiumSubscriptionInvitationView
                 onPressed: () {},
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24.r),
                   ),
@@ -183,7 +184,9 @@ class PremiumSubscriptionInvitationView
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12.h),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.2))),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

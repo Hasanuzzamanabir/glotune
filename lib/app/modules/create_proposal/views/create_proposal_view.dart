@@ -95,7 +95,7 @@ class CreateProposalView extends GetView<CreateProposalController> {
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6.r),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6.r),
@@ -111,7 +111,7 @@ class CreateProposalView extends GetView<CreateProposalController> {
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6.r),
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
@@ -159,8 +159,12 @@ class CreateProposalView extends GetView<CreateProposalController> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Obx(() {
-            final date = isStart ? controller.startDate.value : controller.endDate.value;
-            final text = date != null ? "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}" : label;
+            final date = isStart
+                ? controller.startDate.value
+                : controller.endDate.value;
+            final text = date != null
+                ? "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}"
+                : label;
             return Text(
               text,
               style: TextStyle(
@@ -183,7 +187,7 @@ class CreateProposalView extends GetView<CreateProposalController> {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6.r),
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -239,7 +243,11 @@ class CreateProposalView extends GetView<CreateProposalController> {
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: () {},
-        icon: Icon(Icons.file_download_outlined, color: const Color(0xFF8B1D1D), size: 20.sp),
+        icon: Icon(
+          Icons.file_download_outlined,
+          color: const Color(0xFF8B1D1D),
+          size: 20.sp,
+        ),
         label: Text(
           "Download Proposal",
           style: TextStyle(

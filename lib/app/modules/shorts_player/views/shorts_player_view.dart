@@ -18,9 +18,14 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
       backgroundColor: Colors.black,
       body: Obx(() {
         if (controller.shortsList.isEmpty) {
-          return const Center(child: Text("No shorts available", style: TextStyle(color: Colors.white)));
+          return const Center(
+            child: Text(
+              "No shorts available",
+              style: TextStyle(color: Colors.white),
+            ),
+          );
         }
-        
+
         return PageView.builder(
           controller: controller.pageController,
           scrollDirection: Axis.vertical,
@@ -41,7 +46,7 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
       builder: (_) {
         final videoController = controller.videoControllers[index];
         final isInitialized = videoController?.value.isInitialized ?? false;
-        
+
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -62,7 +67,7 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
                     : _buildPlaceholder(short),
               ),
             ),
-            
+
             // Play/Pause Icon overlay (shows briefly when paused)
             if (isInitialized && !videoController!.value.isPlaying)
               Center(
@@ -71,48 +76,65 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
                   child: Container(
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
+                      color: Colors.black.withValues(alpha: 0.4),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.play_arrow, color: Colors.white, size: 48.w),
+                    child: Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 48.w,
+                    ),
                   ),
                 ),
               ),
 
             // Top Gradient & Back Button
             Positioned(
-              top: 0, left: 0, right: 0,
+              top: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 height: 100.h,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.6),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
                 child: SafeArea(
                   child: Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                      ),
                       onPressed: () => Get.back(),
                     ),
                   ),
                 ),
               ),
             ),
-            
+
             // Bottom Gradient
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 height: 300.h,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.8),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
@@ -131,30 +153,49 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
                       CircleAvatar(
                         radius: 18.r,
                         backgroundImage: short.authorProfile != null
-                            ? CachedNetworkImageProvider(short.authorProfile!) as ImageProvider
+                            ? CachedNetworkImageProvider(short.authorProfile!)
+                                  as ImageProvider
                             : const AssetImage('assets/images/user_avatar.png'),
                         backgroundColor: Colors.grey[800],
                       ),
                       SizedBox(width: 8.w),
                       Text(
                         short.authorName,
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.sp),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.sp,
+                        ),
                       ),
                       SizedBox(width: 12.w),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
-                        child: Text("Subscribe", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          "Subscribe",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 12.h),
                   Text(
                     short.title,
-                    style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -178,31 +219,42 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Obx(() => _buildAction(
-                    controller.isLikedMap[short.id]?.value ?? false ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-                    '${controller.likeCountMap[short.id]?.value ?? short.likeCount ?? 0}',
-                    onTap: () => controller.toggleLike(index),
-                    isActive: controller.isLikedMap[short.id]?.value ?? false,
-                  )),
+                  Obx(
+                    () => _buildAction(
+                      controller.isLikedMap[short.id]?.value ?? false
+                          ? Icons.thumb_up
+                          : Icons.thumb_up_alt_outlined,
+                      '${controller.likeCountMap[short.id]?.value ?? short.likeCount ?? 0}',
+                      onTap: () => controller.toggleLike(index),
+                      isActive: controller.isLikedMap[short.id]?.value ?? false,
+                    ),
+                  ),
                   SizedBox(height: 20.h),
-                  Obx(() => _buildAction(
-                    controller.isDislikedMap[short.id]?.value ?? false ? Icons.thumb_down : Icons.thumb_down_alt_outlined,
-                    '${controller.dislikeCountMap[short.id]?.value ?? short.dislikeCount ?? 0}',
-                    onTap: () => controller.toggleDislike(index),
-                    isActive: controller.isDislikedMap[short.id]?.value ?? false,
-                  )),
+                  Obx(
+                    () => _buildAction(
+                      controller.isDislikedMap[short.id]?.value ?? false
+                          ? Icons.thumb_down
+                          : Icons.thumb_down_alt_outlined,
+                      '${controller.dislikeCountMap[short.id]?.value ?? short.dislikeCount ?? 0}',
+                      onTap: () => controller.toggleDislike(index),
+                      isActive:
+                          controller.isDislikedMap[short.id]?.value ?? false,
+                    ),
+                  ),
                   SizedBox(height: 20.h),
                   _buildAction(
-                    Icons.comment_outlined, 
+                    Icons.comment_outlined,
                     short.commentCount ?? "Comment",
                     onTap: () => _showComments(index),
                   ),
                   SizedBox(height: 20.h),
-                  Obx(() => _buildAction(
-                    Icons.share_outlined,
-                    '${controller.shareCountMap[short.id]?.value ?? short.shareCount}',
-                    onTap: () => controller.shareContent(index),
-                  )),
+                  Obx(
+                    () => _buildAction(
+                      Icons.share_outlined,
+                      '${controller.shareCountMap[short.id]?.value ?? short.shareCount}',
+                      onTap: () => controller.shareContent(index),
+                    ),
+                  ),
                   SizedBox(height: 20.h),
                   Container(
                     width: 40.w,
@@ -223,32 +275,45 @@ class ShortsPlayerView extends GetView<ShortsPlayerController> {
             ),
           ],
         );
-      }
+      },
     );
   }
 
-  Widget _buildAction(IconData icon, String label, {VoidCallback? onTap, bool isActive = false}) {
+  Widget _buildAction(
+    IconData icon,
+    String label, {
+    VoidCallback? onTap,
+    bool isActive = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, color: isActive ? AppColors.primary : Colors.white, size: 30.w),
+          Icon(
+            icon,
+            color: isActive ? AppColors.primary : Colors.white,
+            size: 30.w,
+          ),
           SizedBox(height: 4.h),
           Text(
             label,
-            style: TextStyle(color: isActive ? AppColors.primary : Colors.white, fontSize: 12.sp),
+            style: TextStyle(
+              color: isActive ? AppColors.primary : Colors.white,
+              fontSize: 12.sp,
+            ),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildPlaceholder(ContentList short) {
     if (short.thumbnail != null) {
       return Image.network(
-        short.thumbnail!, 
+        short.thumbnail!,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+        errorBuilder: (_, _, _) =>
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
     return const Center(child: CircularProgressIndicator(color: Colors.white));
@@ -267,12 +332,17 @@ class _ShortsCommentsOverlay extends StatelessWidget {
   final ShortsPlayerController controller;
   final int index;
 
-  const _ShortsCommentsOverlay({Key? key, required this.controller, required this.index}) : super(key: key);
+  const _ShortsCommentsOverlay({
+    super.key,
+    required this.controller,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
     final short = controller.shortsList[index];
-    final commentsList = controller.commentsMap[short.id] ?? <ContentComment>[].obs;
+    final commentsList =
+        controller.commentsMap[short.id] ?? <ContentComment>[].obs;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.65,
@@ -303,15 +373,27 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                     ),
                     const Spacer(),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 4.h,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(15.r),
                       ),
-                      child: Text('Top', style: TextStyle(color: Colors.white, fontSize: 12.sp)),
+                      child: Text(
+                        'Top',
+                        style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                      ),
                     ),
                     SizedBox(width: 8.w),
-                    Text('Newest', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
+                    Text(
+                      'Newest',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     SizedBox(width: 16.w),
                     IconButton(
                       onPressed: () => Get.back(),
@@ -328,7 +410,10 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                     return Center(
                       child: Text(
                         'No comments yet. Be the first to comment!',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14.sp,
+                        ),
                       ),
                     );
                   }
@@ -360,7 +445,9 @@ class _ShortsCommentsOverlay extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(left: 48.w),
             child: Column(
-              children: comment.replies!.map((reply) => _buildReplyItem(reply)).toList(),
+              children: comment.replies!
+                  .map((reply) => _buildReplyItem(reply))
+                  .toList(),
             ),
           ),
       ],
@@ -369,7 +456,8 @@ class _ShortsCommentsOverlay extends StatelessWidget {
 
   Widget _buildSingleComment(ContentComment comment) {
     final currentUserId = Get.find<AuthService>().currentUserId.value;
-    final isMyComment = currentUserId != null && comment.commenter == currentUserId;
+    final isMyComment =
+        currentUserId != null && comment.commenter == currentUserId;
     final short = controller.shortsList[index];
 
     return Padding(
@@ -380,7 +468,8 @@ class _ShortsCommentsOverlay extends StatelessWidget {
           CircleAvatar(
             radius: 18.r,
             backgroundImage: comment.commenterProfile != null
-                ? CachedNetworkImageProvider(comment.commenterProfile!) as ImageProvider
+                ? CachedNetworkImageProvider(comment.commenterProfile!)
+                      as ImageProvider
                 : const AssetImage('assets/images/user_avatar.png'),
           ),
           SizedBox(width: 12.w),
@@ -392,54 +481,97 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                   children: [
                     Text(
                       '@${comment.commenterUsername}',
-                      style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     SizedBox(width: 8.w),
                     Text(
                       comment.createdAtTimeAgo ?? '',
-                      style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  comment.comment,
-                  style: TextStyle(fontSize: 14.sp),
-                ),
+                Text(comment.comment, style: TextStyle(fontSize: 14.sp)),
                 SizedBox(height: 12.h),
                 Obx(() {
-                  final isLiked = controller.commentIsLikedMap[comment.id]?.value ?? false;
-                  final isDisliked = controller.commentIsDislikedMap[comment.id]?.value ?? false;
-                  final likeCount = controller.commentLikeCountMap[comment.id]?.value ?? (int.tryParse(comment.commentLikesCount ?? '0') ?? 0);
-                  final dislikeCount = controller.commentDislikeCountMap[comment.id]?.value ?? (int.tryParse(comment.commentDislikesCount ?? '0') ?? 0);
-                  
+                  final isLiked =
+                      controller.commentIsLikedMap[comment.id]?.value ?? false;
+                  final isDisliked =
+                      controller.commentIsDislikedMap[comment.id]?.value ??
+                      false;
+                  final likeCount =
+                      controller.commentLikeCountMap[comment.id]?.value ??
+                      (int.tryParse(comment.commentLikesCount ?? '0') ?? 0);
+                  final dislikeCount =
+                      controller.commentDislikeCountMap[comment.id]?.value ??
+                      (int.tryParse(comment.commentDislikesCount ?? '0') ?? 0);
+
                   return Row(
                     children: [
                       GestureDetector(
-                        onTap: () => controller.toggleCommentLike(comment.id, comment.commentLikesCount, comment.commentDislikesCount),
+                        onTap: () => controller.toggleCommentLike(
+                          comment.id,
+                          comment.commentLikesCount,
+                          comment.commentDislikesCount,
+                        ),
                         child: Icon(
                           isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                          size: 16.w, 
-                          color: isLiked ? AppColors.primary : AppColors.textSecondary,
+                          size: 16.w,
+                          color: isLiked
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
                         ),
                       ),
                       SizedBox(width: 4.w),
-                      Text('$likeCount', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
+                      Text(
+                        '$likeCount',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       SizedBox(width: 16.w),
                       GestureDetector(
-                        onTap: () => controller.toggleCommentDislike(comment.id, comment.commentLikesCount, comment.commentDislikesCount),
+                        onTap: () => controller.toggleCommentDislike(
+                          comment.id,
+                          comment.commentLikesCount,
+                          comment.commentDislikesCount,
+                        ),
                         child: Icon(
-                          isDisliked ? Icons.thumb_down : Icons.thumb_down_outlined,
-                          size: 16.w, 
-                          color: isDisliked ? AppColors.primary : AppColors.textSecondary,
+                          isDisliked
+                              ? Icons.thumb_down
+                              : Icons.thumb_down_outlined,
+                          size: 16.w,
+                          color: isDisliked
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
                         ),
                       ),
                       SizedBox(width: 4.w),
-                      Text('$dislikeCount', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
+                      Text(
+                        '$dislikeCount',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                       SizedBox(width: 16.w),
                       GestureDetector(
-                        onTap: () => controller.replyToComment(comment.id, comment.commenterUsername),
-                        child: Icon(Icons.comment_outlined, size: 16.w, color: AppColors.textSecondary),
+                        onTap: () => controller.replyToComment(
+                          comment.id,
+                          comment.commenterUsername,
+                        ),
+                        child: Icon(
+                          Icons.comment_outlined,
+                          size: 16.w,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   );
@@ -458,10 +590,7 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
+                const PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
                 const PopupMenuItem<String>(
                   value: 'delete',
                   child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -490,7 +619,8 @@ class _ShortsCommentsOverlay extends StatelessWidget {
               CircleAvatar(
                 radius: 14.r,
                 backgroundImage: reply.commenterProfile != null
-                    ? CachedNetworkImageProvider(reply.commenterProfile!) as ImageProvider
+                    ? CachedNetworkImageProvider(reply.commenterProfile!)
+                          as ImageProvider
                     : const AssetImage('assets/images/user_avatar.png'),
               ),
               SizedBox(width: 10.w),
@@ -518,25 +648,39 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 4.h),
-                    Text(
-                      reply.comment,
-                      style: TextStyle(fontSize: 14.sp),
-                    ),
+                    Text(reply.comment, style: TextStyle(fontSize: 14.sp)),
                     SizedBox(height: 12.h),
                     Obx(() {
-                      final isLiked = controller.commentIsLikedMap[reply.id]?.value ?? false;
-                      final isDisliked = controller.commentIsDislikedMap[reply.id]?.value ?? false;
-                      final likeCount = controller.commentLikeCountMap[reply.id]?.value ?? (int.tryParse(reply.commentLikesCount ?? '0') ?? 0);
-                      final dislikeCount = controller.commentDislikeCountMap[reply.id]?.value ?? (int.tryParse(reply.commentDislikesCount ?? '0') ?? 0);
-                      
+                      final isLiked =
+                          controller.commentIsLikedMap[reply.id]?.value ??
+                          false;
+                      final isDisliked =
+                          controller.commentIsDislikedMap[reply.id]?.value ??
+                          false;
+                      final likeCount =
+                          controller.commentLikeCountMap[reply.id]?.value ??
+                          (int.tryParse(reply.commentLikesCount ?? '0') ?? 0);
+                      final dislikeCount =
+                          controller.commentDislikeCountMap[reply.id]?.value ??
+                          (int.tryParse(reply.commentDislikesCount ?? '0') ??
+                              0);
+
                       return Row(
                         children: [
                           GestureDetector(
-                            onTap: () => controller.toggleCommentLike(reply.id, reply.commentLikesCount, reply.commentDislikesCount),
+                            onTap: () => controller.toggleCommentLike(
+                              reply.id,
+                              reply.commentLikesCount,
+                              reply.commentDislikesCount,
+                            ),
                             child: Icon(
-                              isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                              isLiked
+                                  ? Icons.thumb_up
+                                  : Icons.thumb_up_outlined,
                               size: 14.w,
-                              color: isLiked ? AppColors.primary : AppColors.textSecondary,
+                              color: isLiked
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(width: 4.w),
@@ -549,11 +693,19 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                           ),
                           SizedBox(width: 16.w),
                           GestureDetector(
-                            onTap: () => controller.toggleCommentDislike(reply.id, reply.commentLikesCount, reply.commentDislikesCount),
+                            onTap: () => controller.toggleCommentDislike(
+                              reply.id,
+                              reply.commentLikesCount,
+                              reply.commentDislikesCount,
+                            ),
                             child: Icon(
-                              isDisliked ? Icons.thumb_down : Icons.thumb_down_outlined,
+                              isDisliked
+                                  ? Icons.thumb_down
+                                  : Icons.thumb_down_outlined,
                               size: 14.w,
-                              color: isDisliked ? AppColors.primary : AppColors.textSecondary,
+                              color: isDisliked
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(width: 4.w),
@@ -566,7 +718,10 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                           ),
                           SizedBox(width: 16.w),
                           GestureDetector(
-                            onTap: () => controller.replyToComment(reply.id, reply.commenterUsername),
+                            onTap: () => controller.replyToComment(
+                              reply.id,
+                              reply.commenterUsername,
+                            ),
                             child: Icon(
                               Icons.comment_outlined,
                               size: 14.w,
@@ -581,24 +736,34 @@ class _ShortsCommentsOverlay extends StatelessWidget {
               ),
               if (isMyReply)
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: AppColors.textSecondary,
+                  ),
                   onSelected: (value) {
                     if (value == 'edit') {
                       controller.editReply(reply);
                     } else if (value == 'delete') {
-                      controller.deleteReplyComment(controller.shortsList[index].id, reply.id);
+                      controller.deleteReplyComment(
+                        controller.shortsList[index].id,
+                        reply.id,
+                      );
                     }
                   },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Text('Edit'),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Text('Delete', style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                 )
               else
                 const Icon(Icons.more_vert, color: AppColors.textSecondary),
@@ -620,7 +785,7 @@ class _ShortsCommentsOverlay extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -637,7 +802,7 @@ class _ShortsCommentsOverlay extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
-                color: AppColors.border.withOpacity(0.1),
+                color: AppColors.border.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(25.r),
               ),
               child: Row(
@@ -654,7 +819,8 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                       if (controller.editingCommentId.value != null) {
                         hint = 'Edit your comment...';
                       } else if (controller.replyingToCommentId.value != null) {
-                        hint = 'Replying to @${controller.replyingToUsername.value}...';
+                        hint =
+                            'Replying to @${controller.replyingToUsername.value}...';
                       }
                       return TextField(
                         controller: controller.commentController,
@@ -679,23 +845,30 @@ class _ShortsCommentsOverlay extends StatelessWidget {
           SizedBox(width: 12.w),
           GestureDetector(
             onTap: () => controller.submitComment(index),
-            child: Obx(() => Container(
-              padding: EdgeInsets.all(10.w),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
+            child: Obx(
+              () => Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  controller.editingCommentId.value != null
+                      ? Icons.check
+                      : Icons.send,
+                  color: Colors.white,
+                  size: 20.w,
+                ),
               ),
-              child: Icon(
-                controller.editingCommentId.value != null ? Icons.check : Icons.send, 
-                color: Colors.white, 
-                size: 20.w
-              ),
-            )),
+            ),
           ),
           Obx(() {
-            if (controller.editingCommentId.value != null || controller.replyingToCommentId.value != null) {
+            if (controller.editingCommentId.value != null ||
+                controller.replyingToCommentId.value != null) {
               return GestureDetector(
-                onTap: controller.editingCommentId.value != null ? controller.cancelEdit : controller.cancelReply,
+                onTap: controller.editingCommentId.value != null
+                    ? controller.cancelEdit
+                    : controller.cancelReply,
                 child: Padding(
                   padding: EdgeInsets.only(left: 8.w),
                   child: Container(

@@ -14,7 +14,11 @@ class FavoriteVideosView extends GetView<FavoriteVideosController> {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
@@ -51,7 +55,8 @@ class FavoriteVideosView extends GetView<FavoriteVideosController> {
                             Image.network(
                               item.coverUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(color: Colors.grey[300]),
+                              errorBuilder: (_, _, _) =>
+                                  Container(color: Colors.grey[300]),
                             ),
                             Positioned(
                               top: 8,
@@ -59,7 +64,7 @@ class FavoriteVideosView extends GetView<FavoriteVideosController> {
                               child: Container(
                                 padding: const EdgeInsets.all(4.0),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(

@@ -58,7 +58,14 @@ class MakeDonationView extends GetView<MakeDonationController> {
               title: 'Tips',
               titleColor: Colors.red[300]!,
               username: '@samford432',
-              pillWidget: Text('\$300', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.sp)),
+              pillWidget: Text(
+                '\$300',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
+                ),
+              ),
               options: controller.tipOptions,
               selectedOption: controller.selectedTipAmount,
               onSelect: controller.selectTip,
@@ -74,7 +81,14 @@ class MakeDonationView extends GetView<MakeDonationController> {
                 children: [
                   Icon(Icons.monetization_on, color: Colors.white, size: 14.sp),
                   SizedBox(width: 4.w),
-                  Text('5000', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.sp)),
+                  Text(
+                    '5000',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                    ),
+                  ),
                 ],
               ),
               options: controller.coinOptions,
@@ -87,7 +101,14 @@ class MakeDonationView extends GetView<MakeDonationController> {
               title: 'Credit',
               titleColor: Colors.red[300]!,
               username: '@clifford',
-              pillWidget: Text('75', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.sp)),
+              pillWidget: Text(
+                '75',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
+                ),
+              ),
               options: controller.creditOptions,
               selectedOption: controller.selectedCreditAmount,
               onSelect: controller.selectCredit,
@@ -98,7 +119,14 @@ class MakeDonationView extends GetView<MakeDonationController> {
               title: 'Gift',
               titleColor: Colors.red[300]!,
               username: '@clifford',
-              pillWidget: Text('1000', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.sp)),
+              pillWidget: Text(
+                '1000',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
+                ),
+              ),
               options: controller.giftOptions,
               selectedOption: controller.selectedGiftAmount,
               onSelect: controller.selectGift,
@@ -139,7 +167,9 @@ class MakeDonationView extends GetView<MakeDonationController> {
                     CircleAvatar(
                       radius: 20.r,
                       backgroundColor: Colors.grey[300],
-                      backgroundImage: const AssetImage('assets/images/user_avatar.png'),
+                      backgroundImage: const AssetImage(
+                        'assets/images/user_avatar.png',
+                      ),
                       onBackgroundImageError: (_, _) {},
                       child: const Icon(Icons.person, color: Colors.white),
                     ),
@@ -149,11 +179,18 @@ class MakeDonationView extends GetView<MakeDonationController> {
                       children: [
                         Text(
                           username,
-                          style: TextStyle(fontSize: 14.sp, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                         SizedBox(height: 6.h),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.blue,
                             borderRadius: BorderRadius.circular(16.r),
@@ -165,15 +202,22 @@ class MakeDonationView extends GetView<MakeDonationController> {
                     const Spacer(),
                     Container(
                       width: 140.w,
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 8.h,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50]?.withOpacity(0.3),
+                        color: Colors.blue[50]?.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(4.r),
                         border: Border.all(color: Colors.blue[50]!),
                       ),
                       child: Text(
                         'Thanks, I always enjoy your channel content',
-                        style: TextStyle(fontSize: 10.sp, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -184,14 +228,21 @@ class MakeDonationView extends GetView<MakeDonationController> {
                 top: 0,
                 left: 16.w,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 2.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 2.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red[50],
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                   child: Text(
                     title,
-                    style: TextStyle(color: Colors.red, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -215,7 +266,11 @@ class MakeDonationView extends GetView<MakeDonationController> {
                     padding: EdgeInsets.symmetric(vertical: 6.h),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: isSelected ? Colors.red[300]! : Colors.grey[300]!),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.red[300]!
+                            : Colors.grey[300]!,
+                      ),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     alignment: Alignment.center,
@@ -224,7 +279,9 @@ class MakeDonationView extends GetView<MakeDonationController> {
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: isSelected ? Colors.red[300] : Colors.black87,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -244,7 +301,13 @@ class MakeDonationView extends GetView<MakeDonationController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Custom cost', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Custom cost',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     SizedBox(height: 8.h),
                     SizedBox(
                       height: 36.h,
@@ -252,10 +315,15 @@ class MakeDonationView extends GetView<MakeDonationController> {
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                           hintText: '0.00',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12.sp),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12.sp,
+                          ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                          ),
                           border: OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.grey[200]!),
                             borderRadius: BorderRadius.circular(4.r),
@@ -276,17 +344,28 @@ class MakeDonationView extends GetView<MakeDonationController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Add a comment', style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Add a comment',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     SizedBox(height: 8.h),
                     SizedBox(
                       height: 36.h,
                       child: TextField(
                         decoration: InputDecoration(
                           hintText: 'Comment...',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 12.sp),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12.sp,
+                          ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                          ),
                           border: OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.grey[200]!),
                             borderRadius: BorderRadius.circular(4.r),
@@ -307,11 +386,22 @@ class MakeDonationView extends GetView<MakeDonationController> {
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B1A10), // Deep red color from the design
+                    backgroundColor: const Color(
+                      0xFF8B1A10,
+                    ), // Deep red color from the design
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
                   ),
-                  child: Text('Send', style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Send',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],

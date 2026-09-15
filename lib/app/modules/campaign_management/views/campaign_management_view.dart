@@ -18,7 +18,11 @@ class CampaignManagementView extends GetView<CampaignManagementController> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -109,17 +113,25 @@ class CampaignManagementView extends GetView<CampaignManagementController> {
                             );
                           }
                           return Column(
-                            children: controller.campaignList.asMap().entries.map((entry) {
-                              int index = entry.key;
-                              final campaign = entry.value;
-                              return Column(
-                                children: [
-                                  _buildTableRow(campaign),
-                                  if (index != controller.campaignList.length - 1)
-                                    Divider(height: 1, color: Colors.grey[200]),
-                                ],
-                              );
-                            }).toList(),
+                            children: controller.campaignList
+                                .asMap()
+                                .entries
+                                .map((entry) {
+                                  int index = entry.key;
+                                  final campaign = entry.value;
+                                  return Column(
+                                    children: [
+                                      _buildTableRow(campaign),
+                                      if (index !=
+                                          controller.campaignList.length - 1)
+                                        Divider(
+                                          height: 1,
+                                          color: Colors.grey[200],
+                                        ),
+                                    ],
+                                  );
+                                })
+                                .toList(),
                           );
                         }),
                       ],
@@ -141,7 +153,11 @@ class CampaignManagementView extends GetView<CampaignManagementController> {
     );
   }
 
-  Widget _buildStatCard({required IconData icon, required String title, required String value}) {
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -149,7 +165,7 @@ class CampaignManagementView extends GetView<CampaignManagementController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -242,30 +258,21 @@ class CampaignManagementView extends GetView<CampaignManagementController> {
             flex: 2,
             child: Text(
               data.title,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
             ),
           ),
           Expanded(
             flex: 1,
             child: Text(
               data.campaignType,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
             ),
           ),
           Expanded(
             flex: 1,
             child: Text(
               data.creatorName ?? 'Unknown',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
             ),
           ),
         ],

@@ -36,10 +36,7 @@ class EarningDetailsView extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Container(
-            height: 4.h,
-            color: const Color(0xFFF5F5F5),
-          ),
+          Container(height: 4.h, color: const Color(0xFFF5F5F5)),
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -91,10 +88,7 @@ class EarningDetailsView extends StatelessWidget {
                   ),
                   Text(
                     'Available balance',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12.sp,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12.sp),
                   ),
                 ],
               ),
@@ -105,16 +99,21 @@ class EarningDetailsView extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
                 // Header row
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 12.h,
+                    horizontal: 8.w,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                      bottom: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                      ),
                     ),
                   ),
                   child: Row(
@@ -138,12 +137,16 @@ class EarningDetailsView extends StatelessWidget {
                   final int rowIndex = entry.key;
                   final List<String> row = entry.value;
                   return Container(
-                    padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 16.h,
+                      horizontal: 8.w,
+                    ),
                     decoration: BoxDecoration(
                       border: rowIndex < rows.length - 1
                           ? Border(
                               bottom: BorderSide(
-                                  color: Colors.grey.withOpacity(0.2)),
+                                color: Colors.grey.withValues(alpha: 0.2),
+                              ),
                             )
                           : null,
                     ),

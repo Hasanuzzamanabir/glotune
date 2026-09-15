@@ -74,7 +74,11 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
         children: [
           GestureDetector(
             onTap: () => controller.previousStep(),
-            child: Icon(Icons.arrow_back_ios, size: 16.w, color: Colors.black54),
+            child: Icon(
+              Icons.arrow_back_ios,
+              size: 16.w,
+              color: Colors.black54,
+            ),
           ),
           SizedBox(width: 8.w),
           Expanded(
@@ -120,7 +124,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -161,7 +165,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         spreadRadius: 2,
                       ),
@@ -220,7 +224,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -280,7 +284,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -338,7 +342,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -398,10 +402,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
                       SizedBox(height: 4.h),
                       Text(
                         "Registration fee",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.sp,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 14.sp),
                       ),
                     ],
                   ),
@@ -462,10 +463,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
   Widget _buildPaymentOption(String text) {
     return Text(
       text,
-      style: TextStyle(
-        fontSize: 14.sp,
-        color: AppColors.textSecondary,
-      ),
+      style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
     );
   }
 
@@ -478,11 +476,11 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
       child: TextField(
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.grey[500],
-            fontSize: 14.sp,
+          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
           border: InputBorder.none,
         ),
       ),
@@ -501,10 +499,7 @@ class CompetitionFormView extends GetView<CompetitionFormController> {
           isExpanded: true,
           hint: Text(
             hint,
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 14.sp,
-            ),
+            style: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
           ),
           icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
           items: const [],

@@ -14,7 +14,11 @@ class VideosWatchedView extends GetView<VideosWatchedController> {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
@@ -25,7 +29,10 @@ class VideosWatchedView extends GetView<VideosWatchedController> {
       body: SafeArea(
         child: Obx(
           () => ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(
+              vertical: 12.0,
+              horizontal: 16.0,
+            ),
             itemCount: controller.videos.length,
             itemBuilder: (context, index) {
               final item = controller.videos[index];
@@ -49,20 +56,29 @@ class VideosWatchedView extends GetView<VideosWatchedController> {
                                 Image.network(
                                   item.thumbnailUrl,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Container(color: Colors.grey[300]),
+                                  errorBuilder: (_, _, _) =>
+                                      Container(color: Colors.grey[300]),
                                 ),
                                 Positioned(
                                   bottom: 4,
                                   right: 4,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.8),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       item.duration,
-                                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -99,10 +115,22 @@ class VideosWatchedView extends GetView<VideosWatchedController> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildMetric(Icons.thumb_up_alt_outlined, item.likes.toString()),
-                                _buildMetric(Icons.chat_bubble_outline, item.comments.toString()),
-                                _buildMetric(Icons.visibility_outlined, item.views.toString()),
-                                _buildMetric(Icons.share_outlined, item.shares.toString()),
+                                _buildMetric(
+                                  Icons.thumb_up_alt_outlined,
+                                  item.likes.toString(),
+                                ),
+                                _buildMetric(
+                                  Icons.chat_bubble_outline,
+                                  item.comments.toString(),
+                                ),
+                                _buildMetric(
+                                  Icons.visibility_outlined,
+                                  item.views.toString(),
+                                ),
+                                _buildMetric(
+                                  Icons.share_outlined,
+                                  item.shares.toString(),
+                                ),
                               ],
                             ),
                           ],
@@ -124,7 +152,10 @@ class VideosWatchedView extends GetView<VideosWatchedController> {
       children: [
         Icon(icon, size: 14, color: const Color(0xFF757575)),
         const SizedBox(width: 2),
-        Text(value, style: const TextStyle(fontSize: 10, color: Color(0xFF757575))),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF757575)),
+        ),
       ],
     );
   }

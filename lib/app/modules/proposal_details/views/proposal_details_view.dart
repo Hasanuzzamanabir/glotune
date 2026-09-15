@@ -38,7 +38,7 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -56,7 +56,9 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                       children: [
                         CircleAvatar(
                           radius: 20.r,
-                          backgroundImage: const CachedNetworkImageProvider("https://picsum.photos/100/100?random=5"),
+                          backgroundImage: const CachedNetworkImageProvider(
+                            "https://picsum.photos/100/100?random=5",
+                          ),
                         ),
                         SizedBox(width: 12.w),
                         Column(
@@ -64,12 +66,28 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                           children: [
                             Row(
                               children: [
-                                Text("Cameron Williamson", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                                Text(
+                                  "Cameron Williamson",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
                                 SizedBox(width: 4.w),
-                                Icon(Icons.military_tech, color: Colors.orange, size: 16.sp),
+                                Icon(
+                                  Icons.military_tech,
+                                  color: Colors.orange,
+                                  size: 16.sp,
+                                ),
                               ],
                             ),
-                            Text("@camwils34", style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                            Text(
+                              "@camwils34",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12.sp,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -77,20 +95,32 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text("\$500", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                        Text("Budget", style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                        Text(
+                          "\$500",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                        Text(
+                          "Budget",
+                          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                        ),
                       ],
                     ),
                   ],
                 ),
                 SizedBox(height: 16.h),
-                
+
                 // Managed pill
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 12.w),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 10.h,
+                    horizontal: 12.w,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B1D1D).withOpacity(0.05),
+                    color: const Color(0xFF8B1D1D).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Center(
@@ -106,7 +136,7 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                   ),
                 ),
                 SizedBox(height: 24.h),
-                
+
                 // Contract Details Card
                 Container(
                   padding: EdgeInsets.all(16.w),
@@ -117,20 +147,41 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Contract proposal", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp, color: Colors.black87)),
+                      Text(
+                        "Contract proposal",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                       SizedBox(height: 16.h),
-                      Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+                      Divider(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                        height: 1,
+                      ),
                       SizedBox(height: 16.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Benefit", style: TextStyle(color: Colors.blueGrey[300], fontSize: 13.sp, fontWeight: FontWeight.w500)),
+                          Text(
+                            "Benefit",
+                            style: TextStyle(
+                              color: Colors.blueGrey[300],
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           Expanded(
                             child: Text(
                               "Sponsorship access,\nmonthly coaching",
                               textAlign: TextAlign.right,
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: const Color(0xFF1E293B)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.sp,
+                                color: const Color(0xFF1E293B),
+                              ),
                             ),
                           ),
                         ],
@@ -139,25 +190,60 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Type", style: TextStyle(color: Colors.blueGrey[300], fontSize: 13.sp, fontWeight: FontWeight.w500)),
-                          Text("Exclusive", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: const Color(0xFF1E293B))),
+                          Text(
+                            "Type",
+                            style: TextStyle(
+                              color: Colors.blueGrey[300],
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            "Exclusive",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.sp,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: 16.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Duration", style: TextStyle(color: Colors.blueGrey[300], fontSize: 13.sp, fontWeight: FontWeight.w500)),
-                          Text("6 Months", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: const Color(0xFF1E293B))),
+                          Text(
+                            "Duration",
+                            style: TextStyle(
+                              color: Colors.blueGrey[300],
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            "6 Months",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13.sp,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: 16.h),
-                      Divider(color: Colors.grey.withOpacity(0.2), height: 1),
+                      Divider(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                        height: 1,
+                      ),
                       SizedBox(height: 16.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.download, color: Colors.orange, size: 20.sp),
+                          Icon(
+                            Icons.download,
+                            color: Colors.orange,
+                            size: 20.sp,
+                          ),
                           SizedBox(width: 8.w),
                           Text(
                             "Download full contract details here",
@@ -173,7 +259,7 @@ class ProposalDetailsView extends GetView<ProposalDetailsController> {
                   ),
                 ),
                 SizedBox(height: 32.h),
-                
+
                 // Buttons
                 Row(
                   children: [

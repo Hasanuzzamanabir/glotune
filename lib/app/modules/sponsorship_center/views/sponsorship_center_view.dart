@@ -76,7 +76,7 @@ class SponsorshipCenterView extends GetView<SponsorshipCenterController> {
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -93,14 +93,25 @@ class SponsorshipCenterView extends GetView<SponsorshipCenterController> {
                   children: [
                     CircleAvatar(
                       radius: 20.r,
-                      backgroundImage: const CachedNetworkImageProvider("https://picsum.photos/100/100?random=15"),
+                      backgroundImage: const CachedNetworkImageProvider(
+                        "https://picsum.photos/100/100?random=15",
+                      ),
                     ),
                     SizedBox(width: 12.w),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Pepsi China", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                        Text("@camwils34", style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                        Text(
+                          "Pepsi China",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                        Text(
+                          "@camwils34",
+                          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                        ),
                       ],
                     ),
                   ],
@@ -108,8 +119,17 @@ class SponsorshipCenterView extends GetView<SponsorshipCenterController> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text("\$1,500", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                    Text("Budget", style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+                    Text(
+                      "\$1,500",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                    Text(
+                      "Budget",
+                      style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+                    ),
                   ],
                 ),
               ],
@@ -124,28 +144,70 @@ class SponsorshipCenterView extends GetView<SponsorshipCenterController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Pepsi Sound Nation Tour", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp, color: Colors.black87)),
+                  Text(
+                    "Pepsi Sound Nation Tour",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                      color: Colors.black87,
+                    ),
+                  ),
                   SizedBox(height: 16.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Deadline", style: TextStyle(color: Colors.blueGrey[300], fontSize: 12.sp, fontWeight: FontWeight.w500)),
-                      Text("20-05-25", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, color: Colors.black87)),
+                      Text(
+                        "Deadline",
+                        style: TextStyle(
+                          color: Colors.blueGrey[300],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        "20-05-25",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 12.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("For", style: TextStyle(color: Colors.blueGrey[300], fontSize: 12.sp, fontWeight: FontWeight.w500)),
-                      Text("Comedians and muscians", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, color: Colors.black87)),
+                      Text(
+                        "For",
+                        style: TextStyle(
+                          color: Colors.blueGrey[300],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        "Comedians and muscians",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 12.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Status", style: TextStyle(color: Colors.blueGrey[300], fontSize: 12.sp, fontWeight: FontWeight.w500)),
+                      Text(
+                        "Status",
+                        style: TextStyle(
+                          color: Colors.blueGrey[300],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       Row(
                         children: [
                           Container(
@@ -157,7 +219,14 @@ class SponsorshipCenterView extends GetView<SponsorshipCenterController> {
                             ),
                           ),
                           SizedBox(width: 4.w),
-                          Text("Open", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, color: Colors.black87)),
+                          Text(
+                            "Open",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.sp,
+                              color: Colors.black87,
+                            ),
+                          ),
                         ],
                       ),
                     ],

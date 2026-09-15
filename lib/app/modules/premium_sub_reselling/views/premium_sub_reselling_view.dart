@@ -141,7 +141,9 @@ class PremiumSubResellingView extends GetView<PremiumSubResellingController> {
                       horizontal: 8.w,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                      ),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Text(
@@ -168,7 +170,7 @@ class PremiumSubResellingView extends GetView<PremiumSubResellingController> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Row(
@@ -212,7 +214,9 @@ class PremiumSubResellingView extends GetView<PremiumSubResellingController> {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
                     borderRadius: BorderRadius.circular(24.r),
                   ),
                   child: Row(
@@ -383,7 +387,9 @@ class PremiumSubResellingView extends GetView<PremiumSubResellingController> {
       decoration: BoxDecoration(
         border: isLast
             ? null
-            : Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.2))),
+            : Border(
+                bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -414,7 +420,7 @@ class PremiumSubResellingView extends GetView<PremiumSubResellingController> {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         padding: EdgeInsets.symmetric(vertical: 12.h),
-        side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24.r),
         ),

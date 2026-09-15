@@ -72,15 +72,35 @@ class DealsManagementView extends GetView<DealsManagementController> {
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(icon: Icons.computer, title: "Creators Managed", value: "20"),
-        _buildStatCard(icon: Icons.call_split, title: "Active Deals", value: "8"),
-        _buildStatCard(icon: Icons.request_quote, title: "Pending Proposals", value: "12"),
-        _buildStatCard(icon: Icons.campaign, title: "ROI Across Creators", value: "55%"),
+        _buildStatCard(
+          icon: Icons.computer,
+          title: "Creators Managed",
+          value: "20",
+        ),
+        _buildStatCard(
+          icon: Icons.call_split,
+          title: "Active Deals",
+          value: "8",
+        ),
+        _buildStatCard(
+          icon: Icons.request_quote,
+          title: "Pending Proposals",
+          value: "12",
+        ),
+        _buildStatCard(
+          icon: Icons.campaign,
+          title: "ROI Across Creators",
+          value: "55%",
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard({required IconData icon, required String title, required String value}) {
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -88,7 +108,7 @@ class DealsManagementView extends GetView<DealsManagementController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -104,12 +124,20 @@ class DealsManagementView extends GetView<DealsManagementController> {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               SizedBox(height: 4.h),
               Text(
                 value,
-                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
             ],
           ),
@@ -125,7 +153,7 @@ class DealsManagementView extends GetView<DealsManagementController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -138,14 +166,46 @@ class DealsManagementView extends GetView<DealsManagementController> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(flex: 2, child: Text("Creator Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp))),
-                Expanded(flex: 1, child: Text("Active Deals", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp))),
-                Expanded(flex: 1, child: Text("Total Deal Value", textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp))),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    "Creator Name",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Active Deals",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Total Deal Value",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
-          _buildTableRow(creator: "@JaneVisuals", deals: "3", value: "\$15,000"),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+          _buildTableRow(
+            creator: "@JaneVisuals",
+            deals: "3",
+            value: "\$15,000",
+          ),
           _buildTableRow(creator: "@BeatsByTino", deals: "2", value: "\$9,500"),
           _buildTableRow(creator: "@poe", deals: "6", value: "\$150,000"),
         ],
@@ -153,7 +213,11 @@ class DealsManagementView extends GetView<DealsManagementController> {
     );
   }
 
-  Widget _buildTableRow({required String creator, required String deals, required String value}) {
+  Widget _buildTableRow({
+    required String creator,
+    required String deals,
+    required String value,
+  }) {
     return GestureDetector(
       onTap: () => Get.toNamed(Routes.CREATOR_DEALS),
       child: Container(
@@ -165,13 +229,32 @@ class DealsManagementView extends GetView<DealsManagementController> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(flex: 2, child: Text(creator, style: TextStyle(fontSize: 13.sp, color: Colors.black87))),
-                  Expanded(flex: 1, child: Text(deals, style: TextStyle(fontSize: 13.sp, color: Colors.black87))),
-                  Expanded(flex: 1, child: Text(value, textAlign: TextAlign.right, style: TextStyle(fontSize: 13.sp, color: Colors.black87))),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      creator,
+                      style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      deals,
+                      style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+                    ),
+                  ),
                 ],
               ),
             ),
-            Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+            Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
           ],
         ),
       ),

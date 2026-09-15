@@ -12,8 +12,10 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
   const MerchantProfileView({super.key});
 
   String _formatStatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    if (count >= 1000)
+      return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
     return count.toString();
   }
 
@@ -35,12 +37,12 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
               _buildUserInfo(profile),
               _buildStatsDashboard(profile),
               _buildVerificationBanner(),
-            SizedBox(height: 10.h),
-            _buildMenuSection(),
-            SizedBox(height: 30.h),
-          ],
-        ),
-      );
+              SizedBox(height: 10.h),
+              _buildMenuSection(),
+              SizedBox(height: 30.h),
+            ],
+          ),
+        );
       }),
     );
   }
@@ -55,12 +57,16 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
           width: double.infinity,
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: CachedNetworkImageProvider("https://picsum.photos/800/400?random=30"), 
+              image: CachedNetworkImageProvider(
+                "https://picsum.photos/800/400?random=30",
+              ),
               fit: BoxFit.cover,
             ),
           ),
           child: Container(
-            color: Colors.black.withOpacity(0.2), // Darken slightly for readability
+            color: Colors.black.withValues(
+              alpha: 0.2,
+            ), // Darken slightly for readability
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -73,21 +79,32 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
                       children: [
                         Text(
                           "Profile",
-                          style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
                     GestureDetector(
                       onTap: () => Get.to(() => const MerchantShopView()),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.shopping_bag, color: const Color(0xFF8B1D1D), size: 16.sp),
+                            Icon(
+                              Icons.shopping_bag,
+                              color: const Color(0xFF8B1D1D),
+                              size: 16.sp,
+                            ),
                             SizedBox(width: 4.w),
                             Text(
                               "Shop",
@@ -124,7 +141,11 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
                     SizedBox(width: 4.w),
                     Text(
                       "Share Profile",
-                      style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -133,11 +154,19 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
                 onTap: () => Get.toNamed(Routes.SETTINGS),
                 child: Row(
                   children: [
-                    Icon(Icons.settings_outlined, color: Colors.white, size: 20.sp),
+                    Icon(
+                      Icons.settings_outlined,
+                      color: Colors.white,
+                      size: 20.sp,
+                    ),
                     SizedBox(width: 4.w),
                     Text(
                       "Settings",
-                      style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -157,7 +186,8 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
               radius: 50.r,
               backgroundColor: Colors.white,
               backgroundImage: profile.avatarUrl.startsWith('http')
-                  ? CachedNetworkImageProvider(profile.avatarUrl) as ImageProvider
+                  ? CachedNetworkImageProvider(profile.avatarUrl)
+                        as ImageProvider
                   : AssetImage(profile.avatarUrl) as ImageProvider,
             ),
           ),
@@ -183,7 +213,10 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
             ],
           ),
           SizedBox(height: 4.h),
-          Text(profile.handle, style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+          Text(
+            profile.handle,
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+          ),
           SizedBox(height: 8.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -200,8 +233,11 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
               ] else ...[
                 Icon(Icons.location_on, size: 16.sp, color: Colors.grey[600]),
                 SizedBox(width: 4.w),
-                Text('Global', style: TextStyle(fontSize: 12.sp, color: Colors.grey[600])),
-              ]
+                Text(
+                  'Global',
+                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                ),
+              ],
             ],
           ),
         ],
@@ -224,7 +260,10 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.followingCount), "Following"),
           _buildStatDivider(),
-          _buildStatItem(_formatStatCount(profile.subscribersCount), "Subscribers"),
+          _buildStatItem(
+            _formatStatCount(profile.subscribersCount),
+            "Subscribers",
+          ),
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.videosCount), "Videos"),
         ],
@@ -235,15 +274,25 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
   Widget _buildStatItem(String value, String label) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+        ),
         SizedBox(height: 4.h),
-        Text(label, style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+        ),
       ],
     );
   }
 
   Widget _buildStatDivider() {
-    return Container(height: 30.h, width: 1, color: Colors.grey.withOpacity(0.2));
+    return Container(
+      height: 30.h,
+      width: 1,
+      color: Colors.grey.withValues(alpha: 0.2),
+    );
   }
 
   Widget _buildVerificationBanner() {
@@ -268,14 +317,22 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
               children: [
                 Text(
                   "Complete Your Verification",
-                  style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Row(
                   children: [
                     Text(
                       "Verify",
-                      style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(width: 4.w),
                     Icon(Icons.arrow_forward, color: Colors.white, size: 16.sp),
@@ -286,10 +343,14 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.assignment, color: const Color(0xFF7B2CBF), size: 28.sp),
+              child: Icon(
+                Icons.assignment,
+                color: const Color(0xFF7B2CBF),
+                size: 28.sp,
+              ),
             ),
           ],
         ),
@@ -300,20 +361,40 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
   Widget _buildMenuSection() {
     return Column(
       children: [
-        _buildMenuItem(Icons.campaign, "Campaign management", "View all past videos watched", onTap: () => Get.toNamed(Routes.CAMPAIGN_MANAGEMENT)),
-        _buildMenuDivider(),
-        _buildMenuItem(Icons.receipt_long, "Order management", "View all past videos watched", onTap: () => Get.toNamed(Routes.ORDER_MANAGEMENT)),
+        _buildMenuItem(
+          Icons.campaign,
+          "Campaign management",
+          "View all past videos watched",
+          onTap: () => Get.toNamed(Routes.CAMPAIGN_MANAGEMENT),
+        ),
         _buildMenuDivider(),
         _buildMenuItem(
-          Icons.business_center, 
-          "Scouting tools information", 
+          Icons.receipt_long,
+          "Order management",
+          "View all past videos watched",
+          onTap: () => Get.toNamed(Routes.ORDER_MANAGEMENT),
+        ),
+        _buildMenuDivider(),
+        _buildMenuItem(
+          Icons.business_center,
+          "Scouting tools information",
           "View all past videos watched",
           onTap: () => Get.toNamed(Routes.SCOUTING_TOOLS),
         ),
         _buildMenuDivider(),
-        _buildMenuItem(Icons.business_center, "Inventory management", "Create and manage inventory", onTap: () => Get.toNamed(Routes.INVENTORY_MANAGEMENT)),
+        _buildMenuItem(
+          Icons.business_center,
+          "Inventory management",
+          "Create and manage inventory",
+          onTap: () => Get.toNamed(Routes.INVENTORY_MANAGEMENT),
+        ),
         _buildMenuDivider(),
-        _buildMenuItem(Icons.analytics_outlined, "Performance analytics", "Track campaign and sales performance", onTap: () => Get.toNamed(Routes.PERFORMANCE_METRICS)),
+        _buildMenuItem(
+          Icons.analytics_outlined,
+          "Performance analytics",
+          "Track campaign and sales performance",
+          onTap: () => Get.toNamed(Routes.PERFORMANCE_METRICS),
+        ),
       ],
     );
   }
@@ -324,24 +405,25 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
       thickness: 1,
       indent: 16.w,
       endIndent: 16.w,
-      color: Colors.grey.withOpacity(0.1),
+      color: Colors.grey.withValues(alpha: 0.1),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+  Widget _buildMenuItem(
+    IconData icon,
+    String title,
+    String subtitle, {
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       leading: Container(
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(
-          color: const Color(0xFF8B1D1D).withOpacity(0.05),
+          color: const Color(0xFF8B1D1D).withValues(alpha: 0.05),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: const Color(0xFF8B1D1D),
-          size: 22.sp,
-        ),
+        child: Icon(icon, color: const Color(0xFF8B1D1D), size: 22.sp),
       ),
       title: Text(
         title,
@@ -353,10 +435,7 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 12.sp,
-          color: Colors.grey,
-        ),
+        style: TextStyle(fontSize: 12.sp, color: Colors.grey),
       ),
       trailing: Icon(Icons.chevron_right, color: Colors.black, size: 20.sp),
       onTap: onTap ?? () {},

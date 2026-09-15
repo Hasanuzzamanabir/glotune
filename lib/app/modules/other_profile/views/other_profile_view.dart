@@ -18,7 +18,9 @@ class OtherProfileView extends GetView<OtherProfileController> {
       backgroundColor: AppColors.background,
       body: Obx(() {
         if (controller.isProfileLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
         }
 
         final profile = controller.profileData.value;
@@ -30,15 +32,18 @@ class OtherProfileView extends GetView<OtherProfileController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    controller.errorMessage.value ?? "User not found", 
+                    controller.errorMessage.value ?? "User not found",
                     style: const TextStyle(color: Colors.black),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 20.h),
                   TextButton(
                     onPressed: () => Get.back(),
-                    child: const Text("Go Back", style: TextStyle(color: AppColors.primary)),
-                  )
+                    child: const Text(
+                      "Go Back",
+                      style: TextStyle(color: AppColors.primary),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -75,7 +80,9 @@ class OtherProfileView extends GetView<OtherProfileController> {
           width: double.infinity,
           decoration: BoxDecoration(
             color: const Color(0xFFD9D9D9),
-            image: profile.coverPhotoUrl != null && profile.coverPhotoUrl!.isNotEmpty
+            image:
+                profile.coverPhotoUrl != null &&
+                    profile.coverPhotoUrl!.isNotEmpty
                 ? DecorationImage(
                     image: CachedNetworkImageProvider(profile.coverPhotoUrl!),
                     fit: BoxFit.cover,
@@ -96,10 +103,14 @@ class OtherProfileView extends GetView<OtherProfileController> {
                         child: Container(
                           padding: EdgeInsets.all(4.w),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                       SizedBox(width: 8.w),
@@ -109,7 +120,9 @@ class OtherProfileView extends GetView<OtherProfileController> {
                           color: Colors.white,
                           fontSize: 18.sp,
                           fontWeight: FontWeight.bold,
-                          shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
+                          shadows: const [
+                            Shadow(color: Colors.black, blurRadius: 4),
+                          ],
                         ),
                       ),
                     ],
@@ -121,17 +134,27 @@ class OtherProfileView extends GetView<OtherProfileController> {
                         constraints: const BoxConstraints(),
                         onPressed: () {
                           if (controller.profileData.value != null) {
-                            ReportUtils.showReportUserDialog(controller.profileData.value!.id);
+                            ReportUtils.showReportUserDialog(
+                              controller.profileData.value!.id,
+                            );
                           }
                         },
-                        icon: const Icon(Icons.flag_outlined, color: Colors.white, size: 24),
+                        icon: const Icon(
+                          Icons.flag_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                       SizedBox(width: 16.w),
                       IconButton(
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: controller.shareProfile,
-                        icon: const Icon(Icons.share, color: Colors.white, size: 24),
+                        icon: const Icon(
+                          Icons.share,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ],
                   ),
@@ -152,8 +175,11 @@ class OtherProfileView extends GetView<OtherProfileController> {
             child: CircleAvatar(
               radius: 50.r,
               backgroundColor: Colors.grey[300],
-              backgroundImage: profile.profilePictureUrl != null && profile.profilePictureUrl!.isNotEmpty
-                  ? CachedNetworkImageProvider(profile.profilePictureUrl!) as ImageProvider
+              backgroundImage:
+                  profile.profilePictureUrl != null &&
+                      profile.profilePictureUrl!.isNotEmpty
+                  ? CachedNetworkImageProvider(profile.profilePictureUrl!)
+                        as ImageProvider
                   : const AssetImage('assets/images/user_avatar.png'),
             ),
           ),
@@ -171,26 +197,30 @@ class OtherProfileView extends GetView<OtherProfileController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                profile.fullName?.isNotEmpty == true ? profile.fullName! : "Unknown User",
+                profile.fullName?.isNotEmpty == true
+                    ? profile.fullName!
+                    : "Unknown User",
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
-              if (profile.userType == "Premium" || profile.userType == "Admin") ...[
+              if (profile.userType == "Premium" ||
+                  profile.userType == "Admin") ...[
                 SizedBox(width: 4.w),
-                Icon(Icons.workspace_premium, color: Colors.orange, size: 20.sp),
-              ]
+                Icon(
+                  Icons.workspace_premium,
+                  color: Colors.orange,
+                  size: 20.sp,
+                ),
+              ],
             ],
           ),
           SizedBox(height: 4.h),
           Text(
             profile.email ?? "",
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
           ),
           SizedBox(height: 8.h),
           if (profile.country != null || profile.city != null)
@@ -200,11 +230,11 @@ class OtherProfileView extends GetView<OtherProfileController> {
                 const Icon(Icons.flag, color: Colors.black, size: 16),
                 SizedBox(width: 4.w),
                 Text(
-                  [profile.country, profile.city].where((e) => e != null && e.isNotEmpty).join(", "),
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.grey[600],
-                  ),
+                  [
+                    profile.country,
+                    profile.city,
+                  ].where((e) => e != null && e.isNotEmpty).join(", "),
+                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -214,8 +244,10 @@ class OtherProfileView extends GetView<OtherProfileController> {
   }
 
   String formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    if (count >= 1000)
+      return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
     return count.toString();
   }
 
@@ -232,11 +264,20 @@ class OtherProfileView extends GetView<OtherProfileController> {
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildStatItem(formatCount(currentProfile.followerCount), "Followers"),
+            _buildStatItem(
+              formatCount(currentProfile.followerCount),
+              "Followers",
+            ),
             _buildStatDivider(),
-            _buildStatItem(formatCount(currentProfile.followingCount), "Following"),
+            _buildStatItem(
+              formatCount(currentProfile.followingCount),
+              "Following",
+            ),
             _buildStatDivider(),
-            _buildStatItem(formatCount(currentProfile.subscriberCount), "Subscribers"),
+            _buildStatItem(
+              formatCount(currentProfile.subscriberCount),
+              "Subscribers",
+            ),
             _buildStatDivider(),
             _buildStatItem(formatCount(currentProfile.yourCoins), "Coins"),
           ],
@@ -259,10 +300,7 @@ class OtherProfileView extends GetView<OtherProfileController> {
         SizedBox(height: 4.h),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 10.sp,
-            color: Colors.grey,
-          ),
+          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
         ),
       ],
     );
@@ -272,7 +310,7 @@ class OtherProfileView extends GetView<OtherProfileController> {
     return Container(
       height: 30.h,
       width: 1,
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
     );
   }
 
@@ -283,22 +321,28 @@ class OtherProfileView extends GetView<OtherProfileController> {
         children: [
           Expanded(
             flex: 2,
-            child: Obx(() => _buildFilledButton(
-              controller.isFollowing.value ? "Following" : "Follow", 
-              onTap: controller.toggleFollow,
-              isLoading: controller.isFollowLoading.value,
-              isFollowing: controller.isFollowing.value,
-            )),
+            child: Obx(
+              () => _buildFilledButton(
+                controller.isFollowing.value ? "Following" : "Follow",
+                onTap: controller.toggleFollow,
+                isLoading: controller.isFollowLoading.value,
+                isFollowing: controller.isFollowing.value,
+              ),
+            ),
           ),
           SizedBox(width: 8.w),
           Expanded(
             flex: 2,
-            child: Obx(() => _buildFilledButton(
-              controller.isSubscribed.value ? "Subscribed" : "Subscribe", 
-              onTap: controller.toggleSubscribe,
-              isLoading: controller.isSubscribeLoading.value,
-              isFollowing: controller.isSubscribed.value, // Using same style as follow button
-            )),
+            child: Obx(
+              () => _buildFilledButton(
+                controller.isSubscribed.value ? "Subscribed" : "Subscribe",
+                onTap: controller.toggleSubscribe,
+                isLoading: controller.isSubscribeLoading.value,
+                isFollowing: controller
+                    .isSubscribed
+                    .value, // Using same style as follow button
+              ),
+            ),
           ),
           SizedBox(width: 8.w),
           GestureDetector(
@@ -318,13 +362,20 @@ class OtherProfileView extends GetView<OtherProfileController> {
     );
   }
 
-  Widget _buildFilledButton(String label, {VoidCallback? onTap, bool isLoading = false, bool isFollowing = false}) {
+  Widget _buildFilledButton(
+    String label, {
+    VoidCallback? onTap,
+    bool isLoading = false,
+    bool isFollowing = false,
+  }) {
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          color: isFollowing ? Colors.grey[400] : const Color(0xFF8B1D1D), // Primary Theme color
+          color: isFollowing
+              ? Colors.grey[400]
+              : const Color(0xFF8B1D1D), // Primary Theme color
           borderRadius: BorderRadius.circular(10.r),
         ),
         child: Center(
@@ -332,7 +383,10 @@ class OtherProfileView extends GetView<OtherProfileController> {
               ? SizedBox(
                   height: 16.sp,
                   width: 16.sp,
-                  child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 )
               : Text(
                   label,
@@ -395,10 +449,12 @@ class OtherProfileView extends GetView<OtherProfileController> {
       if (controller.isContentLoading.value) {
         return SizedBox(
           height: 180.h,
-          child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
         );
       }
-      
+
       if (controller.userVideosList.isEmpty) {
         return SizedBox(
           height: 180.h,
@@ -424,28 +480,61 @@ class OtherProfileView extends GetView<OtherProfileController> {
               child: Container(
                 width: 220.w,
                 margin: EdgeInsets.only(right: 12.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12.r),
-                    child: Container(
-                      color: Colors.grey[300], 
-                      height: 130.h, 
-                      width: 220.w,
-                      child: video.thumbnail != null && video.thumbnail!.isNotEmpty
-                        ? Image(image: CachedNetworkImageProvider(video.thumbnail!), fit: BoxFit.cover, errorBuilder: (c, e, s) => const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40)))
-                        : (video.video != null 
-                            ? VideoThumbnailWidget(videoUrl: video.video!) 
-                            : const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40))),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Container(
+                        color: Colors.grey[300],
+                        height: 130.h,
+                        width: 220.w,
+                        child:
+                            video.thumbnail != null &&
+                                video.thumbnail!.isNotEmpty
+                            ? Image(
+                                image: CachedNetworkImageProvider(
+                                  video.thumbnail!,
+                                ),
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => const Center(
+                                  child: Icon(
+                                    Icons.video_library,
+                                    color: Colors.white54,
+                                    size: 40,
+                                  ),
+                                ),
+                              )
+                            : (video.video != null
+                                  ? VideoThumbnailWidget(videoUrl: video.video!)
+                                  : const Center(
+                                      child: Icon(
+                                        Icons.video_library,
+                                        color: Colors.white54,
+                                        size: 40,
+                                      ),
+                                    )),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(video.title, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text("${formatCount(video.viewsCount)} views • ${video.createdAtAgoTime ?? ''}", style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
-                ],
+                    SizedBox(height: 8.h),
+                    Text(
+                      video.title,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      "${formatCount(video.viewsCount)} views • ${video.createdAtAgoTime ?? ''}",
+                      style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
-            ));
+            );
           },
         ),
       );
@@ -457,10 +546,12 @@ class OtherProfileView extends GetView<OtherProfileController> {
       if (controller.isContentLoading.value) {
         return SizedBox(
           height: 220.h,
-          child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          child: const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
         );
       }
-      
+
       if (controller.userShortsList.isEmpty) {
         return SizedBox(
           height: 220.h,
@@ -482,41 +573,73 @@ class OtherProfileView extends GetView<OtherProfileController> {
           itemBuilder: (context, index) {
             final short = controller.userShortsList[index];
             return GestureDetector(
-              onTap: () => Get.toNamed(Routes.SHORTS_PLAYER, arguments: controller.userShortsList.toList()),
+              onTap: () => Get.toNamed(
+                Routes.SHORTS_PLAYER,
+                arguments: controller.userShortsList.toList(),
+              ),
               child: Container(
                 width: 120.w,
                 margin: EdgeInsets.only(right: 12.w),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12.r),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Container(
-                      color: Colors.grey[300],
-                      child: short.thumbnail != null && short.thumbnail!.isNotEmpty
-                          ? Image(image: CachedNetworkImageProvider(short.thumbnail!), fit: BoxFit.cover, errorBuilder: (c, e, s) => const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40)))
-                          : (short.video != null 
-                              ? VideoThumbnailWidget(videoUrl: short.video!) 
-                              : const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40))),
-                    ),
-                    Positioned(
-                      bottom: 8.h,
-                      left: 8.w,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.play_arrow_outlined, color: Colors.white, size: 16),
-                          SizedBox(width: 2.w),
-                          Text(
-                            formatCount(short.viewsCount),
-                            style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        color: Colors.grey[300],
+                        child:
+                            short.thumbnail != null &&
+                                short.thumbnail!.isNotEmpty
+                            ? Image(
+                                image: CachedNetworkImageProvider(
+                                  short.thumbnail!,
+                                ),
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => const Center(
+                                  child: Icon(
+                                    Icons.video_library,
+                                    color: Colors.white54,
+                                    size: 40,
+                                  ),
+                                ),
+                              )
+                            : (short.video != null
+                                  ? VideoThumbnailWidget(videoUrl: short.video!)
+                                  : const Center(
+                                      child: Icon(
+                                        Icons.video_library,
+                                        color: Colors.white54,
+                                        size: 40,
+                                      ),
+                                    )),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 8.h,
+                        left: 8.w,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.play_arrow_outlined,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 2.w),
+                            Text(
+                              formatCount(short.viewsCount),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ));
+            );
           },
         ),
       );
@@ -587,7 +710,9 @@ class OtherProfileView extends GetView<OtherProfileController> {
     Get.dialog(
       AlertDialog(
         title: const Text("Block User"),
-        content: const Text("Are you sure you want to block this user? You will no longer see their content."),
+        content: const Text(
+          "Are you sure you want to block this user? You will no longer see their content.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
@@ -598,17 +723,28 @@ class OtherProfileView extends GetView<OtherProfileController> {
               Get.back(); // close dialog
               controller.blockUser();
             },
-            child: const Text("Block", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              "Block",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOptionItem({required IconData icon, required String label, required VoidCallback onTap, Color color = Colors.black87}) {
+  Widget _buildOptionItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color color = Colors.black87,
+  }) {
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(label, style: TextStyle(color: color, fontSize: 16.sp)),
+      title: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 16.sp),
+      ),
       onTap: onTap,
     );
   }
@@ -645,7 +781,10 @@ class _VideoThumbnailWidgetState extends State<VideoThumbnailWidget> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+            child: CircularProgressIndicator(
+              color: AppColors.primary,
+              strokeWidth: 2,
+            ),
           );
         } else if (snapshot.hasData && snapshot.data != null) {
           return Image.memory(

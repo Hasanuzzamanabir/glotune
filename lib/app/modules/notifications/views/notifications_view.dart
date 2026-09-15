@@ -19,7 +19,11 @@ class NotificationsView extends GetView<NotificationsController> {
         leading: const BackButton(color: Colors.white),
         title: const Text(
           'Notifications',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -30,7 +34,8 @@ class NotificationsView extends GetView<NotificationsController> {
               } else if (value == 'delete_all') {
                 Get.defaultDialog(
                   title: "Delete All Notifications",
-                  middleText: "Are you sure you want to delete all notifications? This action cannot be undone.",
+                  middleText:
+                      "Are you sure you want to delete all notifications? This action cannot be undone.",
                   textConfirm: "Delete",
                   textCancel: "Cancel",
                   confirmTextColor: Colors.white,
@@ -50,7 +55,10 @@ class NotificationsView extends GetView<NotificationsController> {
                 ),
                 const PopupMenuItem<String>(
                   value: 'delete_all',
-                  child: Text('Delete all notifications', style: TextStyle(color: Colors.red)),
+                  child: Text(
+                    'Delete all notifications',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ),
               ];
             },
@@ -70,18 +78,23 @@ class NotificationsView extends GetView<NotificationsController> {
               ],
             ),
           ),
-          
+
           // Notifications List
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
               }
               if (controller.notifications.isEmpty) {
                 return Center(
                   child: Text(
                     "No notifications found.",
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp),
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14.sp,
+                    ),
                   ),
                 );
               }
@@ -108,7 +121,9 @@ class NotificationsView extends GetView<NotificationsController> {
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primary : Colors.white,
             borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+            ),
           ),
           child: Text(
             label,
@@ -131,19 +146,26 @@ class NotificationsView extends GetView<NotificationsController> {
     final title = notification['title'] as String? ?? 'Notification';
     final message = notification['message'] as String? ?? '';
     final isRead = notification['is_read'] as bool? ?? true;
-    
+
     // Convert created_at string to a readable format if needed (simplified here)
     final createdAt = notification['created_at'] as String? ?? '';
-    final timeStr = createdAt.isNotEmpty && createdAt.length >= 10 ? createdAt.substring(0, 10) : '';
+    final timeStr = createdAt.isNotEmpty && createdAt.length >= 10
+        ? createdAt.substring(0, 10)
+        : '';
 
     return GestureDetector(
       onTap: () => controller.showNotificationDetails(id),
       child: Container(
-        color: isRead ? Colors.transparent : AppColors.primary.withOpacity(0.05),
+        color: isRead
+            ? Colors.transparent
+            : AppColors.primary.withValues(alpha: 0.05),
         child: Column(
           children: [
             ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 8.h,
+              ),
               leading: CircleAvatar(
                 radius: 20.r,
                 backgroundColor: Colors.grey[200],
@@ -179,7 +201,7 @@ class NotificationsView extends GetView<NotificationsController> {
                         timeStr,
                         style: TextStyle(
                           fontSize: 10.sp,
-                          color: AppColors.textSecondary.withOpacity(0.7),
+                          color: AppColors.textSecondary.withValues(alpha: 0.7),
                         ),
                       ),
                       if (!isRead) ...[
@@ -207,7 +229,8 @@ class NotificationsView extends GetView<NotificationsController> {
                   } else if (value == 'delete') {
                     Get.defaultDialog(
                       title: "Delete Notification",
-                      middleText: "Are you sure you want to delete this notification?",
+                      middleText:
+                          "Are you sure you want to delete this notification?",
                       textConfirm: "Delete",
                       textCancel: "Cancel",
                       confirmTextColor: Colors.white,
@@ -232,13 +255,16 @@ class NotificationsView extends GetView<NotificationsController> {
                       ),
                     const PopupMenuItem<String>(
                       value: 'delete',
-                      child: Text('Delete', style: TextStyle(color: Colors.red)),
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ];
                 },
               ),
             ),
-            Divider(height: 1, color: AppColors.border.withOpacity(0.5)),
+            Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
           ],
         ).animate().fadeIn(delay: (index * 50).ms),
       ),

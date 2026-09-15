@@ -40,17 +40,24 @@ class VideoCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[800],
-                image: thumbnailUrl.isNotEmpty 
+                image: thumbnailUrl.isNotEmpty
                     ? DecorationImage(
-                        image: thumbnailUrl.startsWith('http') 
-                            ? CachedNetworkImageProvider(thumbnailUrl) as ImageProvider
+                        image: thumbnailUrl.startsWith('http')
+                            ? CachedNetworkImageProvider(thumbnailUrl)
+                                  as ImageProvider
                             : AssetImage(thumbnailUrl),
                         fit: BoxFit.cover,
                       )
                     : null,
               ),
-              child: thumbnailUrl.isEmpty 
-                  ? Center(child: Icon(Icons.videocam, color: Colors.white54, size: 48.sp))
+              child: thumbnailUrl.isEmpty
+                  ? Center(
+                      child: Icon(
+                        Icons.videocam,
+                        color: Colors.white54,
+                        size: 48.sp,
+                      ),
+                    )
                   : null,
             ),
             Positioned(
@@ -59,12 +66,16 @@ class VideoCard extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.8),
+                  color: Colors.black.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
                   duration,
-                  style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -83,10 +94,11 @@ class VideoCard extends StatelessWidget {
                   backgroundColor: Colors.grey[300],
                   backgroundImage: creatorAvatarUrl.isNotEmpty
                       ? (creatorAvatarUrl.startsWith('http')
-                          ? CachedNetworkImageProvider(creatorAvatarUrl) as ImageProvider
-                          : AssetImage(creatorAvatarUrl) as ImageProvider)
+                            ? CachedNetworkImageProvider(creatorAvatarUrl)
+                                  as ImageProvider
+                            : AssetImage(creatorAvatarUrl) as ImageProvider)
                       : null,
-                  child: creatorAvatarUrl.isEmpty 
+                  child: creatorAvatarUrl.isEmpty
                       ? Icon(Icons.person, color: Colors.white, size: 24.sp)
                       : null,
                 ),

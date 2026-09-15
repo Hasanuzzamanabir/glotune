@@ -42,7 +42,7 @@ class PurchasesView extends GetView<PurchasesController> {
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -105,30 +105,28 @@ class PurchasesView extends GetView<PurchasesController> {
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          color: AppColors.primary,
-          size: 24.sp,
-        ),
+        Icon(icon, color: AppColors.primary, size: 24.sp),
         SizedBox(width: 12.w),
         Expanded(
           child: Text(
             title,
             style: TextStyle(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               fontSize: 15.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        Obx(() => Text(
-              value(),
-              style: TextStyle(
-                color: const Color(0xFF64B5F6), // Light blue value
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            )),
+        Obx(
+          () => Text(
+            value(),
+            style: TextStyle(
+              color: const Color(0xFF64B5F6), // Light blue value
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ],
     );
   }

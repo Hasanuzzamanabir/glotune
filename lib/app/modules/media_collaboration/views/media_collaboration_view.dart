@@ -40,38 +40,82 @@ class MediaCollaborationView extends GetView<MediaCollaborationController> {
             children: [
               Text(
                 "All Collaborations",
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 16.h),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Obx(() {
                   return DataTable(
-                    headingRowColor: WidgetStateProperty.all(Colors.transparent),
+                    headingRowColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
                     dataRowMinHeight: 60.h,
                     dataRowMaxHeight: 60.h,
                     horizontalMargin: 12.w,
                     columnSpacing: 30.w,
                     dividerThickness: 1,
                     border: TableBorder(
-                      top: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      bottom: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      left: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      right: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      horizontalInside: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      top: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      bottom: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      left: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      right: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
+                      horizontalInside: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                      ),
                       verticalInside: BorderSide.none,
                     ),
                     columns: const [
-                      DataColumn(label: Text("Username", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("User Type", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Agreement Type", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Cost", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Start Date", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("End Date", style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text("Status", style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                        label: Text(
+                          "Username",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "User Type",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Agreement Type",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Cost",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Start Date",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "End Date",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          "Status",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ],
                     rows: controller.collaborations.map((collab) {
                       return DataRow(
@@ -99,7 +143,7 @@ class MediaCollaborationView extends GetView<MediaCollaborationController> {
   Widget _buildStatusBadge(String status) {
     Color textColor;
     Color bgColor;
-    
+
     switch (status) {
       case "Active":
         textColor = const Color(0xFF28A745);
@@ -115,7 +159,7 @@ class MediaCollaborationView extends GetView<MediaCollaborationController> {
         break;
       default:
         textColor = Colors.grey;
-        bgColor = Colors.grey.withOpacity(0.2);
+        bgColor = Colors.grey.withValues(alpha: 0.2);
     }
 
     return Container(
@@ -130,10 +174,7 @@ class MediaCollaborationView extends GetView<MediaCollaborationController> {
           Container(
             width: 6.w,
             height: 6.w,
-            decoration: BoxDecoration(
-              color: textColor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: textColor, shape: BoxShape.circle),
           ),
           SizedBox(width: 6.w),
           Text(

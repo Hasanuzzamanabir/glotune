@@ -55,7 +55,7 @@ class CreatorDealsView extends GetView<CreatorDealsController> {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -68,22 +68,66 @@ class CreatorDealsView extends GetView<CreatorDealsController> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(flex: 2, child: Text("Brand/ Sponsor", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp))),
-                Expanded(flex: 2, child: Text("Campaign Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp))),
-                Expanded(flex: 1, child: Text("Deal Value", textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp))),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    "Brand/ Sponsor",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    "Campaign Name",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Deal Value",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
-          _buildTableRow(brand: "BrandX Skincare", campaign: "SkinGlow Launch", value: "\$15,000"),
-          _buildTableRow(brand: "GigaSound", campaign: "Summer Drops", value: "\$9,500"),
-          _buildTableRow(brand: "TouchVibes", campaign: "Mechs", value: "\$150,000"),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+          _buildTableRow(
+            brand: "BrandX Skincare",
+            campaign: "SkinGlow Launch",
+            value: "\$15,000",
+          ),
+          _buildTableRow(
+            brand: "GigaSound",
+            campaign: "Summer Drops",
+            value: "\$9,500",
+          ),
+          _buildTableRow(
+            brand: "TouchVibes",
+            campaign: "Mechs",
+            value: "\$150,000",
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTableRow({required String brand, required String campaign, required String value}) {
+  Widget _buildTableRow({
+    required String brand,
+    required String campaign,
+    required String value,
+  }) {
     return Column(
       children: [
         Padding(
@@ -91,13 +135,32 @@ class CreatorDealsView extends GetView<CreatorDealsController> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(flex: 2, child: Text(brand, style: TextStyle(fontSize: 13.sp, color: Colors.black87))),
-              Expanded(flex: 2, child: Text(campaign, style: TextStyle(fontSize: 13.sp, color: Colors.black87))),
-              Expanded(flex: 1, child: Text(value, textAlign: TextAlign.right, style: TextStyle(fontSize: 13.sp, color: Colors.black87))),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  brand,
+                  style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  campaign,
+                  style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(fontSize: 13.sp, color: Colors.black87),
+                ),
+              ),
             ],
           ),
         ),
-        Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+        Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
       ],
     );
   }

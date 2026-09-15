@@ -62,12 +62,20 @@ class ProfileView extends GetView<ProfileController> {
                           padding: EdgeInsets.only(right: 8.w),
                           child: InkWell(
                             onTap: () => Get.back(),
-                            child: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
+                            child: Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 24.sp,
+                            ),
                           ),
                         ),
                       Text(
                         "Profile",
-                        style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -75,7 +83,11 @@ class ProfileView extends GetView<ProfileController> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () {},
-                    icon: Icon(Icons.playlist_add_check, color: Colors.white, size: 28.sp),
+                    icon: Icon(
+                      Icons.playlist_add_check,
+                      color: Colors.white,
+                      size: 28.sp,
+                    ),
                   ),
                 ],
               ),
@@ -86,12 +98,16 @@ class ProfileView extends GetView<ProfileController> {
           bottom: -50.h,
           child: Container(
             padding: EdgeInsets.all(4.w),
-            decoration: const BoxDecoration(color: Color(0xFF8B1D1D), shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: Color(0xFF8B1D1D),
+              shape: BoxShape.circle,
+            ),
             child: CircleAvatar(
               radius: 50.r,
               backgroundColor: Colors.grey[200],
               backgroundImage: profile.avatarUrl.startsWith('http')
-                  ? CachedNetworkImageProvider(profile.avatarUrl) as ImageProvider
+                  ? CachedNetworkImageProvider(profile.avatarUrl)
+                        as ImageProvider
                   : AssetImage(profile.avatarUrl) as ImageProvider,
             ),
           ),
@@ -108,13 +124,19 @@ class ProfileView extends GetView<ProfileController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(profile.name, style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
+              Text(
+                profile.name,
+                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+              ),
               SizedBox(width: 4.w),
               Icon(Icons.workspace_premium, color: Colors.orange, size: 20.sp),
             ],
           ),
           SizedBox(height: 4.h),
-          Text(profile.handle, style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+          Text(
+            profile.handle,
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+          ),
           SizedBox(height: 8.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -122,9 +144,11 @@ class ProfileView extends GetView<ProfileController> {
               const Icon(Icons.flag, color: Colors.black, size: 16),
               SizedBox(width: 4.w),
               Text(
-                (profile.country != null && profile.city != null) 
-                  ? '${profile.country}, ${profile.city}' 
-                  : (profile.country ?? profile.city ?? 'Location unavailable'),
+                (profile.country != null && profile.city != null)
+                    ? '${profile.country}, ${profile.city}'
+                    : (profile.country ??
+                          profile.city ??
+                          'Location unavailable'),
                 style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
               ),
             ],
@@ -135,8 +159,10 @@ class ProfileView extends GetView<ProfileController> {
   }
 
   String _formatStatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    if (count >= 1000)
+      return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
     return count.toString();
   }
 
@@ -151,7 +177,10 @@ class ProfileView extends GetView<ProfileController> {
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.followingCount), "Following"),
           _buildStatDivider(),
-          _buildStatItem(_formatStatCount(profile.subscribersCount), "Subscribers"),
+          _buildStatItem(
+            _formatStatCount(profile.subscribersCount),
+            "Subscribers",
+          ),
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.videosCount), "Videos"),
         ],
@@ -162,15 +191,25 @@ class ProfileView extends GetView<ProfileController> {
   Widget _buildStatItem(String value, String label) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+        ),
         SizedBox(height: 4.h),
-        Text(label, style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+        ),
       ],
     );
   }
 
   Widget _buildStatDivider() {
-    return Container(height: 30.h, width: 1, color: Colors.grey.withOpacity(0.2));
+    return Container(
+      height: 30.h,
+      width: 1,
+      color: Colors.grey.withValues(alpha: 0.2),
+    );
   }
 
   Widget _buildPrimaryActions() {
@@ -178,9 +217,15 @@ class ProfileView extends GetView<ProfileController> {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
         children: [
-          _buildActionButton("Engagement history", onTap: () => Get.toNamed(Routes.ENGAGEMENT_HISTORY)),
+          _buildActionButton(
+            "Engagement history",
+            onTap: () => Get.toNamed(Routes.ENGAGEMENT_HISTORY),
+          ),
           SizedBox(width: 12.w),
-          _buildActionButton("View as public", onTap: () => Get.toNamed(Routes.PUBLIC_PROFILE)),
+          _buildActionButton(
+            "View as public",
+            onTap: () => Get.toNamed(Routes.PUBLIC_PROFILE),
+          ),
         ],
       ),
     );
@@ -200,7 +245,11 @@ class ProfileView extends GetView<ProfileController> {
           child: Center(
             child: Text(
               label,
-              style: TextStyle(color: const Color(0xFF8B1D1D), fontWeight: FontWeight.bold, fontSize: 13.sp),
+              style: TextStyle(
+                color: const Color(0xFF8B1D1D),
+                fontWeight: FontWeight.bold,
+                fontSize: 13.sp,
+              ),
             ),
           ),
         ),
@@ -213,15 +262,20 @@ class ProfileView extends GetView<ProfileController> {
       padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Text(title, style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold)),
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
 
   Widget _buildVideosCarousel() {
     String formatCount(int count) {
-      if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-      if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+      if (count >= 1000000)
+        return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+      if (count >= 1000)
+        return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
       return count.toString();
     }
 
@@ -231,7 +285,7 @@ class ProfileView extends GetView<ProfileController> {
         child: const Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     if (controller.ownVideosList.isEmpty) {
       return SizedBox(
         height: 180.h,
@@ -257,30 +311,55 @@ class ProfileView extends GetView<ProfileController> {
             child: Container(
               width: 220.w,
               margin: EdgeInsets.only(right: 12.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12.r),
-                  child: Container(
-                    color: Colors.grey[800], 
-                    height: 130.h, 
-                    width: 220.w,
-                    child: video.thumbnail != null
-                      ? Image.network(
-                          video.thumbnail!, 
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40)),
-                        )
-                      : const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Container(
+                      color: Colors.grey[800],
+                      height: 130.h,
+                      width: 220.w,
+                      child: video.thumbnail != null
+                          ? Image.network(
+                              video.thumbnail!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                    child: Icon(
+                                      Icons.video_library,
+                                      color: Colors.white54,
+                                      size: 40,
+                                    ),
+                                  ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.video_library,
+                                color: Colors.white54,
+                                size: 40,
+                              ),
+                            ),
+                    ),
                   ),
-                ),
-                SizedBox(height: 8.h),
-                Text(video.title, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text("${formatCount(video.viewsCount)} views • ${video.createdAtAgoTime ?? ''}", style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
-              ],
+                  SizedBox(height: 8.h),
+                  Text(
+                    video.title,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    "${formatCount(video.viewsCount)} views • ${video.createdAtAgoTime ?? ''}",
+                    style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ));
+          );
         },
       ),
     );
@@ -288,8 +367,10 @@ class ProfileView extends GetView<ProfileController> {
 
   Widget _buildShortsCarousel() {
     String formatCount(int count) {
-      if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-      if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+      if (count >= 1000000)
+        return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+      if (count >= 1000)
+        return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
       return count.toString();
     }
 
@@ -299,7 +380,7 @@ class ProfileView extends GetView<ProfileController> {
         child: const Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     if (controller.ownShortsList.isEmpty) {
       return SizedBox(
         height: 220.h,
@@ -321,46 +402,71 @@ class ProfileView extends GetView<ProfileController> {
         itemBuilder: (context, index) {
           final short = controller.ownShortsList[index];
           return GestureDetector(
-            onTap: () => Get.toNamed(Routes.SHORTS_PLAYER, arguments: {
-              'shortsList': controller.ownShortsList,
-              'initialIndex': index,
-            }),
+            onTap: () => Get.toNamed(
+              Routes.SHORTS_PLAYER,
+              arguments: {
+                'shortsList': controller.ownShortsList,
+                'initialIndex': index,
+              },
+            ),
             child: Container(
               width: 120.w,
               margin: EdgeInsets.only(right: 12.w),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    color: Colors.grey[800],
-                    child: short.thumbnail != null 
-                        ? Image.network(
-                            short.thumbnail!, 
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40)),
-                          )
-                        : const Center(child: Icon(Icons.video_library, color: Colors.white54, size: 40)),
-                  ),
-                  Positioned(
-                    bottom: 8.h,
-                    left: 8.w,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.play_arrow_outlined, color: Colors.white, size: 16),
-                        SizedBox(width: 2.w),
-                        Text(
-                          formatCount(short.viewsCount),
-                          style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12.r),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      color: Colors.grey[800],
+                      child: short.thumbnail != null
+                          ? Image.network(
+                              short.thumbnail!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                    child: Icon(
+                                      Icons.video_library,
+                                      color: Colors.white54,
+                                      size: 40,
+                                    ),
+                                  ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.video_library,
+                                color: Colors.white54,
+                                size: 40,
+                              ),
+                            ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      bottom: 8.h,
+                      left: 8.w,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.play_arrow_outlined,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 2.w),
+                          Text(
+                            formatCount(short.viewsCount),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ));
+          );
         },
       ),
     );
@@ -373,7 +479,7 @@ class ProfileView extends GetView<ProfileController> {
         child: const Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     if (controller.favoritesList.isEmpty) {
       return SizedBox(
         height: 180.h,
@@ -404,15 +510,32 @@ class ProfileView extends GetView<ProfileController> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12.r),
                   child: Container(
-                    color: Colors.grey[800], 
-                    height: 130.h, 
+                    color: Colors.grey[800],
+                    height: 130.h,
                     width: 220.w,
-                    child: const Center(child: Icon(Icons.favorite, color: Colors.white54, size: 40)),
+                    child: const Center(
+                      child: Icon(
+                        Icons.favorite,
+                        color: Colors.white54,
+                        size: 40,
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(height: 8.h),
-                Text("Content #${fav.contentId}", style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text("Favorited by User #${fav.user}", style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                Text(
+                  "Content #${fav.contentId}",
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  "Favorited by User #${fav.user}",
+                  style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                ),
               ],
             ),
           );

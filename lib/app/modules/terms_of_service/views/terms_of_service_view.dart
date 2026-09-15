@@ -46,10 +46,7 @@ class TermsOfServiceView extends GetView<TermsOfServiceController> {
               SizedBox(height: 8.h),
               Text(
                 'Last updated: July 2026',
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 13.sp, color: Colors.grey[600]),
               ),
               SizedBox(height: 24.h),
               _buildSection(
@@ -104,7 +101,7 @@ class TermsOfServiceView extends GetView<TermsOfServiceController> {
             style: TextStyle(
               fontSize: 14.sp,
               height: 1.5,
-              color: Colors.black87.withOpacity(0.8),
+              color: Colors.black87.withValues(alpha: 0.8),
             ),
           ),
         ],

@@ -11,8 +11,10 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
   const TalentManagerProfileView({super.key});
 
   String _formatStatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    if (count >= 1000)
+      return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
     return count.toString();
   }
 
@@ -34,44 +36,44 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
               _buildUserInfo(profile),
               _buildStatsDashboard(profile),
               _buildVerificationBanner(),
-            _buildListTile(
-              icon: Icons.campaign,
-              title: "Manage Creators",
-              subtitle: "View all past videos watched",
-              onTap: () => Get.toNamed('/manage-creators'),
-            ),
-            // My Creators has been merged with Manage Creators
-            _buildDivider(),
-            _buildListTile(
-              icon: Icons.receipt_long,
-              title: "Sponsorship center",
-              subtitle: "View all past videos watched",
-              onTap: () => Get.toNamed(Routes.SPONSORSHIP_CENTER),
-            ),
-            _buildDivider(),
-            _buildListTile(
-              icon: Icons.receipt_long,
-              title: "Deals management",
-              subtitle: "View all past videos watched",
-              onTap: () => Get.toNamed(Routes.DEALS_MANAGEMENT),
-            ),
-            _buildDivider(),
-            _buildListTile(
-              icon: Icons.business_center,
-              title: "Scouting tools information",
-              subtitle: "View all past videos watched",
-              onTap: () => Get.toNamed(Routes.SCOUTING_TOOLS),
-            ),
-            _buildDivider(),
-            _buildToggleTile(
-              icon: Icons.receipt_long,
-              title: "Open invite for creators",
-              subtitle: "Allow creators send an invite",
-            ),
-            SizedBox(height: 30.h),
-          ],
-        ),
-      );
+              _buildListTile(
+                icon: Icons.campaign,
+                title: "Manage Creators",
+                subtitle: "View all past videos watched",
+                onTap: () => Get.toNamed('/manage-creators'),
+              ),
+              // My Creators has been merged with Manage Creators
+              _buildDivider(),
+              _buildListTile(
+                icon: Icons.receipt_long,
+                title: "Sponsorship center",
+                subtitle: "View all past videos watched",
+                onTap: () => Get.toNamed(Routes.SPONSORSHIP_CENTER),
+              ),
+              _buildDivider(),
+              _buildListTile(
+                icon: Icons.receipt_long,
+                title: "Deals management",
+                subtitle: "View all past videos watched",
+                onTap: () => Get.toNamed(Routes.DEALS_MANAGEMENT),
+              ),
+              _buildDivider(),
+              _buildListTile(
+                icon: Icons.business_center,
+                title: "Scouting tools information",
+                subtitle: "View all past videos watched",
+                onTap: () => Get.toNamed(Routes.SCOUTING_TOOLS),
+              ),
+              _buildDivider(),
+              _buildToggleTile(
+                icon: Icons.receipt_long,
+                title: "Open invite for creators",
+                subtitle: "Allow creators send an invite",
+              ),
+              SizedBox(height: 30.h),
+            ],
+          ),
+        );
       }),
     );
   }
@@ -86,12 +88,14 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
           width: double.infinity,
           decoration: BoxDecoration(
             image: const DecorationImage(
-              image: CachedNetworkImageProvider('https://picsum.photos/800/400?random=111'),
+              image: CachedNetworkImageProvider(
+                'https://picsum.photos/800/400?random=111',
+              ),
               fit: BoxFit.cover,
             ),
           ),
           child: Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -121,11 +125,17 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
             children: [
               GestureDetector(
                 onTap: () {
-                  Share.share('Check out this talent manager profile on Glotune!');
+                  Share.share(
+                    'Check out this talent manager profile on Glotune!',
+                  );
                 },
                 child: Row(
                   children: [
-                    Icon(Icons.share_outlined, color: Colors.white, size: 20.sp),
+                    Icon(
+                      Icons.share_outlined,
+                      color: Colors.white,
+                      size: 20.sp,
+                    ),
                     SizedBox(width: 4.w),
                     Text(
                       "Share Profile",
@@ -142,7 +152,11 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
                 onTap: () => Get.toNamed(Routes.SETTINGS),
                 child: Row(
                   children: [
-                    Icon(Icons.settings_outlined, color: Colors.white, size: 20.sp),
+                    Icon(
+                      Icons.settings_outlined,
+                      color: Colors.white,
+                      size: 20.sp,
+                    ),
                     SizedBox(width: 4.w),
                     Text(
                       "Settings",
@@ -170,7 +184,8 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
               radius: 50.r,
               backgroundColor: Colors.grey[200],
               backgroundImage: profile.avatarUrl.startsWith('http')
-                  ? CachedNetworkImageProvider(profile.avatarUrl) as ImageProvider
+                  ? CachedNetworkImageProvider(profile.avatarUrl)
+                        as ImageProvider
                   : AssetImage(profile.avatarUrl) as ImageProvider,
             ),
           ),
@@ -187,13 +202,19 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(profile.name, style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold)),
+              Text(
+                profile.name,
+                style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
+              ),
               SizedBox(width: 4.w),
               Icon(Icons.business_center, color: Colors.green, size: 20.sp),
             ],
           ),
           SizedBox(height: 4.h),
-          Text(profile.handle, style: TextStyle(fontSize: 14.sp, color: Colors.grey)),
+          Text(
+            profile.handle,
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+          ),
           SizedBox(height: 8.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -201,10 +222,16 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
               if (profile.country != null) ...[
                 Icon(Icons.location_on, size: 16.sp, color: Colors.grey[600]),
                 SizedBox(width: 4.w),
-                Text("${profile.country}${profile.city != null ? ', ${profile.city}' : ''}", style: TextStyle(fontSize: 14.sp, color: Colors.grey[600])),
+                Text(
+                  "${profile.country}${profile.city != null ? ', ${profile.city}' : ''}",
+                  style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                ),
               ] else ...[
-                Text("Global", style: TextStyle(fontSize: 14.sp, color: Colors.grey[600])),
-              ]
+                Text(
+                  "Global",
+                  style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+                ),
+              ],
             ],
           ),
         ],
@@ -227,7 +254,10 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.followingCount), "Following"),
           _buildStatDivider(),
-          _buildStatItem(_formatStatCount(profile.subscribersCount), "Subscribers"),
+          _buildStatItem(
+            _formatStatCount(profile.subscribersCount),
+            "Subscribers",
+          ),
           _buildStatDivider(),
           _buildStatItem(_formatStatCount(profile.videosCount), "Videos"),
         ],
@@ -238,15 +268,25 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
   Widget _buildStatItem(String value, String label) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+        ),
         SizedBox(height: 4.h),
-        Text(label, style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+        ),
       ],
     );
   }
 
   Widget _buildStatDivider() {
-    return Container(height: 30.h, width: 1, color: Colors.grey.withOpacity(0.2));
+    return Container(
+      height: 30.h,
+      width: 1,
+      color: Colors.grey.withValues(alpha: 0.2),
+    );
   }
 
   Widget _buildVerificationBanner() {
@@ -265,50 +305,59 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
         onTap: () => Get.toNamed(Routes.MANAGER_VERIFICATION),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Complete Your Verification",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
-                ),
-              ),
-              SizedBox(height: 4.h),
-              Row(
-                children: [
-                  Text(
-                    "Verify",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Complete Your Verification",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
                   ),
-                  SizedBox(width: 4.w),
-                  Icon(Icons.arrow_forward, color: Colors.white, size: 16.sp),
-                ],
-              ),
-            ],
-          ),
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(16.r),
+                ),
+                SizedBox(height: 4.h),
+                Row(
+                  children: [
+                    Text(
+                      "Verify",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    Icon(Icons.arrow_forward, color: Colors.white, size: 16.sp),
+                  ],
+                ),
+              ],
             ),
-            child: Icon(Icons.fact_check, color: const Color(0xFF6A8EAE), size: 30.sp),
-          ),
-        ],
-      ),
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Icon(
+                Icons.fact_check,
+                color: const Color(0xFF6A8EAE),
+                size: 30.sp,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildListTile({required IconData icon, required String title, required String subtitle, VoidCallback? onTap}) {
+  Widget _buildListTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       leading: Container(
         padding: EdgeInsets.all(8.w),
@@ -318,39 +367,62 @@ class TalentManagerProfileView extends GetView<TalentManagerProfileController> {
         ),
         child: Icon(icon, color: const Color(0xFF8B1D1D), size: 20.sp),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
+      title: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+      ),
       trailing: Icon(Icons.chevron_right, color: Colors.black, size: 20.sp),
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       onTap: onTap ?? () {},
     );
   }
 
-  Widget _buildToggleTile({required IconData icon, required String title, required String subtitle}) {
-    return Obx(() => ListTile(
-      leading: Container(
-        padding: EdgeInsets.all(8.w),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
-          shape: BoxShape.circle,
+  Widget _buildToggleTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Obx(
+      () => ListTile(
+        leading: Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F8F8),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: const Color(0xFF8B1D1D), size: 20.sp),
         ),
-        child: Icon(icon, color: const Color(0xFF8B1D1D), size: 20.sp),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: Colors.grey, fontSize: 12.sp),
+        ),
+        trailing: Switch(
+          value: controller.openInviteForCreators.value,
+          activeThumbColor: Colors.white,
+          activeTrackColor: const Color(0xFF8B1D1D),
+          inactiveThumbColor: Colors.white,
+          inactiveTrackColor: Colors.grey[300],
+          onChanged: controller.toggleOpenInvite,
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       ),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey, fontSize: 12.sp)),
-      trailing: Switch(
-        value: controller.openInviteForCreators.value,
-        activeThumbColor: Colors.white,
-        activeTrackColor: const Color(0xFF8B1D1D),
-        inactiveThumbColor: Colors.white,
-        inactiveTrackColor: Colors.grey[300],
-        onChanged: controller.toggleOpenInvite,
-      ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-    ));
+    );
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, color: Colors.grey.withOpacity(0.1), indent: 70.w);
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.grey.withValues(alpha: 0.1),
+      indent: 70.w,
+    );
   }
 }

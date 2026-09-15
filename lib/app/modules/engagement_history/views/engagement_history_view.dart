@@ -15,7 +15,11 @@ class EngagementHistoryView extends GetView<EngagementHistoryController> {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
@@ -91,18 +95,18 @@ class HistoryMenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 8.0,
+      ),
       onTap: onTap,
       leading: Container(
         padding: const EdgeInsets.all(10.0),
         decoration: BoxDecoration(
-          color: const Color(0xFF800000).withOpacity(0.1),
+          color: const Color(0xFF800000).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: const Color(0xFF800000),
-        ),
+        child: Icon(icon, color: const Color(0xFF800000)),
       ),
       title: Text(
         title,
@@ -116,16 +120,10 @@ class HistoryMenuTile extends StatelessWidget {
         padding: const EdgeInsets.only(top: 4.0),
         child: Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 13, color: Colors.grey),
         ),
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: Colors.grey,
-      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
     );
   }
 }

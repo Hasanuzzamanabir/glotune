@@ -17,26 +17,26 @@ import 'package:glotune/app/data/models/user_profile.dart';
 class CreateController extends GetxController {
   final selectedTab = "Videos".obs;
   final tabs = ["Posts", "Shorts", "Videos", "Live"];
-  
+
   CameraController? cameraController;
   final isCameraInitialized = false.obs;
-  
+
   final isFlashOn = false.obs;
   final isFrontCamera = true.obs;
   final isRecording = false.obs;
   final isRecordingPaused = false.obs;
   final recordedSeconds = 0.obs;
   Timer? _recordingTimer;
-  
+
   // Media selection
   final ImagePicker _picker = ImagePicker();
   final selectedMediaPath = "".obs;
   final selectedThumbnailPath = "".obs;
-  
+
   // Post/Content Metadata
   final postTitle = "".obs;
   final postCaption = "".obs;
-  final postCategory = Rxn<int>(); 
+  final postCategory = Rxn<int>();
   final isPosting = false.obs;
 
   final categoriesList = <CategoryModel>[].obs;
@@ -44,11 +44,11 @@ class CreateController extends GetxController {
 
   final videoTitle = "".obs;
   final videoDescription = "".obs;
-  
+
   // Live Stream Settings
   final liveTitle = "".obs;
   final liveTitleController = TextEditingController();
-  
+
   // Agora Broadcaster State
   final String appId = ApiConstants.agoraAppId;
   RtcEngine? liveEngine;
@@ -69,7 +69,7 @@ class CreateController extends GetxController {
   final audioSettings = "Stereo".obs;
   final allowComments = true.obs;
   final selectedLayout = "Panel".obs;
-  
+
   void toggleStreamPrivacy() {
     if (streamPrivacy.value == "Public") {
       streamPrivacy.value = "Followers Only";
@@ -83,12 +83,14 @@ class CreateController extends GetxController {
       updateLiveRoom({'availability': streamPrivacy.value.toLowerCase()});
     }
   }
-  
+
   void toggleLatencyMode() {
-    latencyMode.value = latencyMode.value == "Normal" ? "Low Latency" : "Normal";
+    latencyMode.value = latencyMode.value == "Normal"
+        ? "Low Latency"
+        : "Normal";
     print("[DEBUG LIVE] Latency mode toggled to: ${latencyMode.value}");
   }
-  
+
   void toggleAudioSettings() {
     audioSettings.value = audioSettings.value == "Stereo" ? "Mono" : "Stereo";
     print("[DEBUG LIVE] Audio settings toggled to: ${audioSettings.value}");
@@ -101,11 +103,12 @@ class CreateController extends GetxController {
       updateLiveRoom({'allow_comments': val});
     }
   }
-// Live Game Sub-menu & Selection State
+
+  // Live Game Sub-menu & Selection State
   final showGameOptions = false.obs;
   final selectedGameType = "Box battle".obs;
   final selectedLiveAction = "".obs;
-  
+
   final gameOptionsList = [
     "Box battle",
     "1v1",
@@ -135,25 +138,26 @@ class CreateController extends GetxController {
   void clearLiveAction() {
     selectedLiveAction.value = "";
   }
-  
+
   // Live Guests & Battles
   final allowGuests = true.obs;
   final guestLayout = "Grid".obs;
   final isSearchingBattle = false.obs;
-  
+
   // Live Background
   final selectedLiveBackground = (-1).obs;
-  
+
   // Live Detailed Settings
   final guestCount = 3.obs;
   final timeLimit = "45 mins".obs;
   final showLayout = true.obs;
   final saveEveryday = true.obs;
   final isMuteViewers = false.obs;
-  
+
   // Navigation within Create
-  final currentStep = "Camera".obs; // Camera, EditPost, UploadVideo, LiveStream, ModeratorManage, MuteViewers, FilterComments
-  
+  final currentStep = "Camera"
+      .obs; // Camera, EditPost, UploadVideo, LiveStream, ModeratorManage, MuteViewers, FilterComments
+
   // Moderation - dynamic list of moderators
   final moderators = <Map<String, dynamic>>[].obs;
 
@@ -174,19 +178,26 @@ class CreateController extends GetxController {
   }
 
   Future<void> toggleModerator(dynamic member, bool makeModerator) async {
-    final user = member is Map && member['user'] is Map ? member['user'] : (member is Map ? member : {});
+    final user = member is Map && member['user'] is Map
+        ? member['user']
+        : (member is Map ? member : {});
     final userId = user['id'] ?? (member is Map ? member['id'] : null);
-    final name = user['full_name'] ?? user['username'] ?? user['name'] ?? 'User';
+    final name =
+        user['full_name'] ?? user['username'] ?? user['name'] ?? 'User';
     final handle = user['username'] != null ? '@${user['username']}' : '';
     final avatar = user['profile_picture'] ?? user['avatar'];
 
-    print("[DEBUG LIVE] toggleModerator: userId=$userId, name=$name, makeModerator=$makeModerator");
+    print(
+      "[DEBUG LIVE] toggleModerator: userId=$userId, name=$name, makeModerator=$makeModerator",
+    );
 
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
       if (liveRoomId.value.isNotEmpty && userId != null) {
-        final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/moderators/');
+        final url = Uri.parse(
+          '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/moderators/',
+        );
         if (makeModerator) {
           final res = await apiClient.post(
             url,
@@ -196,15 +207,19 @@ class CreateController extends GetxController {
             },
             body: jsonEncode({'user_id': userId}),
           );
-          print("[DEBUG LIVE] Add moderator API [${res.statusCode}]: ${res.body}");
+          print(
+            "[DEBUG LIVE] Add moderator API [${res.statusCode}]: ${res.body}",
+          );
         } else {
           final res = await apiClient.delete(
-            Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/moderators/$userId/'),
-            headers: {
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
+            Uri.parse(
+              '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/moderators/$userId/',
+            ),
+            headers: {if (token != null) 'Authorization': 'Bearer $token'},
           );
-          print("[DEBUG LIVE] Remove moderator API [${res.statusCode}]: ${res.body}");
+          print(
+            "[DEBUG LIVE] Remove moderator API [${res.statusCode}]: ${res.body}",
+          );
         }
       }
     } catch (e) {
@@ -212,7 +227,9 @@ class CreateController extends GetxController {
     }
 
     if (makeModerator) {
-      if (!moderators.any((m) => (m['id'] != null && m['id'] == userId) || m['name'] == name)) {
+      if (!moderators.any(
+        (m) => (m['id'] != null && m['id'] == userId) || m['name'] == name,
+      )) {
         moderators.add({
           'id': userId,
           'name': name,
@@ -221,10 +238,24 @@ class CreateController extends GetxController {
           'role': 'Moderator',
         });
       }
-      Get.snackbar("Moderator", "$name is now a moderator", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black);
+      Get.snackbar(
+        "Moderator",
+        "$name is now a moderator",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
     } else {
-      moderators.removeWhere((m) => (m['id'] != null && m['id'] == userId) || m['name'] == name);
-      Get.snackbar("Moderator", "$name removed from moderators", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black);
+      moderators.removeWhere(
+        (m) => (m['id'] != null && m['id'] == userId) || m['name'] == name,
+      );
+      Get.snackbar(
+        "Moderator",
+        "$name removed from moderators",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
     }
   }
 
@@ -236,13 +267,17 @@ class CreateController extends GetxController {
       pickMediaFromGallery();
     }
   }
-  
+
   Future<void> initCamera() async {
     if (isCameraInitialized.value) return;
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        Get.snackbar("Camera Not Found", "No cameras are available. Are you running on a simulator?", snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          "Camera Not Found",
+          "No cameras are available. Are you running on a simulator?",
+          snackPosition: SnackPosition.BOTTOM,
+        );
         return;
       }
 
@@ -303,7 +338,9 @@ class CreateController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final results = data['results'] as List;
-        categoriesList.value = results.map((e) => CategoryModel.fromJson(e)).toList();
+        categoriesList.value = results
+            .map((e) => CategoryModel.fromJson(e))
+            .toList();
         if (categoriesList.isNotEmpty) {
           postCategory.value = categoriesList.first.id;
         }
@@ -321,7 +358,7 @@ class CreateController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
+
       final response = await apiClient.post(
         Uri.parse('${ApiConstants.baseUrl}category/create/'),
         headers: {
@@ -352,7 +389,7 @@ class CreateController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
+
       final response = await apiClient.patch(
         Uri.parse('${ApiConstants.baseUrl}category/$id/'),
         headers: {
@@ -378,18 +415,23 @@ class CreateController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
-      var request = http.Request('DELETE', Uri.parse('${ApiConstants.baseUrl}category/$id/'));
+
+      var request = http.Request(
+        'DELETE',
+        Uri.parse('${ApiConstants.baseUrl}category/$id/'),
+      );
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      
+
       final response = await apiClient.send(request);
 
       if (response.statusCode == 204 || response.statusCode == 200) {
         await fetchCategories();
         if (postCategory.value == id) {
-          postCategory.value = categoriesList.isNotEmpty ? categoriesList.first.id : null;
+          postCategory.value = categoriesList.isNotEmpty
+              ? categoriesList.first.id
+              : null;
         }
         Get.snackbar("Success", "Category deleted!");
       } else {
@@ -418,7 +460,7 @@ class CreateController extends GetxController {
 
   void toggleFlash() async {
     if (!isCameraInitialized.value || cameraController == null) return;
-    
+
     isFlashOn.value = !isFlashOn.value;
     try {
       if (isFlashOn.value) {
@@ -437,8 +479,10 @@ class CreateController extends GetxController {
 
     try {
       final cameras = await availableCameras();
-      final targetLens = isFrontCamera.value ? CameraLensDirection.front : CameraLensDirection.back;
-      
+      final targetLens = isFrontCamera.value
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+
       final camera = cameras.firstWhere(
         (c) => c.lensDirection == targetLens,
         orElse: () => cameras.first,
@@ -450,10 +494,10 @@ class CreateController extends GetxController {
         ResolutionPreset.high,
         enableAudio: true,
       );
-      
+
       await oldController?.dispose();
       await cameraController!.initialize();
-      
+
       // Trigger UI rebuild
       isCameraInitialized.value = false;
       isCameraInitialized.value = true;
@@ -508,14 +552,14 @@ class CreateController extends GetxController {
         }
       }
     } else {
-       // Take a picture
-       try {
-         final XFile image = await cameraController!.takePicture();
-         selectedMediaPath.value = image.path;
-         navigateTo("EditPost");
-       } catch (e) {
-         print("Error taking picture: $e");
-       }
+      // Take a picture
+      try {
+        final XFile image = await cameraController!.takePicture();
+        selectedMediaPath.value = image.path;
+        navigateTo("EditPost");
+      } catch (e) {
+        print("Error taking picture: $e");
+      }
     }
   }
 
@@ -559,64 +603,79 @@ class CreateController extends GetxController {
     String contentType = 'post';
     if (selectedTab.value == "Videos") {
       contentType = 'video';
-    } else if (selectedTab.value == "Shorts") contentType = 'shorts';
-    else if (selectedTab.value == "Live") contentType = 'live_stream';
+    } else if (selectedTab.value == "Shorts")
+      contentType = 'shorts';
+    else if (selectedTab.value == "Live")
+      contentType = 'live_stream';
 
-    String titleToUse = contentType == 'post' ? postTitle.value : videoTitle.value;
-    String descToUse = contentType == 'post' ? postCaption.value : videoDescription.value;
+    String titleToUse = contentType == 'post'
+        ? postTitle.value
+        : videoTitle.value;
+    String descToUse = contentType == 'post'
+        ? postCaption.value
+        : videoDescription.value;
 
     if (titleToUse.isEmpty || descToUse.isEmpty) {
       Get.snackbar("Error", "Title and description are required.");
       return;
     }
-    
+
     isPosting.value = true;
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
+
       final url = Uri.parse('${ApiConstants.baseUrl}content/create/');
       var request = http.MultipartRequest('POST', url);
-      
+
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
-      
+
       // Add text fields
       request.fields['title'] = titleToUse;
       request.fields['description'] = descToUse;
       if (postCategory.value != null) {
         request.fields['category'] = postCategory.value.toString();
       }
-      
+
       request.fields['content_type'] = contentType;
-      
+
       // Attach media if selected
       if (selectedMediaPath.value.isNotEmpty) {
         final fieldName = contentType == 'post' ? 'thumbnail' : 'video';
-        request.files.add(await http.MultipartFile.fromPath(fieldName, selectedMediaPath.value));
+        request.files.add(
+          await http.MultipartFile.fromPath(fieldName, selectedMediaPath.value),
+        );
       }
 
       // Attach explicitly selected thumbnail if uploading a video/shorts/live
       if (selectedThumbnailPath.value.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('thumbnail', selectedThumbnailPath.value));
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'thumbnail',
+            selectedThumbnailPath.value,
+          ),
+        );
       }
-      
+
       print("========== API REQUEST ==========");
       print("URL: \$url");
       print("Headers: \${request.headers}");
       print("Fields: \${request.fields}");
-      print("Files: \${request.files.map((f) => '\${f.field}: \${f.filename}').toList()}");
+      print(
+        "Files: \${request.files.map((f) => '\${f.field}: \${f.filename}').toList()}",
+      );
       print("=================================");
 
       final response = await apiClient.send(request);
       final respStr = await response.stream.bytesToString();
-      
+
       print("========== API RESPONSE =========");
       print("Status Code: \${response.statusCode}");
       print("Body: \$respStr");
       print("=================================");
-      
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         Get.snackbar("Success", "Content posted successfully!");
         postTitle.value = "";
@@ -640,10 +699,11 @@ class CreateController extends GetxController {
   Future<void> startLiveRoom() async {
     if (isPosting.value) return;
 
-    final enteredTitle = (liveTitleController.text.isNotEmpty
-            ? liveTitleController.text
-            : liveTitle.value)
-        .trim();
+    final enteredTitle =
+        (liveTitleController.text.isNotEmpty
+                ? liveTitleController.text
+                : liveTitle.value)
+            .trim();
     final streamTitle = enteredTitle.isEmpty ? "Live Stream" : enteredTitle;
 
     final authService = Get.find<AuthService>();
@@ -671,7 +731,9 @@ class CreateController extends GetxController {
       print("[DEBUG LIVE] ================= START LIVE ROOM =================");
       print("[DEBUG LIVE] URL: $url");
       print("[DEBUG LIVE] Title: $streamTitle");
-      print("[DEBUG LIVE] Host Profile: ${userProfile.value?.fullName} (${userProfile.value?.email})");
+      print(
+        "[DEBUG LIVE] Host Profile: ${userProfile.value?.fullName} (${userProfile.value?.email})",
+      );
 
       final response = await apiClient.post(
         url,
@@ -679,9 +741,7 @@ class CreateController extends GetxController {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          "title": streamTitle,
-        }),
+        body: jsonEncode({"title": streamTitle}),
       );
 
       print("[DEBUG LIVE] Create Room Status: ${response.statusCode}");
@@ -696,12 +756,15 @@ class CreateController extends GetxController {
         liveRoomId.value =
             data['room_id']?.toString() ?? data['id']?.toString() ?? '';
 
-        print("[DEBUG LIVE] Room created successfully! Room UUID: ${liveRoomId.value}");
+        print(
+          "[DEBUG LIVE] Room created successfully! Room UUID: ${liveRoomId.value}",
+        );
 
         // Start the stream on backend (supports PUT or PATCH /live/rooms/{room_id}/start/)
         try {
           final startUrl = Uri.parse(
-              '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/start/');
+            '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/start/',
+          );
           print("[DEBUG LIVE] Calling start stream endpoint: $startUrl");
           final startRes = await apiClient.put(
             startUrl,
@@ -711,7 +774,9 @@ class CreateController extends GetxController {
             },
             body: jsonEncode({"status": "live"}),
           );
-          print("[DEBUG LIVE] PUT /start/ response: ${startRes.statusCode} - ${startRes.body}");
+          print(
+            "[DEBUG LIVE] PUT /start/ response: ${startRes.statusCode} - ${startRes.body}",
+          );
           if (startRes.statusCode != 200 && startRes.statusCode != 204) {
             final patchRes = await apiClient.patch(
               startUrl,
@@ -721,7 +786,9 @@ class CreateController extends GetxController {
               },
               body: jsonEncode({"status": "live"}),
             );
-            print("[DEBUG LIVE] PATCH /start/ response: ${patchRes.statusCode} - ${patchRes.body}");
+            print(
+              "[DEBUG LIVE] PATCH /start/ response: ${patchRes.statusCode} - ${patchRes.body}",
+            );
           }
         } catch (e) {
           print("[DEBUG LIVE] Start endpoint warning: $e");
@@ -730,42 +797,51 @@ class CreateController extends GetxController {
         // Extract Agora token and credentials from room response
         String? agoraToken =
             data['agora_token']?.toString() ?? data['token']?.toString();
-        String? agoraAppId = data['agora_app_id']?.toString() ??
+        String? agoraAppId =
+            data['agora_app_id']?.toString() ??
             data['app_id']?.toString() ??
             data['appId']?.toString();
-        int uid = (data['host'] is int
+        int uid =
+            (data['host'] is int
                 ? data['host'] as int
                 : int.tryParse(data['host']?.toString() ?? '')) ??
             0;
 
-        print("[DEBUG LIVE] Initial Agora Token: ${agoraToken != null ? (agoraToken.length > 25 ? agoraToken.substring(0, 25) + '...' : agoraToken) : 'none'}");
+        print(
+          "[DEBUG LIVE] Initial Agora Token: ${agoraToken != null ? (agoraToken.length > 25 ? '${agoraToken.substring(0, 25)}...' : agoraToken) : 'none'}",
+        );
         print("[DEBUG LIVE] Initial App ID: $agoraAppId, Host UID: $uid");
 
         // Fallback to fetch token if not in create room response
         if (agoraToken == null || agoraToken.isEmpty) {
           try {
             final tokenUrl = Uri.parse(
-                '${ApiConstants.baseUrl}live/token/${liveRoomId.value}/');
+              '${ApiConstants.baseUrl}live/token/${liveRoomId.value}/',
+            );
             print("[DEBUG LIVE] Fetching Agora token fallback from: $tokenUrl");
             final tokenResponse = await apiClient.get(
               tokenUrl,
-              headers: {
-                'Authorization': 'Bearer $token',
-              },
+              headers: {'Authorization': 'Bearer $token'},
             );
-            print("[DEBUG LIVE] Fallback Token response: ${tokenResponse.statusCode} - ${tokenResponse.body}");
+            print(
+              "[DEBUG LIVE] Fallback Token response: ${tokenResponse.statusCode} - ${tokenResponse.body}",
+            );
             if (tokenResponse.statusCode == 200) {
               final tokenData = jsonDecode(tokenResponse.body);
-              agoraToken = tokenData['agora_token']?.toString() ??
+              agoraToken =
+                  tokenData['agora_token']?.toString() ??
                   tokenData['token']?.toString();
-              agoraAppId ??= tokenData['agora_app_id']?.toString() ??
+              agoraAppId ??=
+                  tokenData['agora_app_id']?.toString() ??
                   tokenData['app_id']?.toString() ??
                   tokenData['appId']?.toString();
               if (uid == 0) {
-                uid = (tokenData['agora_uid'] is int
+                uid =
+                    (tokenData['agora_uid'] is int
                         ? tokenData['agora_uid'] as int
                         : int.tryParse(
-                            tokenData['agora_uid']?.toString() ?? '')) ??
+                            tokenData['agora_uid']?.toString() ?? '',
+                          )) ??
                     (tokenData['uid'] is int
                         ? tokenData['uid'] as int
                         : int.tryParse(tokenData['uid']?.toString() ?? '')) ??
@@ -783,17 +859,24 @@ class CreateController extends GetxController {
               agoraToken.startsWith('006') &&
               agoraToken.length >= 35) {
             agoraAppId = agoraToken.substring(3, 35);
-            print("[DEBUG LIVE] Resolved Agora App ID from token prefix: $agoraAppId");
+            print(
+              "[DEBUG LIVE] Resolved Agora App ID from token prefix: $agoraAppId",
+            );
           } else {
             agoraAppId = ApiConstants.agoraAppId;
-            print("[DEBUG LIVE] Resolved Agora App ID from ApiConstants: $agoraAppId");
+            print(
+              "[DEBUG LIVE] Resolved Agora App ID from ApiConstants: $agoraAppId",
+            );
           }
         }
 
-        Get.snackbar("Success", "Live room created: ${liveTitle.value}",
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.white,
-            colorText: Colors.black);
+        Get.snackbar(
+          "Success",
+          "Live room created: ${liveTitle.value}",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.white,
+          colorText: Colors.black,
+        );
 
         // Initialize Agora
         if (agoraToken != null &&
@@ -811,13 +894,11 @@ class CreateController extends GetxController {
 
         // Start dynamic polling
         _memberPollTimer?.cancel();
-        _memberPollTimer =
-            Timer.periodic(const Duration(seconds: 5), (timer) {
+        _memberPollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
           fetchLiveMemberCount();
         });
         _messagePollTimer?.cancel();
-        _messagePollTimer =
-            Timer.periodic(const Duration(seconds: 2), (timer) {
+        _messagePollTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
           fetchLiveMessages();
         });
 
@@ -825,7 +906,9 @@ class CreateController extends GetxController {
         navigateTo("LiveStream");
       } else {
         Get.snackbar("Error", "Failed to start live: ${response.statusCode}");
-        print("[DEBUG LIVE] Error starting live room: ${response.statusCode} - ${response.body}");
+        print(
+          "[DEBUG LIVE] Error starting live room: ${response.statusCode} - ${response.body}",
+        );
       }
     } catch (e, stack) {
       Get.snackbar("Error", "An unexpected error occurred.");
@@ -835,9 +918,16 @@ class CreateController extends GetxController {
     }
   }
 
-  Future<void> _initLiveEngine(String token, String appId, String channelId, int uid) async {
+  Future<void> _initLiveEngine(
+    String token,
+    String appId,
+    String channelId,
+    int uid,
+  ) async {
     final resolvedAppId = appId.isEmpty ? ApiConstants.agoraAppId : appId;
-    print("[DEBUG LIVE] ================= INITIALIZE AGORA ENGINE =================");
+    print(
+      "[DEBUG LIVE] ================= INITIALIZE AGORA ENGINE =================",
+    );
     print("[DEBUG LIVE] App ID: $resolvedAppId");
     print("[DEBUG LIVE] Channel: $channelId");
     print("[DEBUG LIVE] UID: $uid");
@@ -858,48 +948,65 @@ class CreateController extends GetxController {
     // Request permissions
     print("[DEBUG LIVE] Requesting Microphone and Camera permissions...");
     final perm = await [Permission.microphone, Permission.camera].request();
-    print("[DEBUG LIVE] Permission results: Mic=${perm[Permission.microphone]}, Cam=${perm[Permission.camera]}");
+    print(
+      "[DEBUG LIVE] Permission results: Mic=${perm[Permission.microphone]}, Cam=${perm[Permission.camera]}",
+    );
 
     try {
       print("[DEBUG LIVE] Creating Agora RTC Engine...");
       liveEngine = createAgoraRtcEngine();
-      
+
       print("[DEBUG LIVE] Initializing Agora RTC Engine context...");
-      await liveEngine!.initialize(RtcEngineContext(
-        appId: resolvedAppId,
-        channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
-      ));
+      await liveEngine!.initialize(
+        RtcEngineContext(
+          appId: resolvedAppId,
+          channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
+        ),
+      );
 
       // Register event handlers for live logging
       liveEngine!.registerEventHandler(
         RtcEngineEventHandler(
           onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            print("[DEBUG LIVE] AGORA EVENT: Successfully joined channel: ${connection.channelId}, localUid: ${connection.localUid}, elapsed: $elapsed ms");
+            print(
+              "[DEBUG LIVE] AGORA EVENT: Successfully joined channel: ${connection.channelId}, localUid: ${connection.localUid}, elapsed: $elapsed ms",
+            );
           },
           onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
             print("[DEBUG LIVE] AGORA EVENT: Remote viewer joined: $remoteUid");
             fetchLiveMemberCount();
           },
-          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-            print("[DEBUG LIVE] AGORA EVENT: Remote viewer left: $remoteUid (Reason: $reason)");
-            fetchLiveMemberCount();
-          },
+          onUserOffline:
+              (
+                RtcConnection connection,
+                int remoteUid,
+                UserOfflineReasonType reason,
+              ) {
+                print(
+                  "[DEBUG LIVE] AGORA EVENT: Remote viewer left: $remoteUid (Reason: $reason)",
+                );
+                fetchLiveMemberCount();
+              },
           onError: (ErrorCodeType err, String msg) {
             print("[DEBUG LIVE] AGORA EVENT ERROR: $err - $msg");
           },
         ),
       );
-      
+
       print("[DEBUG LIVE] Setting role to Broadcaster...");
-      await liveEngine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      
+      await liveEngine!.setClientRole(
+        role: ClientRoleType.clientRoleBroadcaster,
+      );
+
       print("[DEBUG LIVE] Enabling video module...");
       await liveEngine!.enableVideo();
-      
+
       print("[DEBUG LIVE] Starting local video preview...");
       await liveEngine!.startPreview();
 
-      print("[DEBUG LIVE] Calling joinChannel (channelId: $channelId, uid: $uid)...");
+      print(
+        "[DEBUG LIVE] Calling joinChannel (channelId: $channelId, uid: $uid)...",
+      );
       await liveEngine!.joinChannel(
         token: token,
         channelId: channelId,
@@ -910,7 +1017,7 @@ class CreateController extends GetxController {
           publishMicrophoneTrack: true,
         ),
       );
-      
+
       print("[DEBUG LIVE] joinChannel call succeeded!");
       isLiveEngineInitialized.value = true;
       liveDurationSeconds.value = 0;
@@ -921,7 +1028,13 @@ class CreateController extends GetxController {
     } catch (e, stackTrace) {
       print("[DEBUG LIVE] Error initializing live engine: $e");
       print("[DEBUG LIVE] Stack trace: $stackTrace");
-      Get.snackbar("Live Error", "Failed to initialize camera. Check App ID or permissions.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black);
+      Get.snackbar(
+        "Live Error",
+        "Failed to initialize camera. Check App ID or permissions.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
       _cleanupAndNavigateToCamera();
     }
   }
@@ -930,7 +1043,7 @@ class CreateController extends GetxController {
 
   bool minimizeToPip(BuildContext context) {
     if (liveEngine == null || !isLiveEngineInitialized.value) return true;
-    
+
     print("[DEBUG LIVE] Minimizing to Picture-in-Picture mode");
     final pipService = Get.find<PipService>();
     pipService.showPip(
@@ -938,7 +1051,7 @@ class CreateController extends GetxController {
       engine: liveEngine!,
       onTap: restoreFromPip,
     );
-    
+
     return true;
   }
 
@@ -946,7 +1059,7 @@ class CreateController extends GetxController {
     print("[DEBUG LIVE] Restoring from PiP mode to fullscreen");
     final pipService = Get.find<PipService>();
     pipService.hidePip();
-    
+
     Get.toNamed('/create');
     navigateTo("LiveStream");
   }
@@ -982,14 +1095,18 @@ class CreateController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/members/');
+
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/members/',
+      );
       final response = await apiClient.get(
         url,
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
-      print("[DEBUG LIVE] fetchLiveMemberCount [${response.statusCode}]: ${response.body}");
+      print(
+        "[DEBUG LIVE] fetchLiveMemberCount [${response.statusCode}]: ${response.body}",
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -1014,7 +1131,9 @@ class CreateController extends GetxController {
         }
         liveMemberCount.value = count;
         liveMembers.value = parsedList;
-        print("[DEBUG LIVE] Live members updated: count=$count, list=${parsedList.length}");
+        print(
+          "[DEBUG LIVE] Live members updated: count=$count, list=${parsedList.length}",
+        );
       }
     } catch (e) {
       print("[DEBUG LIVE] Exception fetching member count: $e");
@@ -1026,14 +1145,18 @@ class CreateController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/messages/');
+
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/messages/',
+      );
       final response = await apiClient.get(
         url,
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
-      print("[DEBUG LIVE] fetchLiveMessages [${response.statusCode}]: ${response.body}");
+      print(
+        "[DEBUG LIVE] fetchLiveMessages [${response.statusCode}]: ${response.body}",
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -1060,12 +1183,16 @@ class CreateController extends GetxController {
   Future<void> sendLiveMessage(String message) async {
     final text = message.trim();
     if (liveRoomId.value.isEmpty || text.isEmpty) return;
-    print("[DEBUG LIVE] Sending live message: '$text' to room: ${liveRoomId.value}");
+    print(
+      "[DEBUG LIVE] Sending live message: '$text' to room: ${liveRoomId.value}",
+    );
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/send-message/');
+
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/send-message/',
+      );
       final response = await apiClient.post(
         url,
         headers: {
@@ -1075,7 +1202,9 @@ class CreateController extends GetxController {
         body: jsonEncode({"message": text}),
       );
 
-      print("[DEBUG LIVE] sendLiveMessage status: ${response.statusCode} - ${response.body}");
+      print(
+        "[DEBUG LIVE] sendLiveMessage status: ${response.statusCode} - ${response.body}",
+      );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         // Fetch messages immediately to show the new one dynamically
@@ -1090,13 +1219,17 @@ class CreateController extends GetxController {
 
   Future<void> updateLiveRoom(Map<String, dynamic> data) async {
     if (liveRoomId.value.isEmpty) return;
-    print("[DEBUG LIVE] Updating live room: ${liveRoomId.value} with data: $data");
+    print(
+      "[DEBUG LIVE] Updating live room: ${liveRoomId.value} with data: $data",
+    );
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/');
-      
+
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/',
+      );
+
       final response = await apiClient.patch(
         url,
         headers: {
@@ -1106,12 +1239,16 @@ class CreateController extends GetxController {
         body: jsonEncode(data),
       );
 
-      print("[DEBUG LIVE] updateLiveRoom response: ${response.statusCode} - ${response.body}");
+      print(
+        "[DEBUG LIVE] updateLiveRoom response: ${response.statusCode} - ${response.body}",
+      );
 
       if (response.statusCode == 200) {
         print("[DEBUG LIVE] Live room successfully updated!");
       } else {
-        print("[DEBUG LIVE] Failed to update live room: ${response.statusCode}");
+        print(
+          "[DEBUG LIVE] Failed to update live room: ${response.statusCode}",
+        );
       }
     } catch (e) {
       print("[DEBUG LIVE] Exception in updateLiveRoom: $e");
@@ -1123,7 +1260,7 @@ class CreateController extends GetxController {
     print("[DEBUG LIVE] ================= END LIVE STREAM =================");
     print("[DEBUG LIVE] Ending room: $currentRoomId");
     Map<String, dynamic>? stats;
-    
+
     // Stop engine and UI immediately so the user doesn't feel stuck
     if (liveEngine != null) {
       try {
@@ -1143,7 +1280,7 @@ class CreateController extends GetxController {
     _memberPollTimer?.cancel();
     _messagePollTimer?.cancel();
     isLiveEngineInitialized.value = false;
-    
+
     // Clean up and route back to camera
     _cleanupAndNavigateToCamera();
 
@@ -1151,9 +1288,11 @@ class CreateController extends GetxController {
       try {
         final authService = Get.find<AuthService>();
         final token = authService.accessToken.value;
-        final endUrl = Uri.parse('${ApiConstants.baseUrl}live/rooms/$currentRoomId/end/');
+        final endUrl = Uri.parse(
+          '${ApiConstants.baseUrl}live/rooms/$currentRoomId/end/',
+        );
         print("[DEBUG LIVE] Calling end endpoint: $endUrl");
-        
+
         final response = await apiClient.patch(
           endUrl,
           headers: {
@@ -1162,19 +1301,25 @@ class CreateController extends GetxController {
           },
           body: jsonEncode({}),
         );
-        
-        print("[DEBUG LIVE] End room response: ${response.statusCode} - ${response.body}");
+
+        print(
+          "[DEBUG LIVE] End room response: ${response.statusCode} - ${response.body}",
+        );
 
         if (response.statusCode == 200 || response.statusCode == 204) {
           // Fetch stats dynamically
           try {
-            final statsUrl = Uri.parse('${ApiConstants.baseUrl}live/rooms/$currentRoomId/stats/');
+            final statsUrl = Uri.parse(
+              '${ApiConstants.baseUrl}live/rooms/$currentRoomId/stats/',
+            );
             print("[DEBUG LIVE] Fetching stream stats: $statsUrl");
             final statsResponse = await apiClient.get(
               statsUrl,
               headers: {if (token != null) 'Authorization': 'Bearer $token'},
             );
-            print("[DEBUG LIVE] Stats response: ${statsResponse.statusCode} - ${statsResponse.body}");
+            print(
+              "[DEBUG LIVE] Stats response: ${statsResponse.statusCode} - ${statsResponse.body}",
+            );
             if (statsResponse.statusCode == 200) {
               stats = jsonDecode(statsResponse.body);
             }
@@ -1196,19 +1341,25 @@ class CreateController extends GetxController {
     final durationSeconds = liveDurationSeconds.value;
     final minutes = durationSeconds ~/ 60;
     final seconds = durationSeconds % 60;
-    final durationStr = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final durationStr =
+        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 
-    final totalViews = stats['total_views']?.toString() ??
+    final totalViews =
+        stats['total_views']?.toString() ??
         stats['views']?.toString() ??
         liveMemberCount.value.toString();
-    final peakViewers = stats['peak_viewers']?.toString() ??
+    final peakViewers =
+        stats['peak_viewers']?.toString() ??
         stats['viewers']?.toString() ??
         liveMemberCount.value.toString();
-    final totalMessages = stats['total_messages']?.toString() ??
+    final totalMessages =
+        stats['total_messages']?.toString() ??
         stats['messages_count']?.toString() ??
         liveMessages.length.toString();
 
-    print("[DEBUG LIVE] Live stats dialog displayed: duration=$durationStr, views=$totalViews, peak=$peakViewers, messages=$totalMessages");
+    print(
+      "[DEBUG LIVE] Live stats dialog displayed: duration=$durationStr, views=$totalViews, peak=$peakViewers, messages=$totalMessages",
+    );
 
     Get.dialog(
       Dialog(
@@ -1219,7 +1370,14 @@ class CreateController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Live Stream Ended", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text(
+                "Live Stream Ended",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 24),
               _buildStatRow(Icons.timer_outlined, "Duration", durationStr),
               const SizedBox(height: 16),
@@ -1234,13 +1392,22 @@ class CreateController extends GetxController {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () {
                     Get.back(); // close dialog
                   },
-                  child: const Text("Done", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Done",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1259,10 +1426,20 @@ class CreateController extends GetxController {
           children: [
             Icon(icon, color: Colors.grey, size: 20),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: Colors.grey, fontSize: 16)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 16),
+            ),
           ],
         ),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
@@ -1289,23 +1466,31 @@ class CreateController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/$currentRoomId/');
+
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}live/rooms/$currentRoomId/',
+      );
       print("[DEBUG LIVE] Calling DELETE at: $url");
-      
+
       final response = await apiClient.delete(
         url,
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
-      print("[DEBUG LIVE] DELETE response: ${response.statusCode} - ${response.body}");
+      print(
+        "[DEBUG LIVE] DELETE response: ${response.statusCode} - ${response.body}",
+      );
 
       if (response.statusCode == 204 || response.statusCode == 200) {
-        Get.snackbar("Deleted", "Live room was deleted successfully.", snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar(
+          "Deleted",
+          "Live room was deleted successfully.",
+          snackPosition: SnackPosition.BOTTOM,
+        );
       } else {
-        print("[DEBUG LIVE] Failed to delete live room: ${response.statusCode}");
+        print(
+          "[DEBUG LIVE] Failed to delete live room: ${response.statusCode}",
+        );
       }
     } catch (e) {
       print("[DEBUG LIVE] Exception in deleteLiveRoom: $e");
@@ -1323,19 +1508,23 @@ class CreateController extends GetxController {
       _memberPollTimer?.cancel();
       _messagePollTimer?.cancel();
       isLiveEngineInitialized.value = false;
-      
+
       _cleanupAndNavigateToCamera();
     }
   }
 
   Future<void> inviteGuest(dynamic userId) async {
     if (liveRoomId.value.isEmpty || userId == null) return;
-    print("[DEBUG LIVE] Inviting co-host user: $userId to room: ${liveRoomId.value}");
+    print(
+      "[DEBUG LIVE] Inviting co-host user: $userId to room: ${liveRoomId.value}",
+    );
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
 
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/invite-cohost/');
+      final url = Uri.parse(
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/invite-cohost/',
+      );
       final response = await apiClient.post(
         url,
         headers: {
@@ -1345,11 +1534,25 @@ class CreateController extends GetxController {
         body: jsonEncode({"user_id": userId}),
       );
 
-      print("[DEBUG LIVE] inviteGuest response: ${response.statusCode} - ${response.body}");
-      Get.snackbar("Invitation", "Invite sent to co-host!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black);
+      print(
+        "[DEBUG LIVE] inviteGuest response: ${response.statusCode} - ${response.body}",
+      );
+      Get.snackbar(
+        "Invitation",
+        "Invite sent to co-host!",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
     } catch (e) {
       print("[DEBUG LIVE] Exception in inviteGuest: $e");
-      Get.snackbar("Invitation", "Invite request sent!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.white, colorText: Colors.black);
+      Get.snackbar(
+        "Invitation",
+        "Invite request sent!",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
     }
   }
 
@@ -1358,10 +1561,18 @@ class CreateController extends GetxController {
   void toggleTimer() {
     if (timerSeconds.value == 0) {
       timerSeconds.value = 3;
-      Get.snackbar("Timer", "Timer set to 3 seconds", snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        "Timer",
+        "Timer set to 3 seconds",
+        snackPosition: SnackPosition.TOP,
+      );
     } else if (timerSeconds.value == 3) {
       timerSeconds.value = 10;
-      Get.snackbar("Timer", "Timer set to 10 seconds", snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        "Timer",
+        "Timer set to 10 seconds",
+        snackPosition: SnackPosition.TOP,
+      );
     } else {
       timerSeconds.value = 0;
       Get.snackbar("Timer", "Timer off", snackPosition: SnackPosition.TOP);
@@ -1370,7 +1581,7 @@ class CreateController extends GetxController {
 
   final selectedEffect = "None".obs;
   final selectedMusic = "None".obs;
-  
+
   void openEffects() {
     // Handled by the View
   }
@@ -1389,8 +1600,12 @@ class CreateController extends GetxController {
       if (media != null) {
         selectedMediaPath.value = media.path;
         final lowerPath = media.path.toLowerCase();
-        final isVideo = lowerPath.endsWith('.mp4') || lowerPath.endsWith('.mov') || lowerPath.endsWith('.avi') || lowerPath.endsWith('.mkv');
-        
+        final isVideo =
+            lowerPath.endsWith('.mp4') ||
+            lowerPath.endsWith('.mov') ||
+            lowerPath.endsWith('.avi') ||
+            lowerPath.endsWith('.mkv');
+
         if (isVideo) {
           navigateTo("UploadVideo");
         } else {
@@ -1405,6 +1620,7 @@ class CreateController extends GetxController {
       }
     }
   }
+
   Future<void> pickThumbnail() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {

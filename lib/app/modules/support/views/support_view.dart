@@ -78,7 +78,7 @@ class SupportView extends GetView<SupportController> {
                   borderRadius: BorderRadius.circular(12.r),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -88,16 +88,14 @@ class SupportView extends GetView<SupportController> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: controller.faqs.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color: Colors.grey[200],
-                    height: 1,
-                  ),
+                  separatorBuilder: (context, index) =>
+                      Divider(color: Colors.grey[200], height: 1),
                   itemBuilder: (context, index) {
                     final faq = controller.faqs[index];
                     return Theme(
-                      data: Theme.of(context).copyWith(
-                        dividerColor: Colors.transparent,
-                      ),
+                      data: Theme.of(
+                        context,
+                      ).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         iconColor: AppColors.primary,
                         collapsedIconColor: AppColors.textSecondary,
@@ -159,14 +157,10 @@ class SupportView extends GetView<SupportController> {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: AppColors.primary,
-                size: 24.w,
-              ),
+              child: Icon(icon, color: AppColors.primary, size: 24.w),
             ),
             SizedBox(width: 16.w),
             Expanded(

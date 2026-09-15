@@ -14,7 +14,11 @@ class CreateNewCampaignView extends GetView<CreateNewCampaignController> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -41,7 +45,10 @@ class CreateNewCampaignView extends GetView<CreateNewCampaignController> {
               SizedBox(height: 12.h),
               _buildTextField('Campaign cost'),
               SizedBox(height: 12.h),
-              _buildTextField('Managed by', icon: Icons.keyboard_arrow_down_rounded),
+              _buildTextField(
+                'Managed by',
+                icon: Icons.keyboard_arrow_down_rounded,
+              ),
               SizedBox(height: 12.h),
               _buildTextField('Creators @ usernames'),
               SizedBox(height: 12.h),
@@ -55,7 +62,11 @@ class CreateNewCampaignView extends GetView<CreateNewCampaignController> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: Icon(Icons.cloud_upload_rounded, color: Colors.black87, size: 20.sp),
+                  icon: Icon(
+                    Icons.cloud_upload_rounded,
+                    color: Colors.black87,
+                    size: 20.sp,
+                  ),
                   label: Text(
                     'Upload media assets',
                     style: TextStyle(
@@ -112,7 +123,7 @@ class CreateNewCampaignView extends GetView<CreateNewCampaignController> {
         borderRadius: BorderRadius.circular(8.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -128,7 +139,10 @@ class CreateNewCampaignView extends GetView<CreateNewCampaignController> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
+          ),
           suffixIcon: icon != null
               ? Icon(icon, color: Colors.black87, size: 20.sp)
               : null,

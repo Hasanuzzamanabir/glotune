@@ -33,16 +33,20 @@ class DonationsView extends GetView<DonationsController> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            onPressed: () => Get.toNamed('/make-donation'), // Directly use the route string or import Routes
+            onPressed: () => Get.toNamed(
+              '/make-donation',
+            ), // Directly use the route string or import Routes
           ),
         ],
       ),
-      body: Obx(() => ListView(
-            padding: EdgeInsets.symmetric(vertical: 16.h),
-            children: controller.donations.entries.map((entry) {
-              return _buildDonationCard(entry.key, entry.value);
-            }).toList(),
-          )),
+      body: Obx(
+        () => ListView(
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          children: controller.donations.entries.map((entry) {
+            return _buildDonationCard(entry.key, entry.value);
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -55,7 +59,7 @@ class DonationsView extends GetView<DonationsController> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -78,7 +82,10 @@ class DonationsView extends GetView<DonationsController> {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: items.length,
             itemBuilder: (context, index) {
-              return _buildDonationRow(items[index] as Map<String, dynamic>, title);
+              return _buildDonationRow(
+                items[index] as Map<String, dynamic>,
+                title,
+              );
             },
           ),
         ],
@@ -89,7 +96,7 @@ class DonationsView extends GetView<DonationsController> {
   Widget _buildDonationRow(Map<String, dynamic> item, String type) {
     bool isCurrency = type == 'Live Gift' || type == 'Tips';
     String amountPrefix = isCurrency ? '\$' : '';
-    
+
     return Padding(
       padding: EdgeInsets.only(bottom: 20.h),
       child: Row(
@@ -143,7 +150,7 @@ class DonationsView extends GetView<DonationsController> {
           child: Text(
             role,
             style: TextStyle(
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
               fontSize: 8.sp,
               fontWeight: FontWeight.bold,
             ),
@@ -171,7 +178,7 @@ class DonationsView extends GetView<DonationsController> {
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -191,16 +198,13 @@ class DonationsView extends GetView<DonationsController> {
                     children: [
                       Text(
                         date,
-                        style: TextStyle(
-                          fontSize: 9.sp,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 9.sp, color: Colors.grey),
                       ),
                       Text(
                         time,
                         style: TextStyle(
                           fontSize: 9.sp,
-                          color: Colors.grey.withOpacity(0.6),
+                          color: Colors.grey.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
