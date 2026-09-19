@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
 import '../../controllers/create_controller.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:glotune/app/modules/live_player/views/widgets/floating_reactions.dart';
 
 class LiveStreamView extends GetView<CreateController> {
   const LiveStreamView({super.key});
@@ -56,6 +57,11 @@ class LiveStreamView extends GetView<CreateController> {
 
             // Side Controls
             _buildLiveSideControls(),
+
+            // Floating Reactions Overlay for Host
+            Positioned.fill(
+              child: FloatingReactions(reactionStream: controller.reactionStream),
+            ),
           ],
         ),
       ),
@@ -262,7 +268,36 @@ class LiveStreamView extends GetView<CreateController> {
             }),
           ),
 
-          SizedBox(height: 12.h),
+          // Typing indicator banner
+          Obx(() {
+            if (controller.typingNotice.value.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h, left: 4.w),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 10.w,
+                    height: 10.h,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: Colors.amberAccent,
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    controller.typingNotice.value,
+                    style: TextStyle(
+                      color: Colors.amberAccent,
+                      fontSize: 11.sp,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
 
           // Bottom Controls
           Row(
@@ -285,8 +320,16 @@ class LiveStreamView extends GetView<CreateController> {
                       hintStyle: TextStyle(color: Colors.white70),
                       border: InputBorder.none,
                     ),
+                    onChanged: (val) {
+                      if (val.trim().isNotEmpty) {
+                        controller.sendSocketTyping(true);
+                      } else {
+                        controller.sendSocketTyping(false);
+                      }
+                    },
                     onSubmitted: (val) {
                       if (val.trim().isNotEmpty) {
+                        controller.sendSocketTyping(false);
                         controller.sendLiveMessage(val);
                         messageController.clear();
                       }
@@ -298,6 +341,7 @@ class LiveStreamView extends GetView<CreateController> {
               GestureDetector(
                 onTap: () {
                   if (messageController.text.trim().isNotEmpty) {
+                    controller.sendSocketTyping(false);
                     controller.sendLiveMessage(messageController.text);
                     messageController.clear();
                   }

@@ -34,6 +34,8 @@ class LivePlayerController extends GetxController {
   final errorMessage = "".obs;
 
   final liveMessages = [].obs;
+  final typingNotice = "".obs;
+  Timer? _typingTimer;
   Timer? _messagePollTimer;
   Timer? _memberPollTimer;
   Timer? _invitePollTimer;
@@ -220,20 +222,22 @@ class LivePlayerController extends GetxController {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
 
-      // Build WS URL from baseUrl
       final parsed = Uri.parse(ApiConstants.baseUrl);
       final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
-      final wsUrl = '$wsScheme://${parsed.host}${parsed.hasPort ? ':${parsed.port}' : ''}/ws/live/$roomId/?token=${token ?? ''}';
-      
-      print("[LivePlayer WS] Connecting to: $wsUrl");
-      WebSocket.connect(wsUrl).then((ws) {
+      final portStr = parsed.hasPort ? ':${parsed.port}' : '';
+      final primaryWsUrl = '$wsScheme://${parsed.host}$portStr/api/ws/live/$roomId/?token=${token ?? ''}';
+      final fallbackWsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/?token=${token ?? ''}';
+
+      void listenWs(WebSocket ws) {
         _chatWs = ws;
-        print("[LivePlayer WS] Connected successfully");
+        print("[LivePlayer WS] Connected successfully to: ${ws.toString()}");
         ws.listen((event) {
           try {
             final data = jsonDecode(event.toString());
             print("[LivePlayer WS Event]: $data");
-            _handleWebSocketEvent(data);
+            if (data is Map<String, dynamic>) {
+              _handleWebSocketEvent(data);
+            }
           } catch (err) {
             print("[LivePlayer WS] Error parsing message: $err");
           }
@@ -242,8 +246,18 @@ class LivePlayerController extends GetxController {
         }, onDone: () {
           print("[LivePlayer WS] Stream closed");
         });
+      }
+
+      print("[LivePlayer WS] Connecting to primary: $primaryWsUrl");
+      WebSocket.connect(primaryWsUrl).then((ws) {
+        listenWs(ws);
       }).catchError((err) {
-        print("[LivePlayer WS] Connect error: $err");
+        print("[LivePlayer WS] Primary connect error ($err), attempting fallback to: $fallbackWsUrl");
+        WebSocket.connect(fallbackWsUrl).then((ws) {
+          listenWs(ws);
+        }).catchError((fallbackErr) {
+          print("[LivePlayer WS] Fallback connect error: $fallbackErr");
+        });
       });
     } catch (e) {
       print("[LivePlayer WS] Setup exception: $e");
@@ -255,8 +269,92 @@ class LivePlayerController extends GetxController {
     final type = data['type']?.toString();
     final action = data['action']?.toString();
 
-    // Check invitation events
-    if (type == 'cohost_invite' ||
+    // 1. Message event
+    if (type == 'message') {
+      final exists = liveMessages.any((m) {
+        if (m is Map) {
+          return (m['id'] != null && m['id'] == data['id']) ||
+              (m['message'] == data['message'] &&
+                  m['username'] == (data['username'] ?? data['user']?['username']) &&
+                  m['created_at'] == data['created_at']);
+        }
+        return false;
+      });
+      if (!exists) {
+        liveMessages.insert(0, data);
+      }
+    }
+
+    // 2. Like, love or reaction event
+    else if (type == 'like' ||
+        action == 'like' ||
+        type == 'love' ||
+        action == 'love' ||
+        type == 'reaction' ||
+        action == 'reaction') {
+      final reactionName = (type == 'love' || action == 'love')
+          ? 'love'
+          : (data['reaction_type']?.toString() ?? data['reaction']?.toString() ?? 'like');
+      print("[LivePlayer WS] Incoming reaction event: $reactionName");
+      _reactionStreamController.add(reactionName);
+    }
+
+    // 3. Gift event
+    else if (type == 'gift') {
+      final giftType = data['gift_type']?.toString() ?? 'gift';
+      final quantity = data['quantity'] ?? 1;
+      final sender = data['username'] ?? data['user']?['username'] ?? 'Someone';
+      _reactionStreamController.add(giftType);
+      // Also add as system message in chat
+      liveMessages.insert(0, {
+        'message': '🎁 $sender sent $quantity $giftType!',
+        'user': {'username': 'System'},
+        'is_system': true,
+      });
+    }
+
+    // 4. Typing event
+    else if (type == 'typing') {
+      final isTyping = data['is_typing'] == true || data['is_typing'] == 'true';
+      final username = data['username'] ?? data['user']?['username'] ?? 'Someone';
+      if (isTyping) {
+        typingNotice.value = "$username is typing...";
+        _typingTimer?.cancel();
+        _typingTimer = Timer(const Duration(seconds: 3), () {
+          typingNotice.value = "";
+        });
+      } else {
+        typingNotice.value = "";
+      }
+    }
+
+    // 5. Room ended event
+    else if (type == 'room_ended') {
+      Get.snackbar(
+        'Live Ended',
+        data['message']?.toString() ?? 'The host has ended this live stream.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      Future.delayed(const Duration(seconds: 2), () {
+        if (Get.currentRoute.contains('live') || Get.isDialogOpen == true) {
+          Get.back();
+        }
+      });
+    }
+
+    // 6. Member action / room update
+    else if (type == 'member_action') {
+      if (data['viewer_count'] != null) {
+        memberCount.value = int.tryParse(data['viewer_count'].toString()) ?? memberCount.value;
+      } else if (data['member_count'] != null) {
+        memberCount.value = int.tryParse(data['member_count'].toString()) ?? memberCount.value;
+      }
+    }
+
+    // 7. Check cohost invitation events
+    else if (type == 'cohost_invite' ||
         type == 'cohost_invitation' ||
         type == 'invite_cohost' ||
         type == 'cohost' ||
@@ -620,6 +718,21 @@ class LivePlayerController extends GetxController {
   Future<void> sendLiveMessage(String message) async {
     final text = message.trim();
     if (text.isEmpty) return;
+
+    // Send via WebSocket first if connected
+    bool sentViaWs = false;
+    try {
+      if (_chatWs != null) {
+        _chatWs!.add(jsonEncode({
+          "action": "message",
+          "message": text,
+        }));
+        sentViaWs = true;
+      }
+    } catch (e) {
+      print("[LivePlayer WS] Error sending message via WS: $e");
+    }
+
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
@@ -635,8 +748,10 @@ class LivePlayerController extends GetxController {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Fetch messages immediately to show the new one
-        await fetchLiveMessages();
+        // If not sent via WS, update immediately via REST
+        if (!sentViaWs) {
+          await fetchLiveMessages();
+        }
       } else {
         print("Failed to send message: ${response.statusCode} - ${response.body}");
         if (token == null && (response.statusCode == 401 || response.statusCode == 403)) {
@@ -648,9 +763,35 @@ class LivePlayerController extends GetxController {
     }
   }
 
+  void sendSocketTyping(bool isTyping) {
+    try {
+      if (_chatWs != null) {
+        _chatWs!.add(jsonEncode({
+          "action": "typing",
+          "is_typing": isTyping,
+        }));
+      }
+    } catch (e) {
+      print("[LivePlayer WS] Error sending typing status: $e");
+    }
+  }
+
   Future<void> sendReaction(String reactionType) async {
     // Show local floating animation immediately for responsive feedback
     _reactionStreamController.add(reactionType);
+
+    // Send action to WebSocket so all other viewers & host see the reaction
+    try {
+      if (_chatWs != null) {
+        final actionToSend = (reactionType == 'heart' || reactionType == 'love') ? 'love' : reactionType;
+        _chatWs!.add(jsonEncode({
+          "action": actionToSend,
+          "reaction_type": reactionType,
+        }));
+      }
+    } catch (e) {
+      print("[LivePlayer WS] Error sending reaction: $e");
+    }
 
     final authService = Get.find<AuthService>();
     final token = authService.accessToken.value;
@@ -709,6 +850,15 @@ class LivePlayerController extends GetxController {
   }
 
   void shareLive() {
+    try {
+      if (_chatWs != null) {
+        _chatWs!.add(jsonEncode({
+          "action": "share",
+        }));
+      }
+    } catch (e) {
+      print("[LivePlayer WS] Error sending share action: $e");
+    }
     Share.share('Join my live stream on Glotune! https://glotune.com/live/$roomId');
   }
 
@@ -735,6 +885,19 @@ class LivePlayerController extends GetxController {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Broadcast gift action over WebSocket to all participants
+        try {
+          if (_chatWs != null) {
+            _chatWs!.add(jsonEncode({
+              "action": "gift",
+              "gift_type": giftType,
+              "quantity": quantity,
+            }));
+          }
+        } catch (wsErr) {
+          print("[LivePlayer WS] Error broadcasting gift: $wsErr");
+        }
+
         Get.back(); // close bottom sheet
         Get.snackbar('Success', 'Gift sent successfully!', colorText: Colors.white, backgroundColor: Colors.green);
       } else {

@@ -59,11 +59,17 @@ class CreateController extends GetxController {
   final liveMemberCount = 0.obs;
   final liveMembers = <dynamic>[].obs;
   final liveMessages = <dynamic>[].obs;
+  final typingNotice = "".obs;
+  Timer? _typingTimer;
   final liveDurationSeconds = 0.obs;
   Timer? _memberPollTimer;
   Timer? _messagePollTimer;
   Timer? _liveDurationTimer;
   WebSocket? _liveWs;
+
+  // Stream for floating reactions for host screen
+  final _reactionStreamController = StreamController<String>.broadcast();
+  Stream<String> get reactionStream => _reactionStreamController.stream;
   final userProfile = Rxn<UserProfile>();
   final streamPrivacy = "Public".obs;
   final latencyMode = "Normal".obs;
@@ -1191,6 +1197,21 @@ class CreateController extends GetxController {
     print(
       "[DEBUG LIVE] Sending live message: '$text' to room: ${liveRoomId.value}",
     );
+
+    // Send via WebSocket first
+    bool sentViaWs = false;
+    try {
+      if (_liveWs != null) {
+        _liveWs!.add(jsonEncode({
+          "action": "message",
+          "message": text,
+        }));
+        sentViaWs = true;
+      }
+    } catch (e) {
+      print("[DEBUG LIVE WS] Error sending message: $e");
+    }
+
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
@@ -1212,13 +1233,27 @@ class CreateController extends GetxController {
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Fetch messages immediately to show the new one dynamically
-        await fetchLiveMessages();
+        if (!sentViaWs) {
+          await fetchLiveMessages();
+        }
       } else {
         print("[DEBUG LIVE] Failed to send message: ${response.statusCode}");
       }
     } catch (e) {
       print("[DEBUG LIVE] Exception sending message: $e");
+    }
+  }
+
+  void sendSocketTyping(bool isTyping) {
+    try {
+      if (_liveWs != null) {
+        _liveWs!.add(jsonEncode({
+          "action": "typing",
+          "is_typing": isTyping,
+        }));
+      }
+    } catch (e) {
+      print("[DEBUG LIVE WS] Error sending typing status: $e");
     }
   }
 
@@ -1530,27 +1565,127 @@ class CreateController extends GetxController {
 
       final parsed = Uri.parse(ApiConstants.baseUrl);
       final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
-      final wsUrl = '$wsScheme://${parsed.host}${parsed.hasPort ? ':${parsed.port}' : ''}/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
+      final portStr = parsed.hasPort ? ':${parsed.port}' : '';
+      final primaryWsUrl = '$wsScheme://${parsed.host}$portStr/api/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
+      final fallbackWsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
 
-      print("[DEBUG LIVE WS] Host connecting to: $wsUrl");
-      WebSocket.connect(wsUrl).then((ws) {
+      void listenWs(WebSocket ws) {
         _liveWs = ws;
-        print("[DEBUG LIVE WS] Host connected successfully");
+        print("[DEBUG LIVE WS] Host connected successfully to: ${ws.toString()}");
         ws.listen((event) {
           try {
             final data = jsonDecode(event.toString());
             print("[DEBUG LIVE WS Event]: $data");
-          } catch (_) {}
+            if (data is Map<String, dynamic>) {
+              _handleHostWebSocketEvent(data);
+            }
+          } catch (e) {
+            print("[DEBUG LIVE WS] Error parsing event: $e");
+          }
         }, onError: (err) {
           print("[DEBUG LIVE WS] Stream error: $err");
         }, onDone: () {
           print("[DEBUG LIVE WS] Stream closed");
         });
+      }
+
+      print("[DEBUG LIVE WS] Host connecting to primary: $primaryWsUrl");
+      WebSocket.connect(primaryWsUrl).then((ws) {
+        listenWs(ws);
       }).catchError((err) {
-        print("[DEBUG LIVE WS] Connect error: $err");
+        print("[DEBUG LIVE WS] Primary connect error ($err), attempting fallback to: $fallbackWsUrl");
+        WebSocket.connect(fallbackWsUrl).then((ws) {
+          listenWs(ws);
+        }).catchError((fallbackErr) {
+          print("[DEBUG LIVE WS] Fallback connect error: $fallbackErr");
+        });
       });
     } catch (e) {
       print("[DEBUG LIVE WS] Connect exception: $e");
+    }
+  }
+
+  void _handleHostWebSocketEvent(Map<String, dynamic> data) {
+    final type = data['type']?.toString();
+    final action = data['action']?.toString();
+
+    // 1. New chat message
+    if (type == 'message') {
+      final exists = liveMessages.any((m) {
+        if (m is Map) {
+          return (m['id'] != null && m['id'] == data['id']) ||
+              (m['message'] == data['message'] &&
+                  m['username'] == (data['username'] ?? data['user']?['username']) &&
+                  m['created_at'] == data['created_at']);
+        }
+        return false;
+      });
+      if (!exists) {
+        liveMessages.insert(0, data);
+      }
+    }
+
+    // 2. Incoming like, love or reaction from viewer
+    else if (type == 'like' ||
+        action == 'like' ||
+        type == 'love' ||
+        action == 'love' ||
+        type == 'reaction' ||
+        action == 'reaction') {
+      final reactionName = (type == 'love' || action == 'love')
+          ? 'love'
+          : (data['reaction_type']?.toString() ?? data['reaction']?.toString() ?? 'like');
+      print("[DEBUG LIVE WS] Incoming reaction event: $reactionName");
+      _reactionStreamController.add(reactionName);
+    }
+
+    // 3. Incoming gift
+    else if (type == 'gift') {
+      final giftType = data['gift_type']?.toString() ?? 'gift';
+      final quantity = data['quantity'] ?? 1;
+      final sender = data['username'] ?? data['user']?['username'] ?? 'Someone';
+      _reactionStreamController.add(giftType);
+      liveMessages.insert(0, {
+        'message': '🎁 $sender sent $quantity $giftType!',
+        'user': {'username': 'System'},
+        'is_system': true,
+      });
+    }
+
+    // 4. Viewer typing
+    else if (type == 'typing') {
+      final isTyping = data['is_typing'] == true || data['is_typing'] == 'true';
+      final username = data['username'] ?? data['user']?['username'] ?? 'Someone';
+      if (isTyping) {
+        typingNotice.value = "$username is typing...";
+        _typingTimer?.cancel();
+        _typingTimer = Timer(const Duration(seconds: 3), () {
+          typingNotice.value = "";
+        });
+      } else {
+        typingNotice.value = "";
+      }
+    }
+
+    // 5. Member count / action updates
+    else if (type == 'member_action') {
+      if (data['viewer_count'] != null) {
+        liveMemberCount.value = int.tryParse(data['viewer_count'].toString()) ?? liveMemberCount.value;
+      } else if (data['member_count'] != null) {
+        liveMemberCount.value = int.tryParse(data['member_count'].toString()) ?? liveMemberCount.value;
+      }
+    }
+
+    // 6. Join or stream requests from viewers
+    else if (type == 'stream_request' && data['action'] == 'requested') {
+      final requesterName = data['requester_username'] ?? data['username'] ?? 'User';
+      Get.snackbar(
+        'Stream Request',
+        '$requesterName wants to join your stream!',
+        backgroundColor: Colors.indigoAccent,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -295,6 +296,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
 
   Widget _buildInteractionArea() {
     final messageController = TextEditingController();
+    Timer? typingDebounceTimer;
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -305,42 +307,89 @@ class LivePlayerView extends GetView<LivePlayerController> {
           colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Container(
-              height: 40.h,
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20.r),
+          // Typing indicator banner
+          Obx(() {
+            if (controller.typingNotice.value.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h, left: 4.w),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 10.w,
+                    height: 10.h,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: Colors.amberAccent,
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    controller.typingNotice.value,
+                    style: TextStyle(
+                      color: Colors.amberAccent,
+                      fontSize: 11.sp,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
-              child: TextField(
-                controller: messageController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "Add a comment...",
-                  hintStyle: const TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white70),
-                    onPressed: () {
-                      if (messageController.text.trim().isNotEmpty) {
-                        controller.sendLiveMessage(messageController.text);
+            );
+          }),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 40.h,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: TextField(
+                    controller: messageController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Add a comment...",
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      border: InputBorder.none,
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.white70),
+                        onPressed: () {
+                          if (messageController.text.trim().isNotEmpty) {
+                            controller.sendSocketTyping(false);
+                            controller.sendLiveMessage(messageController.text);
+                            messageController.clear();
+                          }
+                        },
+                      ),
+                    ),
+                    onChanged: (val) {
+                      if (val.trim().isNotEmpty) {
+                        controller.sendSocketTyping(true);
+                        typingDebounceTimer?.cancel();
+                        typingDebounceTimer = Timer(const Duration(seconds: 2), () {
+                          controller.sendSocketTyping(false);
+                        });
+                      } else {
+                        controller.sendSocketTyping(false);
+                      }
+                    },
+                    onSubmitted: (val) {
+                      if (val.trim().isNotEmpty) {
+                        controller.sendSocketTyping(false);
+                        controller.sendLiveMessage(val);
                         messageController.clear();
                       }
                     },
                   ),
                 ),
-                onSubmitted: (val) {
-                  if (val.trim().isNotEmpty) {
-                    controller.sendLiveMessage(val);
-                    messageController.clear();
-                  }
-                },
               ),
-            ),
-          ),
           SizedBox(width: 8.w),
           Obx(() {
             if (!controller.isCohost.value) return const SizedBox.shrink();
@@ -383,36 +432,60 @@ class LivePlayerView extends GetView<LivePlayerController> {
             );
           }),
           GestureDetector(
-            onTap: () => controller.sendReaction('like'),
-            child: Icon(
-              Icons.thumb_up_alt_outlined,
-              color: Colors.white,
-              size: 24.sp,
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              print("[LivePlayer] Tapped like button");
+              controller.sendReaction('like');
+            },
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
+              child: Icon(
+                Icons.thumb_up_alt_outlined,
+                color: Colors.white,
+                size: 26.sp,
+              ),
             ),
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: 8.w),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: _showGiftBottomSheet,
-            child: Icon(Icons.card_giftcard, color: Colors.white, size: 24.sp),
-          ),
-          SizedBox(width: 12.w),
-          GestureDetector(
-            onTap: () => controller.sendReaction('heart'),
-            child: Icon(
-              Icons.favorite_border,
-              color: Colors.white,
-              size: 24.sp,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
+              child: Icon(Icons.card_giftcard, color: Colors.white, size: 26.sp),
             ),
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: 8.w),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              print("[LivePlayer] Tapped heart button");
+              controller.sendReaction('heart');
+            },
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
+              child: Icon(
+                Icons.favorite_border,
+                color: Colors.white,
+                size: 26.sp,
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => controller.shareLive(),
-            child: Icon(Icons.share, color: Colors.white, size: 24.sp),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 8.h),
+              child: Icon(Icons.share, color: Colors.white, size: 26.sp),
+            ),
           ),
         ],
       ),
-    );
-  }
+    ],
+  ),
+);
+}
 
   void _showGiftBottomSheet() {
     Get.bottomSheet(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,11 +15,13 @@ class FloatingReactions extends StatefulWidget {
 class _FloatingReactionsState extends State<FloatingReactions> with TickerProviderStateMixin {
   final List<_ReactionItem> _reactions = [];
   final Random _random = Random();
+  StreamSubscription<String>? _sub;
 
   @override
   void initState() {
     super.initState();
-    widget.reactionStream.listen((reactionType) {
+    _sub = widget.reactionStream.listen((reactionType) {
+      print("[FloatingReactions] Received reaction: $reactionType");
       _addReaction(reactionType);
     });
   }
@@ -29,7 +32,7 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
     IconData iconData = Icons.thumb_up;
     Color color = Colors.blue;
     
-    if (type == 'heart') {
+    if (type == 'heart' || type == 'love') {
       iconData = Icons.favorite;
       color = Colors.red;
     } else if (type == 'like') {
@@ -41,11 +44,23 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
     } else if (type == 'laugh') {
       iconData = Icons.sentiment_very_satisfied;
       color = Colors.orange;
+    } else if (type == 'rose') {
+      iconData = Icons.local_florist;
+      color = Colors.pink;
+    } else if (type == 'diamond') {
+      iconData = Icons.diamond;
+      color = Colors.lightBlueAccent;
+    } else if (type == 'crown') {
+      iconData = Icons.workspace_premium;
+      color = Colors.amber;
+    } else {
+      iconData = Icons.favorite;
+      color = Colors.redAccent;
     }
 
     final controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 1800),
     );
 
     final item = _ReactionItem(
@@ -54,7 +69,7 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
       icon: iconData,
       color: color,
       controller: controller,
-      startX: _random.nextDouble() * 40 - 20, // offset from center
+      startX: _random.nextDouble() * 50 - 25, // offset from center
     );
 
     setState(() {
@@ -73,6 +88,7 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
 
   @override
   void dispose() {
+    _sub?.cancel();
     for (var item in _reactions) {
       item.controller.dispose();
     }
@@ -83,28 +99,41 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: Stack(
+        clipBehavior: Clip.none,
         children: _reactions.map((item) {
           return AnimatedBuilder(
             animation: item.controller,
             builder: (context, child) {
               final value = item.controller.value;
-              final yOffset = -value * 200.h; // Float up 200 pixels
-              final xOffset = item.startX + (sin(value * pi * 2) * 20); // Sway side to side
-              final opacity = 1.0 - value; // Fade out
+              final yOffset = -value * 280.h; // Float up 280 pixels
+              final xOffset = item.startX + (sin(value * pi * 2) * 24); // Sway side to side
+              final opacity = (1.0 - value).clamp(0.0, 1.0); // Fade out
 
               return Positioned(
-                bottom: 80.h,
-                right: 60.w + xOffset, // Origin point near the bottom right
+                bottom: 90.h,
+                right: 36.w + xOffset, // Origin point directly above the reaction buttons
                 child: Opacity(
                   opacity: opacity,
                   child: Transform.translate(
                     offset: Offset(0, yOffset),
                     child: Transform.scale(
-                      scale: 1.0 + (value * 0.5), // Grow slightly
-                      child: Icon(
-                        item.icon,
-                        color: item.color,
-                        size: 32.sp,
+                      scale: 1.0 + (value * 0.6), // Grow dynamically
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: item.color.withValues(alpha: 0.4),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          item.icon,
+                          color: item.color,
+                          size: 36.sp,
+                        ),
                       ),
                     ),
                   ),
