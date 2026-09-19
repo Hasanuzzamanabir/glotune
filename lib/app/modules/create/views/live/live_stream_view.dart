@@ -628,6 +628,10 @@ class LiveStreamView extends GetView<CreateController> {
             onTap: () => controller.switchCamera(),
           ),
           _buildSideIcon(
+            Icons.grid_view_rounded,
+            onTap: () => controller.startBoxBattle(),
+          ),
+          _buildSideIcon(
             Icons.auto_awesome,
             onTap: () => Get.snackbar(
               "Beauty Mode",
@@ -682,21 +686,6 @@ class LiveStreamView extends GetView<CreateController> {
     );
   }
 
-  Widget _buildBattleButton(String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: Colors.white, fontSize: 10.sp),
-      ),
-    );
-  }
-
   void _showDetailedSettings() {
     Get.bottomSheet(
       Container(
@@ -733,6 +722,14 @@ class LiveStreamView extends GetView<CreateController> {
                 onTap: () {
                   Get.back();
                   controller.switchCamera();
+                },
+              ),
+              _buildListSetting(
+                "Box Battle (8 Boxes)",
+                Icons.grid_view_rounded,
+                onTap: () {
+                  Get.back();
+                  controller.startBoxBattle();
                 },
               ),
               _buildListSetting(

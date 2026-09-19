@@ -993,6 +993,9 @@ class CreateController extends GetxController {
             if (!remoteUids.contains(remoteUid)) {
               remoteUids.add(remoteUid);
             }
+            if (isBoxBattleActive.value) {
+              assignGuestToVacantSlot(remoteUid);
+            }
           },
           onUserOffline:
               (
@@ -1004,6 +1007,9 @@ class CreateController extends GetxController {
                   "[DEBUG LIVE] AGORA EVENT: Remote co-host left: $remoteUid (Reason: $reason)",
                 );
                 remoteUids.remove(remoteUid);
+                if (isBoxBattleActive.value) {
+                  _freeSlotByUid(remoteUid);
+                }
               },
           onError: (ErrorCodeType err, String msg) {
             print("[DEBUG LIVE] AGORA EVENT ERROR: $err - $msg");
@@ -1756,6 +1762,25 @@ class CreateController extends GetxController {
         ),
       );
     }
+
+    // 7. Box Battle events (PDF Section 14)
+    else if (type == 'guest_gift_update' || action == 'guest_gift_update') {
+      final slotNumber = data['slot_number'];
+      final giftTotal = data['gift_total'];
+      final bonusTotal = data['bonus_total'];
+      if (slotNumber != null) {
+        final slotNum = int.tryParse(slotNumber.toString());
+        final idx = boxSlots.indexWhere((s) => s['slot_number'] == slotNum);
+        if (idx != -1) {
+          final s = Map<String, dynamic>.from(boxSlots[idx]);
+          if (giftTotal != null) s['gift_total'] = giftTotal;
+          if (bonusTotal != null) s['bonus_total'] = bonusTotal;
+          boxSlots[idx] = s;
+        }
+      }
+    } else if (type == 'battle_ended' || action == 'battle_ended') {
+      endBoxBattle();
+    }
   }
 
   Future<void> inviteGuest(dynamic userId) async {
@@ -1838,6 +1863,229 @@ class CreateController extends GetxController {
       Get.snackbar(
         "Invitation Sent",
         "Participant invitation sent!",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
+    }
+  }
+
+  // ================= BOX BATTLE (PDF SPECIFICATION) =================
+  final isBoxBattleActive = false.obs;
+  final boxBattleTimerSeconds = 90.obs;
+  Timer? _boxBattleTimer;
+  final boxSlots = <Map<String, dynamic>>[].obs;
+
+  String get formattedBoxBattleTimer {
+    final s = boxBattleTimerSeconds.value;
+    final m = s ~/ 60;
+    final rem = s % 60;
+    return "$m:${rem.toString().padLeft(2, '0')}";
+  }
+
+  void initBoxBattleSlots() {
+    final List<Map<String, dynamic>> slots = [];
+    final currentGuests = List<int>.from(remoteUids);
+
+    for (int i = 1; i <= 8; i++) {
+      if (i - 1 < currentGuests.length) {
+        final uid = currentGuests[i - 1];
+        slots.add({
+          'slot_number': i,
+          'status': 'OCCUPIED',
+          'uid': uid,
+          'guest_id': uid,
+          'username': 'Guest $i',
+          'gift_total': 200,
+          'bonus_total': 30,
+          'mic_on': true,
+          'camera_on': true,
+        });
+      } else {
+        slots.add({
+          'slot_number': i,
+          'status': 'VACANT',
+          'uid': null,
+          'guest_id': null,
+          'username': '',
+          'gift_total': 0,
+          'bonus_total': 0,
+          'mic_on': true,
+          'camera_on': true,
+        });
+      }
+    }
+    boxSlots.value = slots;
+  }
+
+  void assignGuestToVacantSlot(int uid, {String? username}) {
+    final vacantIndex = boxSlots.indexWhere((s) => s['status'] == 'VACANT');
+    if (vacantIndex != -1) {
+      final slotNum = boxSlots[vacantIndex]['slot_number'];
+      final updated = Map<String, dynamic>.from(boxSlots[vacantIndex]);
+      updated['status'] = 'OCCUPIED';
+      updated['uid'] = uid;
+      updated['guest_id'] = uid;
+      updated['username'] = username ?? 'Guest $slotNum';
+      updated['gift_total'] = 200;
+      updated['bonus_total'] = 30;
+      updated['mic_on'] = true;
+      updated['camera_on'] = true;
+      boxSlots[vacantIndex] = updated;
+    }
+  }
+
+  void _freeSlotByUid(int uid) {
+    final index = boxSlots.indexWhere((s) => s['uid'] == uid);
+    if (index != -1) {
+      final slotNum = boxSlots[index]['slot_number'];
+      boxSlots[index] = {
+        'slot_number': slotNum,
+        'status': 'VACANT',
+        'uid': null,
+        'guest_id': null,
+        'username': '',
+        'gift_total': 0,
+        'bonus_total': 0,
+        'mic_on': true,
+        'camera_on': true,
+      };
+    }
+  }
+
+  Future<void> startBoxBattle() async {
+    isBoxBattleActive.value = true;
+    initBoxBattleSlots();
+    boxBattleTimerSeconds.value = 90;
+    _boxBattleTimer?.cancel();
+    _boxBattleTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (boxBattleTimerSeconds.value > 0) {
+        boxBattleTimerSeconds.value--;
+      } else {
+        timer.cancel();
+      }
+    });
+
+    try {
+      if (_liveWs != null) {
+        _liveWs!.add(jsonEncode({
+          "type": "battle_started",
+          "action": "battle_started",
+          "battle_type": "box_battle",
+          "max_guests": 8,
+          "room_id": liveRoomId.value,
+        }));
+      }
+    } catch (_) {}
+
+    try {
+      final authService = Get.find<AuthService>();
+      final token = authService.accessToken.value;
+      if (token != null && liveRoomId.value.isNotEmpty) {
+        apiClient.post(
+          Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/box-battles/'),
+          headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+          body: jsonEncode({"battle_type": "box_battle", "max_guests": 8}),
+        );
+      }
+    } catch (_) {}
+
+    navigateTo("LiveBoxBattle");
+  }
+
+  void endBoxBattle() {
+    isBoxBattleActive.value = false;
+    _boxBattleTimer?.cancel();
+
+    try {
+      if (_liveWs != null) {
+        _liveWs!.add(jsonEncode({
+          "type": "battle_ended",
+          "action": "battle_ended",
+          "room_id": liveRoomId.value,
+        }));
+      }
+    } catch (_) {}
+
+    navigateTo("LiveStream");
+    Get.snackbar(
+      "Box Battle Ended",
+      "Returned to standard live stream",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
+  }
+
+  void removeBoxGuest(int slotNumber) {
+    final index = boxSlots.indexWhere((s) => s['slot_number'] == slotNumber);
+    if (index != -1) {
+      final slot = Map<String, dynamic>.from(boxSlots[index]);
+      final uid = slot['uid'];
+      if (uid != null && uid is int) {
+        remoteUids.remove(uid);
+      }
+      boxSlots[index] = {
+        'slot_number': slotNumber,
+        'status': 'VACANT',
+        'uid': null,
+        'guest_id': null,
+        'username': '',
+        'gift_total': 0,
+        'bonus_total': 0,
+        'mic_on': true,
+        'camera_on': true,
+      };
+
+      try {
+        if (_liveWs != null) {
+          _liveWs!.add(jsonEncode({
+            "type": "guest_removed",
+            "action": "guest_removed",
+            "slot_number": slotNumber,
+            "guest_id": uid,
+            "room_id": liveRoomId.value,
+          }));
+        }
+      } catch (_) {}
+
+      Get.snackbar(
+        "Guest Removed",
+        "Slot $slotNumber is now vacant",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
+    }
+  }
+
+  void toggleSlotMic(int slotNumber) {
+    final index = boxSlots.indexWhere((s) => s['slot_number'] == slotNumber);
+    if (index != -1) {
+      final slot = Map<String, dynamic>.from(boxSlots[index]);
+      final currentMic = slot['mic_on'] == true;
+      slot['mic_on'] = !currentMic;
+      boxSlots[index] = slot;
+      Get.snackbar(
+        "Guest Microphone",
+        "Slot $slotNumber mic ${!currentMic ? 'enabled' : 'muted'}",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
+    }
+  }
+
+  void toggleSlotCamera(int slotNumber) {
+    final index = boxSlots.indexWhere((s) => s['slot_number'] == slotNumber);
+    if (index != -1) {
+      final slot = Map<String, dynamic>.from(boxSlots[index]);
+      final currentCam = slot['camera_on'] == true;
+      slot['camera_on'] = !currentCam;
+      boxSlots[index] = slot;
+      Get.snackbar(
+        "Guest Camera",
+        "Slot $slotNumber camera ${!currentCam ? 'enabled' : 'disabled'}",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.white,
         colorText: Colors.black,

@@ -37,7 +37,43 @@ class LivePlayerView extends GetView<LivePlayerController> {
               final hasRemote = controller.remoteUids.isNotEmpty;
               final isCo = controller.isCohost.value;
 
-              if (!hasRemote && !isCo) {
+              if (!hasRemote) {
+                if (isCo) {
+                  // Only local co-host active so far, waiting for host stream
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      AgoraVideoView(
+                        controller: VideoViewController(
+                          rtcEngine: controller.engine,
+                          canvas: const VideoCanvas(uid: 0),
+                        ),
+                      ),
+                      Positioned(
+                        top: 50.h,
+                        left: 12.w,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 3.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.indigoAccent,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            "You (Co-Host) • Waiting for Host...",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
                 return const Text(
                   'Waiting for host to broadcast...',
                   style: TextStyle(color: Colors.white),
@@ -45,10 +81,10 @@ class LivePlayerView extends GetView<LivePlayerController> {
                 );
               }
 
-              // Combine broadcasters: remote streams + local co-host if upgraded
+              // Guaranteed hasRemote is true (controller.remoteUids is not empty)
               final totalBroadcasters = controller.remoteUids.length + (isCo ? 1 : 0);
 
-              if (totalBroadcasters == 1 && hasRemote) {
+              if (totalBroadcasters == 1) {
                 // Single broadcaster (host)
                 return AgoraVideoView(
                   controller: VideoViewController.remote(
