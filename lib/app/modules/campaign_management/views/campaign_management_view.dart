@@ -3,9 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/routes/app_pages.dart';
 import 'package:glotune/app/data/models/campaign.dart';
-import 'package:get/get.dart';
 import '../controllers/campaign_management_controller.dart';
-import 'package:glotune/app/routes/app_pages.dart';
 
 class CampaignManagementView extends GetView<CampaignManagementController> {
   const CampaignManagementView({super.key});

@@ -7,12 +7,14 @@ import 'app/routes/app_pages.dart';
 import 'app/core/services/auth_service.dart';
 import 'app/core/services/interaction_service.dart';
 import 'app/core/services/pip_service.dart';
+import 'app/core/services/notification_websocket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Get.putAsync(() => AuthService().init());
   Get.put(InteractionService());
   Get.put(PipService());
+  Get.put(NotificationWebSocketService());
 
   runApp(
     ScreenUtilInit(

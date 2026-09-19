@@ -244,10 +244,12 @@ class OtherProfileView extends GetView<OtherProfileController> {
   }
 
   String formatCount(int count) {
-    if (count >= 1000000)
+    if (count >= 1000000) {
       return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000)
+    }
+    if (count >= 1000) {
       return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    }
     return count.toString();
   }
 

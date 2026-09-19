@@ -23,10 +23,12 @@ class CommunityView extends GetView<CommunityController> {
           child: Stack(
             children: [
               Obx(() {
-                if (controller.selectedTab.value == "Friends")
+                if (controller.selectedTab.value == "Friends") {
                   return _buildFriendsList();
-                if (controller.selectedTab.value == "Pending request")
+                }
+                if (controller.selectedTab.value == "Pending request") {
                   return _buildPendingRequests();
+                }
                 return _buildInbox();
               }),
               Positioned(

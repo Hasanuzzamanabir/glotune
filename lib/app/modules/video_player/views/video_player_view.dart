@@ -344,7 +344,7 @@ class VideoPlayerView extends GetView<VideoPlayerController> {
 class _CommentsOverlay extends StatelessWidget {
   final VideoPlayerController controller;
 
-  const _CommentsOverlay({super.key, required this.controller});
+  const _CommentsOverlay({required this.controller});
 
   @override
   Widget build(BuildContext context) {

@@ -31,11 +31,76 @@ class LiveStreamView extends GetView<CreateController> {
                     child: CircularProgressIndicator(color: Colors.white),
                   );
                 }
-                return AgoraVideoView(
-                  controller: VideoViewController(
-                    rtcEngine: controller.liveEngine!,
-                    canvas: const VideoCanvas(uid: 0),
-                  ),
+
+                // If no remote co-hosts, show single full-screen host view
+                if (controller.remoteUids.isEmpty) {
+                  return AgoraVideoView(
+                    controller: VideoViewController(
+                      rtcEngine: controller.liveEngine!,
+                      canvas: const VideoCanvas(uid: 0),
+                    ),
+                  );
+                }
+
+                // Vertical split: Host in top half, other participants in bottom half
+                final guests = controller.remoteUids;
+                return Column(
+                  children: [
+                    // Top half: Host (You)
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.black,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            AgoraVideoView(
+                              controller: VideoViewController(
+                                rtcEngine: controller.liveEngine!,
+                                canvas: const VideoCanvas(uid: 0),
+                              ),
+                            ),
+                            Positioned(
+                              top: 50.h,
+                              left: 12.w,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 3.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[800],
+                                  borderRadius: BorderRadius.circular(4.r),
+                                ),
+                                child: Text(
+                                  "Host (You)",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Clean separation border
+                    Container(height: 2.h, color: Colors.white24),
+
+                    // Bottom half: Other participants
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.black,
+                        child: _buildParticipantsBottomHalf(guests),
+                      ),
+                    ),
+                  ],
                 );
               }),
             ),
@@ -225,6 +290,38 @@ class LiveStreamView extends GetView<CreateController> {
                 reverse: true,
                 itemBuilder: (context, index) {
                   final msg = controller.liveMessages[index];
+                  final isSystem = msg is Map && (msg['is_system'] == true || msg['type'] == 'member_action');
+                  final text =
+                      (msg is Map
+                          ? (msg['message'] ?? msg['content'] ?? msg['text'])
+                          : msg.toString()) ??
+                      "";
+
+                  if (isSystem) {
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 6.h),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(color: Colors.white12, width: 0.5),
+                          ),
+                          child: Text(
+                            text,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11.sp,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
                   final userObj = msg is Map
                       ? (msg['user'] is Map ? msg['user'] : msg)
                       : {};
@@ -233,11 +330,6 @@ class LiveStreamView extends GetView<CreateController> {
                       userObj['full_name'] ??
                       userObj['name'] ??
                       "Viewer";
-                  final text =
-                      (msg is Map
-                          ? (msg['message'] ?? msg['content'] ?? msg['text'])
-                          : msg.toString()) ??
-                      "";
                   return Padding(
                     padding: EdgeInsets.only(bottom: 8.h),
                     child: Row(
@@ -267,6 +359,41 @@ class LiveStreamView extends GetView<CreateController> {
               );
             }),
           ),
+
+          // Temporary message banner from socket
+          Obx(() {
+            if (controller.temporaryNotice.value.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h, left: 4.w),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: Colors.amberAccent.withValues(alpha: 0.5), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.notifications_active, color: Colors.amberAccent, size: 13.sp),
+                    SizedBox(width: 6.w),
+                    Flexible(
+                      child: Text(
+                        controller.temporaryNotice.value,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
 
           // Typing indicator banner
           Obx(() {
@@ -353,6 +480,141 @@ class LiveStreamView extends GetView<CreateController> {
         ],
       ),
     );
+  }
+
+  Widget _buildParticipantsBottomHalf(List<int> guests) {
+    if (guests.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    if (guests.length == 1) {
+      final remoteUid = guests.first;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          AgoraVideoView(
+            controller: VideoViewController.remote(
+              rtcEngine: controller.liveEngine!,
+              canvas: VideoCanvas(uid: remoteUid),
+              connection: RtcConnection(
+                channelId: controller.liveRoomId.value,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 10.h,
+            left: 10.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: Colors.indigoAccent,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                "Guest",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (guests.length == 2) {
+      return Row(
+        children: guests.map((uid) {
+          return Expanded(
+            child: Container(
+              margin: EdgeInsets.all(0.5.w),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  AgoraVideoView(
+                    controller: VideoViewController.remote(
+                      rtcEngine: controller.liveEngine!,
+                      canvas: VideoCanvas(uid: uid),
+                      connection: RtcConnection(
+                        channelId: controller.liveRoomId.value,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8.h,
+                    left: 8.w,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: Colors.indigoAccent,
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        "Guest",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    } else {
+      return GridView.builder(
+        padding: EdgeInsets.zero,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 1.0,
+        ),
+        itemCount: guests.length,
+        itemBuilder: (context, index) {
+          final uid = guests[index];
+          return Container(
+            margin: const EdgeInsets.all(0.5),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AgoraVideoView(
+                  controller: VideoViewController.remote(
+                    rtcEngine: controller.liveEngine!,
+                    canvas: VideoCanvas(uid: uid),
+                    connection: RtcConnection(
+                      channelId: controller.liveRoomId.value,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 6.h,
+                  left: 6.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: Colors.indigoAccent,
+                      borderRadius: BorderRadius.circular(3.r),
+                    ),
+                    child: Text(
+                      "Guest",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
 
   Widget _buildLiveSideControls() {
@@ -599,7 +861,7 @@ class LiveStreamView extends GetView<CreateController> {
   }
 
   void _showInviteGuests() {
-    controller.fetchLiveMemberCount();
+    controller.fetchLiveParticipants();
     final searchController = TextEditingController();
     final searchQuery = "".obs;
 
@@ -662,6 +924,11 @@ class LiveStreamView extends GetView<CreateController> {
             SizedBox(height: 16.h),
             Expanded(
               child: Obx(() {
+                if (controller.isLoadingMembers.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                }
                 final query = searchQuery.value;
                 final allMembers = controller.liveMembers;
                 final filtered = allMembers.where((m) {
@@ -741,8 +1008,9 @@ class LiveStreamView extends GetView<CreateController> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final member = filtered[index];
-                    final user = member is Map && member['user'] is Map
-                        ? member['user']
+                    final dynamic userObj = member is Map ? member['user'] : null;
+                    final user = userObj is Map
+                        ? userObj
                         : (member is Map ? member : {});
                     final name =
                         user['full_name'] ??
@@ -753,8 +1021,9 @@ class LiveStreamView extends GetView<CreateController> {
                         ? '@${user['username']}'
                         : '';
                     final avatar = user['profile_picture'] ?? user['avatar'];
-                    final userId =
-                        user['id'] ?? (member is Map ? member['id'] : null);
+                    final userId = (userObj is Map ? userObj['id'] : null) ??
+                        (userObj is int || userObj is String ? userObj : null) ??
+                        (member is Map ? (member['user_id'] ?? member['id']) : null);
 
                     return ListTile(
                       leading: CircleAvatar(
@@ -1072,7 +1341,7 @@ class LiveStreamView extends GetView<CreateController> {
   }
 
   void _showLiveMembersList() {
-    controller.fetchLiveMemberCount();
+    controller.fetchLiveParticipants();
     Get.bottomSheet(
       Container(
         height: Get.height * 0.6,
@@ -1104,6 +1373,11 @@ class LiveStreamView extends GetView<CreateController> {
             SizedBox(height: 16.h),
             Expanded(
               child: Obx(() {
+                if (controller.isLoadingMembers.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                }
                 if (controller.liveMembers.isEmpty) {
                   return const Center(child: Text("No viewers yet."));
                 }

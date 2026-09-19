@@ -59,64 +59,73 @@ class LivePlayerView extends GetView<LivePlayerController> {
                 );
               }
 
-              // Multiple broadcasters (Host + Co-hosts) in responsive grid
-              return GridView.builder(
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: totalBroadcasters > 2 ? 2 : 1,
-                  childAspectRatio: totalBroadcasters == 2 ? 1.0 : 0.9,
-                ),
-                itemCount: totalBroadcasters,
-                itemBuilder: (context, index) {
-                  // If co-host, render local camera as the last tile
-                  if (isCo && index == controller.remoteUids.length) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.indigoAccent, width: 1.0),
-                      ),
+              // Multiple broadcasters: Host in top half, other participants in bottom half
+              final hostUid = controller.remoteUids.first;
+              final otherRemoteUids = controller.remoteUids.length > 1
+                  ? controller.remoteUids.sublist(1)
+                  : <int>[];
+
+              return Column(
+                children: [
+                  // Top half: Host
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      width: double.infinity,
+                      color: Colors.black,
                       child: Stack(
+                        fit: StackFit.expand,
                         children: [
                           AgoraVideoView(
-                            controller: VideoViewController(
+                            controller: VideoViewController.remote(
                               rtcEngine: controller.engine,
-                              canvas: const VideoCanvas(uid: 0),
+                              canvas: VideoCanvas(uid: hostUid),
+                              connection: RtcConnection(channelId: controller.roomId),
                             ),
                           ),
                           Positioned(
-                            top: 8,
-                            left: 8,
+                            top: 50.h,
+                            left: 12.w,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.indigoAccent,
-                                borderRadius: BorderRadius.circular(4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 3.h,
                               ),
-                              child: const Text(
-                                "You (Co-Host)",
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              decoration: BoxDecoration(
+                                color: Colors.orange[800],
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                "Host",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    );
-                  }
-
-                  final uid = controller.remoteUids[index];
-                  return Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white24, width: 0.5),
                     ),
-                    child: AgoraVideoView(
-                      controller: VideoViewController.remote(
-                        rtcEngine: controller.engine,
-                        canvas: VideoCanvas(uid: uid),
-                        connection: RtcConnection(channelId: controller.roomId),
+                  ),
+
+                  // Separation line
+                  Container(height: 2.h, color: Colors.white24),
+
+                  // Bottom half: Other participants / Co-host
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      width: double.infinity,
+                      color: Colors.black,
+                      child: _buildPlayerParticipantsBottomHalf(
+                        otherRemoteUids: otherRemoteUids,
+                        isCohost: isCo,
                       ),
                     ),
-                  );
-                },
+                  ),
+                ],
               );
             }),
           ),
@@ -146,6 +155,152 @@ class LivePlayerView extends GetView<LivePlayerController> {
         ],
       ),
     );
+  }
+
+  Widget _buildPlayerParticipantsBottomHalf({
+    required List<int> otherRemoteUids,
+    required bool isCohost,
+  }) {
+    if (isCohost && otherRemoteUids.isEmpty) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          AgoraVideoView(
+            controller: VideoViewController(
+              rtcEngine: controller.engine,
+              canvas: const VideoCanvas(uid: 0),
+            ),
+          ),
+          Positioned(
+            top: 10.h,
+            left: 10.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: Colors.indigoAccent,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                "You (Co-Host)",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final List<Widget> guestTiles = [];
+
+    for (final uid in otherRemoteUids) {
+      guestTiles.add(
+        Stack(
+          fit: StackFit.expand,
+          children: [
+            AgoraVideoView(
+              controller: VideoViewController.remote(
+                rtcEngine: controller.engine,
+                canvas: VideoCanvas(uid: uid),
+                connection: RtcConnection(channelId: controller.roomId),
+              ),
+            ),
+            Positioned(
+              top: 8.h,
+              left: 8.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: Colors.indigoAccent,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  "Guest",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (isCohost) {
+      guestTiles.add(
+        Stack(
+          fit: StackFit.expand,
+          children: [
+            AgoraVideoView(
+              controller: VideoViewController(
+                rtcEngine: controller.engine,
+                canvas: const VideoCanvas(uid: 0),
+              ),
+            ),
+            Positioned(
+              top: 8.h,
+              left: 8.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: Colors.indigoAccent,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  "You (Co-Host)",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (guestTiles.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    if (guestTiles.length == 1) {
+      return guestTiles.first;
+    } else if (guestTiles.length == 2) {
+      return Row(
+        children: guestTiles.map((tile) {
+          return Expanded(
+            child: Container(
+              margin: EdgeInsets.all(0.5.w),
+              child: tile,
+            ),
+          );
+        }).toList(),
+      );
+    } else {
+      return GridView.builder(
+        padding: EdgeInsets.zero,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 1.0,
+        ),
+        itemCount: guestTiles.length,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.all(0.5),
+            child: guestTiles[index],
+          );
+        },
+      );
+    }
   }
 
   Widget _buildHeader() {
@@ -180,6 +335,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
                   ),
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.group, color: Colors.white, size: 12),
                     SizedBox(width: 4.w),
@@ -254,6 +410,37 @@ class LivePlayerView extends GetView<LivePlayerController> {
             reverse: true, // Show latest messages at the bottom
             itemBuilder: (context, index) {
               final msg = controller.liveMessages[index];
+              final isSystem = msg is Map && (msg['is_system'] == true || msg['type'] == 'member_action');
+              final text = (msg is Map
+                      ? (msg['message'] ?? msg['content'] ?? msg['text'])
+                      : msg.toString()) ??
+                  "";
+
+              if (isSystem) {
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 6.h),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: Colors.white12, width: 0.5),
+                      ),
+                      child: Text(
+                        text,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11.sp,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+
               final userObj = msg is Map
                   ? (msg['user'] is Map ? msg['user'] : msg)
                   : {};
@@ -261,10 +448,6 @@ class LivePlayerView extends GetView<LivePlayerController> {
                   userObj['full_name'] ??
                   userObj['name'] ??
                   "User";
-              final text = (msg is Map
-                      ? (msg['message'] ?? msg['content'] ?? msg['text'])
-                      : msg.toString()) ??
-                  "";
               return Padding(
                 padding: EdgeInsets.only(bottom: 8.h),
                 child: Row(
@@ -311,6 +494,41 @@ class LivePlayerView extends GetView<LivePlayerController> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Temporary message banner from socket
+          Obx(() {
+            if (controller.temporaryNotice.value.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h, left: 4.w),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(color: Colors.amberAccent.withValues(alpha: 0.5), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.notifications_active, color: Colors.amberAccent, size: 13.sp),
+                    SizedBox(width: 6.w),
+                    Flexible(
+                      child: Text(
+                        controller.temporaryNotice.value,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+
           // Typing indicator banner
           Obx(() {
             if (controller.typingNotice.value.isEmpty) {

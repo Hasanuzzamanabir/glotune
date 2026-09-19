@@ -39,9 +39,14 @@ class AuthService extends GetxService {
         }
         final normalized = base64Url.normalize(payloadBase64);
         final payloadString = utf8.decode(base64Url.decode(normalized));
-        final payloadMap = jsonDecode(payloadString);
-        final userIdStr = payloadMap['user_id'];
+        final payloadMap = jsonDecode(payloadString) as Map<String, dynamic>;
+        final userIdStr = payloadMap['user_id'] ??
+            payloadMap['id'] ??
+            payloadMap['sub'] ??
+            payloadMap['user']?['id'] ??
+            payloadMap['pk'];
         currentUserId.value = int.tryParse(userIdStr.toString());
+        print("[AuthService] Decoded JWT user ID: ${currentUserId.value}");
       }
     } catch (e) {
       print('Error decoding JWT: $e');

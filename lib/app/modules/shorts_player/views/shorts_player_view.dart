@@ -332,11 +332,7 @@ class _ShortsCommentsOverlay extends StatelessWidget {
   final ShortsPlayerController controller;
   final int index;
 
-  const _ShortsCommentsOverlay({
-    super.key,
-    required this.controller,
-    required this.index,
-  });
+  const _ShortsCommentsOverlay({required this.controller, required this.index});
 
   @override
   Widget build(BuildContext context) {

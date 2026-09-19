@@ -54,6 +54,7 @@ class CreateController extends GetxController {
   final String appId = ApiConstants.agoraAppId;
   RtcEngine? liveEngine;
   final isLiveEngineInitialized = false.obs;
+  final remoteUids = <int>[].obs;
   final liveRoomId = "".obs;
   final liveRoomData = Rxn<Map<String, dynamic>>();
   final liveMemberCount = 0.obs;
@@ -62,8 +63,19 @@ class CreateController extends GetxController {
   final liveMessages = <dynamic>[].obs;
   final typingNotice = "".obs;
   Timer? _typingTimer;
+  final temporaryNotice = "".obs;
+  Timer? _temporaryNoticeTimer;
+
+  void showTemporaryNotice(String message) {
+    if (message.trim().isEmpty) return;
+    temporaryNotice.value = message;
+    _temporaryNoticeTimer?.cancel();
+    _temporaryNoticeTimer = Timer(const Duration(seconds: 4), () {
+      temporaryNotice.value = "";
+    });
+  }
+  final isLoadingMembers = false.obs;
   final liveDurationSeconds = 0.obs;
-  Timer? _memberPollTimer;
   Timer? _messagePollTimer;
   Timer? _liveDurationTimer;
   WebSocket? _liveWs;
@@ -456,7 +468,6 @@ class CreateController extends GetxController {
   void onClose() {
     liveTitleController.dispose();
     _recordingTimer?.cancel();
-    _memberPollTimer?.cancel();
     _messagePollTimer?.cancel();
     _liveDurationTimer?.cancel();
     cameraController?.dispose();
@@ -815,6 +826,12 @@ class CreateController extends GetxController {
                 ? data['host'] as int
                 : int.tryParse(data['host']?.toString() ?? '')) ??
             0;
+        liveMemberCount.value = int.tryParse(
+              data['viewer_count']?.toString() ??
+                  data['member_count']?.toString() ??
+                  '0',
+            ) ??
+            0;
 
         print(
           "[DEBUG LIVE] Initial Agora Token: ${agoraToken != null ? (agoraToken.length > 25 ? '${agoraToken.substring(0, 25)}...' : agoraToken) : 'none'}",
@@ -897,17 +914,8 @@ class CreateController extends GetxController {
           print("[DEBUG LIVE] Failed: Missing streaming credentials");
         }
 
-        // Fetch initial dynamic members
-        await fetchLiveMemberCount();
-
-        // Start dynamic polling for members
-        _memberPollTimer?.cancel();
-        _memberPollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-          fetchLiveMemberCount();
-        });
         _messagePollTimer?.cancel();
-
-        // Connect Host WebSocket for real-time signaling
+        // Member count & events handled real-time via WebSocket
         _connectLiveWebSocket();
 
         // Navigate to the live stream view
@@ -981,8 +989,10 @@ class CreateController extends GetxController {
             );
           },
           onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-            print("[DEBUG LIVE] AGORA EVENT: Remote viewer joined: $remoteUid");
-            fetchLiveMemberCount();
+            print("[DEBUG LIVE] AGORA EVENT: Remote co-host joined: $remoteUid");
+            if (!remoteUids.contains(remoteUid)) {
+              remoteUids.add(remoteUid);
+            }
           },
           onUserOffline:
               (
@@ -991,9 +1001,9 @@ class CreateController extends GetxController {
                 UserOfflineReasonType reason,
               ) {
                 print(
-                  "[DEBUG LIVE] AGORA EVENT: Remote viewer left: $remoteUid (Reason: $reason)",
+                  "[DEBUG LIVE] AGORA EVENT: Remote co-host left: $remoteUid (Reason: $reason)",
                 );
-                fetchLiveMemberCount();
+                remoteUids.remove(remoteUid);
               },
           onError: (ErrorCodeType err, String msg) {
             print("[DEBUG LIVE] AGORA EVENT ERROR: $err - $msg");
@@ -1098,9 +1108,10 @@ class CreateController extends GetxController {
     }
   }
 
-  Future<void> fetchLiveMemberCount() async {
+  Future<void> fetchLiveParticipants() async {
     if (liveRoomId.value.isEmpty) return;
     try {
+      isLoadingMembers.value = true;
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
 
@@ -1113,7 +1124,7 @@ class CreateController extends GetxController {
       );
 
       print(
-        "[DEBUG LIVE] fetchLiveMemberCount [${response.statusCode}]: ${response.body}",
+        "[DEBUG LIVE] fetchLiveParticipants [${response.statusCode}]: ${response.body}",
       );
 
       if (response.statusCode == 200) {
@@ -1144,7 +1155,9 @@ class CreateController extends GetxController {
         );
       }
     } catch (e) {
-      print("[DEBUG LIVE] Exception fetching member count: $e");
+      print("[DEBUG LIVE] Exception fetching members: $e");
+    } finally {
+      isLoadingMembers.value = false;
     }
   }
 
@@ -1285,7 +1298,6 @@ class CreateController extends GetxController {
       }
       liveEngine = null;
     }
-    _memberPollTimer?.cancel();
     _messagePollTimer?.cancel();
     isLiveEngineInitialized.value = false;
 
@@ -1462,8 +1474,12 @@ class CreateController extends GetxController {
     liveDurationSeconds.value = 0;
     liveMembers.clear();
     invitedUserIds.clear();
+    remoteUids.clear();
     liveMessages.clear();
     _liveDurationTimer?.cancel();
+    _typingTimer?.cancel();
+    _temporaryNoticeTimer?.cancel();
+    temporaryNotice.value = "";
     navigateTo("Camera");
     initCamera(); // Restore flutter camera
   }
@@ -1514,7 +1530,6 @@ class CreateController extends GetxController {
         }
         liveEngine = null;
       }
-      _memberPollTimer?.cancel();
       _messagePollTimer?.cancel();
       try {
         _liveWs?.close();
@@ -1678,22 +1693,67 @@ class CreateController extends GetxController {
 
     // 5. Member count / action updates
     else if (type == 'member_action') {
-      if (data['viewer_count'] != null) {
-        liveMemberCount.value = int.tryParse(data['viewer_count'].toString()) ?? liveMemberCount.value;
-      } else if (data['member_count'] != null) {
-        liveMemberCount.value = int.tryParse(data['member_count'].toString()) ?? liveMemberCount.value;
+      final countVal = data['viewer_count'] ?? data['member_count'] ?? data['count'];
+      if (countVal != null) {
+        final parsed = int.tryParse(countVal.toString());
+        if (parsed != null) {
+          liveMemberCount.value = parsed;
+          print("[DEBUG LIVE WS] Updated liveMemberCount to: $parsed");
+        }
+      }
+
+      final username = data['username'] ?? data['user']?['username'] ?? '';
+      String noticeMsg = (data['message'] ?? data['text'] ?? '')?.toString().trim() ?? '';
+      if (noticeMsg.isEmpty && action != null) {
+        if (action == 'user_left') {
+          noticeMsg = username.isNotEmpty ? '@$username left the LIVE' : 'A viewer left the LIVE';
+        } else if (action == 'user_joined') {
+          noticeMsg = username.isNotEmpty ? '@$username joined the LIVE' : 'A new viewer joined the LIVE';
+        }
+      }
+
+      if (noticeMsg.isNotEmpty) {
+        showTemporaryNotice(noticeMsg);
+
+        // Also add to chat messages as system notification
+        liveMessages.insert(0, {
+          'message': noticeMsg,
+          'type': 'member_action',
+          'action': action,
+          'is_system': true,
+          'username': username,
+          'user_id': data['user_id'],
+          'profile_picture': data['profile_picture'],
+          'timestamp': DateTime.now().toIso8601String(),
+        });
       }
     }
 
     // 6. Join or stream requests from viewers
     else if (type == 'stream_request' && data['action'] == 'requested') {
       final requesterName = data['requester_username'] ?? data['username'] ?? 'User';
+      final requesterId = data['requester_id'] ?? data['user_id'];
       Get.snackbar(
         'Stream Request',
-        '$requesterName wants to join your stream!',
+        '$requesterName wants to join your stream as a guest!',
         backgroundColor: Colors.indigoAccent,
         colorText: Colors.white,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 8),
+        mainButton: TextButton(
+          onPressed: () {
+            Get.closeCurrentSnackbar();
+            if (requesterId != null) {
+              inviteGuest(requesterId);
+            }
+          },
+          child: const Text(
+            'Accept',
+            style: TextStyle(
+              color: Colors.amberAccent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       );
     }
   }
@@ -1712,14 +1772,20 @@ class CreateController extends GetxController {
 
     // 1. Send immediate real-time invitation over WebSocket so guest receives it instantly
     try {
+      if (_liveWs == null) {
+        _connectLiveWebSocket();
+      }
       if (_liveWs != null) {
+        final hostName = liveRoomData.value?['host']?['username'] ?? "Host";
         final inviteWsPayload = jsonEncode({
           "type": "cohost_invite",
           "action": "invite",
           "target_user_id": parsedUserId,
+          "invited_user_id": parsedUserId,
           "user_id": parsedUserId,
-          "username": liveRoomData.value?['host']?['username'] ?? "Host",
-          "host_username": liveRoomData.value?['host']?['username'] ?? "Host",
+          "user_ids": [parsedUserId],
+          "username": hostName,
+          "host_username": hostName,
           "room_id": liveRoomId.value,
         });
         _liveWs!.add(inviteWsPayload);
@@ -1737,7 +1803,6 @@ class CreateController extends GetxController {
       final endpoints = [
         '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/invite/',
         '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/invite-cohost/',
-        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/cohost-invites/',
       ];
 
       for (final ep in endpoints) {
@@ -1750,6 +1815,7 @@ class CreateController extends GetxController {
             },
             body: jsonEncode({
               "user_ids": [parsedUserId],
+              "role": "viewer",
               "user_id": parsedUserId,
             }),
           );

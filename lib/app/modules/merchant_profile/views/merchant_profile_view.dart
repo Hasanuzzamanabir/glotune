@@ -12,10 +12,12 @@ class MerchantProfileView extends GetView<MerchantProfileController> {
   const MerchantProfileView({super.key});
 
   String _formatStatCount(int count) {
-    if (count >= 1000000)
+    if (count >= 1000000) {
       return '${(count / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M';
-    if (count >= 1000)
+    }
+    if (count >= 1000) {
       return '${(count / 1000).toStringAsFixed(1).replaceAll('.0', '')}K';
+    }
     return count.toString();
   }
 

@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:glotune/app/core/network/api_client.dart';
 import 'package:glotune/app/core/values/api_constants.dart';
 import 'package:glotune/app/core/services/auth_service.dart';
+import 'package:glotune/app/core/services/notification_websocket_service.dart';
 import 'package:share_plus/share_plus.dart';
 
 class LivePlayerController extends GetxController {
@@ -36,9 +37,30 @@ class LivePlayerController extends GetxController {
   final liveMessages = [].obs;
   final typingNotice = "".obs;
   Timer? _typingTimer;
+  final temporaryNotice = "".obs;
+  Timer? _temporaryNoticeTimer;
+  Timer? _wsReconnectTimer;
+
+  void _scheduleWsReconnect() {
+    _wsReconnectTimer?.cancel();
+    if (isClosed) return;
+    _wsReconnectTimer = Timer(const Duration(seconds: 2), () {
+      if (_chatWs == null) {
+        print("[LivePlayer WS] Reconnecting socket...");
+        _connectInRoomWebSocket();
+      }
+    });
+  }
+
+  void showTemporaryNotice(String message) {
+    if (message.trim().isEmpty) return;
+    temporaryNotice.value = message;
+    _temporaryNoticeTimer?.cancel();
+    _temporaryNoticeTimer = Timer(const Duration(seconds: 4), () {
+      temporaryNotice.value = "";
+    });
+  }
   Timer? _messagePollTimer;
-  Timer? _memberPollTimer;
-  Timer? _invitePollTimer;
 
   // In-room WebSocket
   WebSocket? _chatWs;
@@ -164,21 +186,21 @@ class LivePlayerController extends GetxController {
       localUid.value = agoraUid;
       isEngineInitialized.value = true;
       isLoading.value = false;
+      hasActiveInvitation.value = false;
 
-      // Start polling members and invitations (messages handled real-time via WebSocket)
-      fetchLiveMemberCount();
-      checkCohostInvitations();
-
-      _memberPollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-        fetchLiveMemberCount();
-      });
-      _invitePollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-        checkCohostInvitations();
-      });
-
-      // Also connect to in-room WebSocket for real-time invitation events
+      // Connect to WebSocket
       _connectInRoomWebSocket();
 
+      // Check if user came from a notification "Accept & Go Live" tap
+      if (Get.isRegistered<NotificationWebSocketService>()) {
+        final notifService = Get.find<NotificationWebSocketService>();
+        if (notifService.hasPendingAutoAccept.value) {
+          notifService.hasPendingAutoAccept.value = false;
+          Future.delayed(const Duration(milliseconds: 600), () {
+            acceptCohostInvitation();
+          });
+        }
+      }
     } catch (e) {
       print("Error initializing Agora: $e");
       errorMessage.value = e.toString();
@@ -240,9 +262,11 @@ class LivePlayerController extends GetxController {
         }, onError: (err) {
           print("[LivePlayer WS] Stream error: $err");
           _chatWs = null;
+          _scheduleWsReconnect();
         }, onDone: () {
           print("[LivePlayer WS] Stream closed");
           _chatWs = null;
+          _scheduleWsReconnect();
         });
       }
 
@@ -382,10 +406,38 @@ class LivePlayerController extends GetxController {
 
     // 6. Member action / room update
     else if (type == 'member_action') {
-      if (data['viewer_count'] != null) {
-        memberCount.value = int.tryParse(data['viewer_count'].toString()) ?? memberCount.value;
-      } else if (data['member_count'] != null) {
-        memberCount.value = int.tryParse(data['member_count'].toString()) ?? memberCount.value;
+      final countVal = data['viewer_count'] ?? data['member_count'] ?? data['count'];
+      if (countVal != null) {
+        final parsed = int.tryParse(countVal.toString());
+        if (parsed != null) {
+          memberCount.value = parsed;
+        }
+      }
+
+      final username = data['username'] ?? data['user']?['username'] ?? '';
+      String noticeMsg = (data['message'] ?? data['text'] ?? '')?.toString().trim() ?? '';
+      if (noticeMsg.isEmpty && action != null) {
+        if (action == 'user_left') {
+          noticeMsg = username.isNotEmpty ? '@$username left the LIVE' : 'A viewer left the LIVE';
+        } else if (action == 'user_joined') {
+          noticeMsg = username.isNotEmpty ? '@$username joined the LIVE' : 'A new viewer joined the LIVE';
+        }
+      }
+
+      if (noticeMsg.isNotEmpty) {
+        showTemporaryNotice(noticeMsg);
+
+        // Also add to chat messages as system notification
+        liveMessages.insert(0, {
+          'message': noticeMsg,
+          'type': 'member_action',
+          'action': action,
+          'is_system': true,
+          'username': username,
+          'user_id': data['user_id'],
+          'profile_picture': data['profile_picture'],
+          'timestamp': DateTime.now().toIso8601String(),
+        });
       }
     }
 
@@ -395,69 +447,98 @@ class LivePlayerController extends GetxController {
         type == 'invite_cohost' ||
         type == 'cohost' ||
         type == 'invite' ||
+        action == 'invite' ||
+        action == 'invited' ||
+        action == 'cohost_invite' ||
+        action == 'cohost_invitation' ||
+        action == 'invite_cohost' ||
         (type == 'stream_request' && (action == 'invite' || action == 'invited'))) {
 
-      final targetId = data['target_user_id'] ?? data['user_id'] ?? data['recipient_id'];
       final authService = Get.find<AuthService>();
-      final myId = authService.currentUserId.value;
+      int? myId = authService.currentUserId.value;
 
-      // If targetId is provided, ensure it is for this user
-      if (targetId != null && myId != null && targetId.toString() != myId.toString()) {
-        print("[LivePlayer] Invite is for user $targetId, my id is $myId - ignoring");
-        return;
+      if (myId == null && authService.accessToken.value != null) {
+        try {
+          final parts = authService.accessToken.value!.split('.');
+          if (parts.length > 1) {
+            var p64 = parts[1];
+            while (p64.length % 4 != 0) {
+              p64 += '=';
+            }
+            final map = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(p64))));
+            final idVal = map['user_id'] ?? map['id'] ?? map['sub'] ?? map['pk'];
+            if (idVal != null) {
+              myId = int.tryParse(idVal.toString());
+              authService.currentUserId.value = myId;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Check explicit target recipient
+      final targetId = data['target_user_id'] ??
+          data['invited_user_id'] ??
+          data['recipient_id'] ??
+          data['target_id'] ??
+          data['to_user_id'] ??
+          (data['invited_user'] is Map ? data['invited_user']['id'] : data['invited_user']) ??
+          (data['target_user'] is Map ? data['target_user']['id'] : data['target_user']);
+      
+      final userIdsList = data['user_ids'];
+
+      // If targetId is provided and myId is known, verify it is meant for this user
+      if (targetId != null && myId != null) {
+        if (targetId.toString() != myId.toString()) {
+          print("[LivePlayer] Invite is for user $targetId, my id is $myId - ignoring");
+          return;
+        }
+      } else if (userIdsList is List && myId != null) {
+        final includesMe = userIdsList.any((id) => id.toString() == myId.toString());
+        if (!includesMe) {
+          print("[LivePlayer] Invite list does not include my id $myId - ignoring");
+          return;
+        }
       }
 
       final hostName = data['host_username'] ?? data['username'] ?? 'Host';
-      _triggerCohostInvitationPrompt(hostName.toString());
-    } else if (type == 'stream_request' && action == 'approved') {
+      print("[LivePlayer] Received co-host invitation from $hostName for current user!");
+      triggerCohostInvitationPrompt(hostName.toString());
+    } else if ((type == 'notification' && data['notification_type'] == 'live_invitation') ||
+        type == 'live_invitation' ||
+        data['notification_type'] == 'live_invitation') {
+      final hostName = data['sender_name'] ?? data['host_username'] ?? data['username'] ?? 'Host';
+      final notifRoomId = data['room_id']?.toString();
+      if (notifRoomId == null || notifRoomId.isEmpty || notifRoomId == roomId) {
+        print("[LivePlayer] Received live_invitation notification from $hostName for room $roomId");
+        triggerCohostInvitationPrompt(hostName.toString());
+      }
+    } else if ((type == 'stream_request' || action == 'stream_request') &&
+        (action == 'approved' || data['status'] == 'approved')) {
+      print("[LivePlayer] Stream request approved! Auto-accepting cohost...");
       acceptCohostInvitation();
     }
   }
 
-  Future<void> checkCohostInvitations() async {
-    // If already co-hosting or already has active dialog, skip
-    if (isCohost.value || hasActiveInvitation.value) return;
-
-    try {
-      final authService = Get.find<AuthService>();
-      final token = authService.accessToken.value;
-      if (token == null) return;
-
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/cohost-invites/');
-      final res = await apiClient.get(
-        url,
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        List invites = [];
-        if (data is List) {
-          invites = data;
-        } else if (data is Map && data['results'] is List) {
-          invites = data['results'];
-        }
-
-        final currentUserId = authService.currentUserId.value;
-        for (var inv in invites) {
-          final targetUserId = inv['user_id'] ?? (inv['user'] is Map ? inv['user']['id'] : null);
-          final status = inv['status']?.toString();
-          if ((targetUserId == null || targetUserId == currentUserId) && (status == 'pending' || status == null)) {
-            final hostName = inv['host_name'] ?? inv['host_username'] ?? 'Host';
-            _triggerCohostInvitationPrompt(hostName.toString());
-            break;
-          }
-        }
-      }
-    } catch (_) {
-      // Endpoint may not be implemented on older versions; WS and message stream are primary
+  void triggerCohostInvitationPrompt(String hostName) {
+    if (isCohost.value) {
+      print("[LivePlayer] Already co-host, skipping prompt");
+      return;
     }
-  }
-
-  void _triggerCohostInvitationPrompt(String hostName) {
-    if (hasActiveInvitation.value || isCohost.value) return;
+    if (hasActiveInvitation.value) {
+      print("[LivePlayer] Invitation dialog already active");
+      return;
+    }
+    print("[LivePlayer] Displaying Co-Host Invitation dialog from: $hostName");
     hasActiveInvitation.value = true;
     invitingHostName.value = hostName;
+
+    // Dismiss any active bottom sheet or transient dialog so the invitation prompt is visible
+    if (Get.isBottomSheetOpen == true) {
+      Get.back();
+    }
+    if (Get.isDialogOpen == true) {
+      Get.back();
+    }
 
     Get.dialog(
       Dialog(
@@ -527,6 +608,7 @@ class LivePlayerController extends GetxController {
                         ),
                       ),
                       onPressed: () {
+                        hasActiveInvitation.value = false;
                         Get.back();
                         acceptCohostInvitation();
                       },
@@ -652,7 +734,9 @@ class LivePlayerController extends GetxController {
 
   @override
   void onClose() {
-    _invitePollTimer?.cancel();
+    _wsReconnectTimer?.cancel();
+    _typingTimer?.cancel();
+    _temporaryNoticeTimer?.cancel();
     try {
       _chatWs?.close();
     } catch (_) {}
@@ -680,44 +764,11 @@ class LivePlayerController extends GetxController {
       print("Agora release error: $e");
     }
     _messagePollTimer?.cancel();
-    _memberPollTimer?.cancel();
     _reactionStreamController.close();
     super.onClose();
   }
 
-  Future<void> fetchLiveMemberCount() async {
-    try {
-      final authService = Get.find<AuthService>();
-      final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/members/');
-      final response = await apiClient.get(
-        url,
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
-      );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        int count = 0;
-        if (data is Map) {
-          if (data['results'] is List) {
-            count = data['count'] ?? (data['results'] as List).length;
-          } else if (data['members'] is List) {
-            count = data['count'] ?? (data['members'] as List).length;
-          } else if (data['data'] is List) {
-            count = (data['data'] as List).length;
-          } else {
-            count = data['count'] ?? data['member_count'] ?? data['viewer_count'] ?? 0;
-          }
-        } else if (data is List) {
-          count = data.length;
-        }
-        memberCount.value = count;
-      }
-    } catch (e) {
-      print("Exception fetching member count: $e");
-    }
-  }
 
   Future<void> fetchLiveMessages() async {
     try {
@@ -838,6 +889,19 @@ class LivePlayerController extends GetxController {
     }
 
     try {
+      // 1. Send immediate real-time notification to host over WebSocket
+      if (_chatWs != null) {
+        final myId = authService.currentUserId.value;
+        _chatWs!.add(jsonEncode({
+          "type": "stream_request",
+          "action": "requested",
+          "room_id": roomId,
+          "requester_id": myId,
+          "user_id": myId,
+        }));
+      }
+
+      // 2. Call backend request-stream endpoint
       final res = await apiClient.post(
         Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/request-stream/'),
         headers: {
@@ -851,7 +915,8 @@ class LivePlayerController extends GetxController {
             backgroundColor: Colors.green, colorText: Colors.white);
       } else {
         print("Request to stream failed: ${res.statusCode} - ${res.body}");
-        Get.snackbar('Notice', 'Request sent to host.');
+        Get.snackbar('Request Sent', 'Your request was sent to the host.',
+            backgroundColor: Colors.indigoAccent, colorText: Colors.white);
       }
     } catch (e) {
       print("Error sending request to stream: $e");
