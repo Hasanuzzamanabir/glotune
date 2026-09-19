@@ -58,6 +58,7 @@ class CreateController extends GetxController {
   final liveRoomData = Rxn<Map<String, dynamic>>();
   final liveMemberCount = 0.obs;
   final liveMembers = <dynamic>[].obs;
+  final invitedUserIds = <dynamic>{}.obs;
   final liveMessages = <dynamic>[].obs;
   final typingNotice = "".obs;
   Timer? _typingTimer;
@@ -896,19 +897,15 @@ class CreateController extends GetxController {
           print("[DEBUG LIVE] Failed: Missing streaming credentials");
         }
 
-        // Fetch initial dynamic members & messages
+        // Fetch initial dynamic members
         await fetchLiveMemberCount();
-        await fetchLiveMessages();
 
-        // Start dynamic polling
+        // Start dynamic polling for members
         _memberPollTimer?.cancel();
         _memberPollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
           fetchLiveMemberCount();
         });
         _messagePollTimer?.cancel();
-        _messagePollTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-          fetchLiveMessages();
-        });
 
         // Connect Host WebSocket for real-time signaling
         _connectLiveWebSocket();
@@ -1195,52 +1192,23 @@ class CreateController extends GetxController {
     final text = message.trim();
     if (liveRoomId.value.isEmpty || text.isEmpty) return;
     print(
-      "[DEBUG LIVE] Sending live message: '$text' to room: ${liveRoomId.value}",
+      "[DEBUG LIVE] Sending live message via socket: '$text' to room: ${liveRoomId.value}",
     );
 
-    // Send via WebSocket first
-    bool sentViaWs = false;
     try {
       if (_liveWs != null) {
-        _liveWs!.add(jsonEncode({
+        final payload = jsonEncode({
           "action": "message",
           "message": text,
-        }));
-        sentViaWs = true;
+        });
+        _liveWs!.add(payload);
+        print("[DEBUG LIVE WS] Message sent: $payload");
+      } else {
+        print("[DEBUG LIVE WS] WebSocket not connected; attempting reconnect...");
+        _connectLiveWebSocket();
       }
     } catch (e) {
       print("[DEBUG LIVE WS] Error sending message: $e");
-    }
-
-    try {
-      final authService = Get.find<AuthService>();
-      final token = authService.accessToken.value;
-
-      final url = Uri.parse(
-        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/send-message/',
-      );
-      final response = await apiClient.post(
-        url,
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({"message": text}),
-      );
-
-      print(
-        "[DEBUG LIVE] sendLiveMessage status: ${response.statusCode} - ${response.body}",
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        if (!sentViaWs) {
-          await fetchLiveMessages();
-        }
-      } else {
-        print("[DEBUG LIVE] Failed to send message: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("[DEBUG LIVE] Exception sending message: $e");
     }
   }
 
@@ -1493,6 +1461,7 @@ class CreateController extends GetxController {
     liveMemberCount.value = 0;
     liveDurationSeconds.value = 0;
     liveMembers.clear();
+    invitedUserIds.clear();
     liveMessages.clear();
     _liveDurationTimer?.cancel();
     navigateTo("Camera");
@@ -1584,8 +1553,10 @@ class CreateController extends GetxController {
           }
         }, onError: (err) {
           print("[DEBUG LIVE WS] Stream error: $err");
+          _liveWs = null;
         }, onDone: () {
           print("[DEBUG LIVE WS] Stream closed");
+          _liveWs = null;
         });
       }
 
@@ -1610,18 +1581,54 @@ class CreateController extends GetxController {
     final action = data['action']?.toString();
 
     // 1. New chat message
-    if (type == 'message') {
-      final exists = liveMessages.any((m) {
-        if (m is Map) {
-          return (m['id'] != null && m['id'] == data['id']) ||
-              (m['message'] == data['message'] &&
-                  m['username'] == (data['username'] ?? data['user']?['username']) &&
-                  m['created_at'] == data['created_at']);
+    if (type == 'message' || action == 'message') {
+      final text = (data['message'] ?? data['text'] ?? data['content'])?.toString();
+      if (text != null && text.trim().isNotEmpty) {
+        final msgId = data['message_id'] ?? data['id'];
+        final username = data['username'] ?? data['user']?['username'];
+        final time = data['timestamp'] ?? data['created_at'];
+
+        // Normalize message object
+        final normalized = <String, dynamic>{
+          'id': msgId,
+          'message_id': msgId,
+          'message': text,
+          'username': username ?? 'Viewer',
+          'user_id': data['user_id'],
+          'profile_picture': data['profile_picture'],
+          'timestamp': time ?? DateTime.now().toIso8601String(),
+          ...data,
+        };
+
+        final existingIndex = liveMessages.indexWhere((m) {
+          if (m is Map) {
+            final mId = m['message_id'] ?? m['id'];
+            if (msgId != null && mId != null && msgId.toString() == mId.toString()) {
+              return true;
+            }
+            final mText = (m['message'] ?? m['text'] ?? m['content'])?.toString();
+            final mUser = m['username'] ?? m['user']?['username'];
+            if (mText == text) {
+              if (mUser == null || username == null || mUser == username) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+
+        if (existingIndex != -1) {
+          final existing = liveMessages[existingIndex];
+          if (existing is Map) {
+            liveMessages[existingIndex] = {
+              ...existing,
+              ...normalized,
+            };
+          }
+        } else {
+          liveMessages.insert(0, normalized);
+          print("[DEBUG LIVE WS] Inserted message: $normalized");
         }
-        return false;
-      });
-      if (!exists) {
-        liveMessages.insert(0, data);
       }
     }
 
@@ -1693,9 +1700,15 @@ class CreateController extends GetxController {
 
   Future<void> inviteGuest(dynamic userId) async {
     if (liveRoomId.value.isEmpty || userId == null) return;
+    final parsedUserId = int.tryParse(userId.toString()) ?? userId;
     print(
-      "[DEBUG LIVE] Inviting co-host user: $userId to room: ${liveRoomId.value}",
+      "[DEBUG LIVE] Inviting participant user: $parsedUserId to room: ${liveRoomId.value}",
     );
+
+    // Track invited state immediately for responsive UI
+    invitedUserIds.add(userId);
+    invitedUserIds.add(userId.toString());
+    invitedUserIds.add(parsedUserId);
 
     // 1. Send immediate real-time invitation over WebSocket so guest receives it instantly
     try {
@@ -1703,8 +1716,8 @@ class CreateController extends GetxController {
         final inviteWsPayload = jsonEncode({
           "type": "cohost_invite",
           "action": "invite",
-          "target_user_id": userId,
-          "user_id": userId,
+          "target_user_id": parsedUserId,
+          "user_id": parsedUserId,
           "username": liveRoomData.value?['host']?['username'] ?? "Host",
           "host_username": liveRoomData.value?['host']?['username'] ?? "Host",
           "room_id": liveRoomId.value,
@@ -1716,7 +1729,7 @@ class CreateController extends GetxController {
       print("[DEBUG LIVE WS] Error sending invite via WS: $wsErr");
     }
 
-    // 2. Also notify backend API (tries invite-cohost, then cohost-invites fallback)
+    // 2. Also notify backend API (primary: /api/live/rooms/{roomId}/invite/)
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
@@ -1736,8 +1749,8 @@ class CreateController extends GetxController {
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
-              "user_ids": [userId],
-              "user_id": userId,
+              "user_ids": [parsedUserId],
+              "user_id": parsedUserId,
             }),
           );
           print("[DEBUG LIVE] inviteGuest at $ep response: ${res.statusCode} - ${res.body}");
@@ -1748,8 +1761,8 @@ class CreateController extends GetxController {
       }
 
       Get.snackbar(
-        "Invitation",
-        "Co-host invitation sent!",
+        "Invitation Sent",
+        "Participant invitation sent successfully!",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.white,
         colorText: Colors.black,
@@ -1757,8 +1770,8 @@ class CreateController extends GetxController {
     } catch (e) {
       print("[DEBUG LIVE] Exception in inviteGuest: $e");
       Get.snackbar(
-        "Invitation",
-        "Co-host invitation sent!",
+        "Invitation Sent",
+        "Participant invitation sent!",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.white,
         colorText: Colors.black,

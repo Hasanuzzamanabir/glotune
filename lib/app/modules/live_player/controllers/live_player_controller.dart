@@ -165,14 +165,10 @@ class LivePlayerController extends GetxController {
       isEngineInitialized.value = true;
       isLoading.value = false;
 
-      // Start polling messages and members
+      // Start polling members and invitations (messages handled real-time via WebSocket)
       fetchLiveMemberCount();
-      fetchLiveMessages();
       checkCohostInvitations();
 
-      _messagePollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-        fetchLiveMessages();
-      });
       _memberPollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
         fetchLiveMemberCount();
       });
@@ -243,8 +239,10 @@ class LivePlayerController extends GetxController {
           }
         }, onError: (err) {
           print("[LivePlayer WS] Stream error: $err");
+          _chatWs = null;
         }, onDone: () {
           print("[LivePlayer WS] Stream closed");
+          _chatWs = null;
         });
       }
 
@@ -270,18 +268,54 @@ class LivePlayerController extends GetxController {
     final action = data['action']?.toString();
 
     // 1. Message event
-    if (type == 'message') {
-      final exists = liveMessages.any((m) {
-        if (m is Map) {
-          return (m['id'] != null && m['id'] == data['id']) ||
-              (m['message'] == data['message'] &&
-                  m['username'] == (data['username'] ?? data['user']?['username']) &&
-                  m['created_at'] == data['created_at']);
+    if (type == 'message' || action == 'message') {
+      final text = (data['message'] ?? data['text'] ?? data['content'])?.toString();
+      if (text != null && text.trim().isNotEmpty) {
+        final msgId = data['message_id'] ?? data['id'];
+        final username = data['username'] ?? data['user']?['username'];
+        final time = data['timestamp'] ?? data['created_at'];
+
+        // Normalize message
+        final normalized = <String, dynamic>{
+          'id': msgId,
+          'message_id': msgId,
+          'message': text,
+          'username': username ?? 'Viewer',
+          'user_id': data['user_id'],
+          'profile_picture': data['profile_picture'],
+          'timestamp': time ?? DateTime.now().toIso8601String(),
+          ...data,
+        };
+
+        final existingIndex = liveMessages.indexWhere((m) {
+          if (m is Map) {
+            final mId = m['message_id'] ?? m['id'];
+            if (msgId != null && mId != null && msgId.toString() == mId.toString()) {
+              return true;
+            }
+            final mText = (m['message'] ?? m['text'] ?? m['content'])?.toString();
+            final mUser = m['username'] ?? m['user']?['username'];
+            if (mText == text) {
+              if (mUser == null || username == null || mUser == username) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+
+        if (existingIndex != -1) {
+          final existing = liveMessages[existingIndex];
+          if (existing is Map) {
+            liveMessages[existingIndex] = {
+              ...existing,
+              ...normalized,
+            };
+          }
+        } else {
+          liveMessages.insert(0, normalized);
+          print("[LivePlayer WS] Inserted message: $normalized");
         }
-        return false;
-      });
-      if (!exists) {
-        liveMessages.insert(0, data);
       }
     }
 
@@ -721,47 +755,20 @@ class LivePlayerController extends GetxController {
     final text = message.trim();
     if (text.isEmpty) return;
 
-    // Send via WebSocket first if connected
-    bool sentViaWs = false;
     try {
       if (_chatWs != null) {
-        _chatWs!.add(jsonEncode({
+        final payload = jsonEncode({
           "action": "message",
           "message": text,
-        }));
-        sentViaWs = true;
+        });
+        _chatWs!.add(payload);
+        print("[LivePlayer WS] Message sent: $payload");
+      } else {
+        print("[LivePlayer WS] Socket not connected, attempting reconnect...");
+        _connectInRoomWebSocket();
       }
     } catch (e) {
       print("[LivePlayer WS] Error sending message via WS: $e");
-    }
-
-    try {
-      final authService = Get.find<AuthService>();
-      final token = authService.accessToken.value;
-      
-      final url = Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/send-message/');
-      final response = await apiClient.post(
-        url,
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({"message": text}),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // If not sent via WS, update immediately via REST
-        if (!sentViaWs) {
-          await fetchLiveMessages();
-        }
-      } else {
-        print("Failed to send message: ${response.statusCode} - ${response.body}");
-        if (token == null && (response.statusCode == 401 || response.statusCode == 403)) {
-          Get.snackbar('Login Required', 'Please log in to send comments in the stream.');
-        }
-      }
-    } catch (e) {
-      print("Exception sending message in LivePlayerController: $e");
     }
   }
 

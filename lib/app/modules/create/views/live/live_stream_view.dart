@@ -599,6 +599,7 @@ class LiveStreamView extends GetView<CreateController> {
   }
 
   void _showInviteGuests() {
+    controller.fetchLiveMemberCount();
     final searchController = TextEditingController();
     final searchQuery = "".obs;
 
@@ -630,7 +631,7 @@ class LiveStreamView extends GetView<CreateController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Invite Co-hosts",
+                  "Invite Participants",
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -647,7 +648,7 @@ class LiveStreamView extends GetView<CreateController> {
               controller: searchController,
               onChanged: (val) => searchQuery.value = val.trim().toLowerCase(),
               decoration: InputDecoration(
-                hintText: "Search viewers or followers...",
+                hintText: "Search viewers or enter User ID...",
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.r),
@@ -676,12 +677,18 @@ class LiveStreamView extends GetView<CreateController> {
                           .toString()
                           .toLowerCase();
                   final username = (user['username'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  return name.contains(query) || username.contains(query);
+                          .toString()
+                          .toLowerCase();
+                  final idStr = (user['id'] ?? (m is Map ? m['id'] : ''))
+                          .toString()
+                          .toLowerCase();
+                  return name.contains(query) ||
+                      username.contains(query) ||
+                      idStr.contains(query);
                 }).toList();
 
                 if (filtered.isEmpty) {
+                  final queryId = int.tryParse(query);
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -694,10 +701,37 @@ class LiveStreamView extends GetView<CreateController> {
                         SizedBox(height: 10.h),
                         Text(
                           allMembers.isEmpty
-                              ? "No one is here yet"
+                              ? "No viewers in stream yet"
                               : "No matching viewers found",
                           style: TextStyle(color: Colors.grey, fontSize: 16.sp),
                         ),
+                        if (queryId != null) ...[
+                          SizedBox(height: 14.h),
+                          Obx(() {
+                            final isInvited = controller.invitedUserIds.contains(queryId) ||
+                                controller.invitedUserIds.contains(queryId.toString());
+                            return ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isInvited ? Colors.grey[400] : AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                ),
+                              ),
+                              icon: Icon(
+                                isInvited ? Icons.check : Icons.send,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              label: Text(
+                                isInvited ? "Invited User #$queryId ✓" : "Invite User #$queryId",
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              onPressed: isInvited
+                                  ? null
+                                  : () => controller.inviteGuest(queryId),
+                            );
+                          }),
+                        ],
                       ],
                     ),
                   );
@@ -735,24 +769,30 @@ class LiveStreamView extends GetView<CreateController> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(username),
-                      trailing: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.r),
+                      trailing: Obx(() {
+                        final isInvited = controller.invitedUserIds.contains(userId) ||
+                            controller.invitedUserIds.contains(userId.toString());
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isInvited ? Colors.grey[400] : AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
                           ),
-                        ),
-                        onPressed: () {
-                          print(
-                            "[DEBUG LIVE] Inviting guest: $name (id: $userId)",
-                          );
-                          controller.inviteGuest(userId);
-                        },
-                        child: const Text(
-                          "Invite",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
+                          onPressed: isInvited || userId == null
+                              ? null
+                              : () {
+                                  print(
+                                    "[DEBUG LIVE] Inviting guest: $name (id: $userId)",
+                                  );
+                                  controller.inviteGuest(userId);
+                                },
+                          child: Text(
+                            isInvited ? "Invited ✓" : "Invite",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }),
                     );
                   },
                 );
@@ -1032,6 +1072,7 @@ class LiveStreamView extends GetView<CreateController> {
   }
 
   void _showLiveMembersList() {
+    controller.fetchLiveMemberCount();
     Get.bottomSheet(
       Container(
         height: Get.height * 0.6,
@@ -1087,6 +1128,9 @@ class LiveStreamView extends GetView<CreateController> {
                             ? (member['role'] ?? member['current_user_role'])
                             : null) ??
                         "Viewer";
+                    final userId =
+                        user['id'] ?? (member is Map ? member['id'] : null);
+                    final isHost = role.toString().toLowerCase() == "host";
 
                     return ListTile(
                       leading: CircleAvatar(
@@ -1107,31 +1151,65 @@ class LiveStreamView extends GetView<CreateController> {
                         username.isNotEmpty ? username : role,
                         style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                       ),
-                      trailing: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: role.toString().toLowerCase() == "host"
-                              ? Colors.amber.withValues(alpha: 0.2)
-                              : (role.toString().toLowerCase() == "moderator"
-                                    ? Colors.blue.withValues(alpha: 0.2)
-                                    : Colors.grey.withValues(alpha: 0.1)),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          role.toString().toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
-                            color: role.toString().toLowerCase() == "host"
-                                ? Colors.orange[800]
-                                : (role.toString().toLowerCase() == "moderator"
-                                      ? Colors.blue[800]
-                                      : Colors.grey[700]),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 4.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isHost
+                                  ? Colors.amber.withValues(alpha: 0.2)
+                                  : (role.toString().toLowerCase() == "moderator"
+                                        ? Colors.blue.withValues(alpha: 0.2)
+                                        : Colors.grey.withValues(alpha: 0.1)),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Text(
+                              role.toString().toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                color: isHost
+                                    ? Colors.orange[800]
+                                    : (role.toString().toLowerCase() == "moderator"
+                                          ? Colors.blue[800]
+                                          : Colors.grey[700]),
+                              ),
+                            ),
                           ),
-                        ),
+                          if (!isHost && userId != null) ...[
+                            SizedBox(width: 8.w),
+                            Obx(() {
+                              final isInvited = controller.invitedUserIds.contains(userId) ||
+                                  controller.invitedUserIds.contains(userId.toString());
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isInvited ? Colors.grey[400] : AppColors.primary,
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                                  minimumSize: Size(55.w, 28.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14.r),
+                                  ),
+                                ),
+                                onPressed: isInvited
+                                    ? null
+                                    : () {
+                                        print(
+                                          "[DEBUG LIVE] Inviting participant: $name (id: $userId)",
+                                        );
+                                        controller.inviteGuest(userId);
+                                      },
+                                child: Text(
+                                  isInvited ? "Invited ✓" : "Invite",
+                                  style: TextStyle(color: Colors.white, fontSize: 11.sp),
+                                ),
+                              );
+                            }),
+                          ],
+                        ],
                       ),
                     );
                   },
