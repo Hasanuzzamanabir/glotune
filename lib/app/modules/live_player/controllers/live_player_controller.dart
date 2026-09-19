@@ -285,15 +285,17 @@ class LivePlayerController extends GetxController {
       }
     }
 
-    // 2. Like, love or reaction event
+    // 2. Like, heart or reaction event
     else if (type == 'like' ||
         action == 'like' ||
+        type == 'heart' ||
+        action == 'heart' ||
         type == 'love' ||
         action == 'love' ||
         type == 'reaction' ||
         action == 'reaction') {
-      final reactionName = (type == 'love' || action == 'love')
-          ? 'love'
+      final reactionName = (type == 'heart' || action == 'heart' || type == 'love' || action == 'love')
+          ? 'heart'
           : (data['reaction_type']?.toString() ?? data['reaction']?.toString() ?? 'like');
       print("[LivePlayer WS] Incoming reaction event: $reactionName");
       _reactionStreamController.add(reactionName);
@@ -783,7 +785,7 @@ class LivePlayerController extends GetxController {
     // Send action to WebSocket so all other viewers & host see the reaction
     try {
       if (_chatWs != null) {
-        final actionToSend = (reactionType == 'heart' || reactionType == 'love') ? 'love' : reactionType;
+        final actionToSend = (reactionType == 'heart' || reactionType == 'love') ? 'heart' : reactionType;
         _chatWs!.add(jsonEncode({
           "action": actionToSend,
           "reaction_type": reactionType,

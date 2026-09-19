@@ -1625,15 +1625,17 @@ class CreateController extends GetxController {
       }
     }
 
-    // 2. Incoming like, love or reaction from viewer
+    // 2. Incoming like, heart or reaction from viewer
     else if (type == 'like' ||
         action == 'like' ||
+        type == 'heart' ||
+        action == 'heart' ||
         type == 'love' ||
         action == 'love' ||
         type == 'reaction' ||
         action == 'reaction') {
-      final reactionName = (type == 'love' || action == 'love')
-          ? 'love'
+      final reactionName = (type == 'heart' || action == 'heart' || type == 'love' || action == 'love')
+          ? 'heart'
           : (data['reaction_type']?.toString() ?? data['reaction']?.toString() ?? 'like');
       print("[DEBUG LIVE WS] Incoming reaction event: $reactionName");
       _reactionStreamController.add(reactionName);
