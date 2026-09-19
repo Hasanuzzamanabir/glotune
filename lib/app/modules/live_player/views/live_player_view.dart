@@ -33,20 +33,89 @@ class LivePlayerView extends GetView<LivePlayerController> {
                   style: TextStyle(color: Colors.white),
                 );
               }
-              if (controller.remoteUids.isEmpty) {
+              final hasRemote = controller.remoteUids.isNotEmpty;
+              final isCo = controller.isCohost.value;
+
+              if (!hasRemote && !isCo) {
                 return const Text(
                   'Waiting for host to broadcast...',
                   style: TextStyle(color: Colors.white),
                   textAlign: TextAlign.center,
                 );
               }
-              // Render the first remote user (host)
-              return AgoraVideoView(
-                controller: VideoViewController.remote(
-                  rtcEngine: controller.engine,
-                  canvas: VideoCanvas(uid: controller.remoteUids.first),
-                  connection: RtcConnection(channelId: controller.roomId),
+
+              // Combine broadcasters: remote streams + local co-host if upgraded
+              final totalBroadcasters = controller.remoteUids.length + (isCo ? 1 : 0);
+
+              if (totalBroadcasters == 1 && hasRemote) {
+                // Single broadcaster (host)
+                return AgoraVideoView(
+                  controller: VideoViewController.remote(
+                    rtcEngine: controller.engine,
+                    canvas: VideoCanvas(uid: controller.remoteUids.first),
+                    connection: RtcConnection(channelId: controller.roomId),
+                  ),
+                );
+              }
+
+              // Multiple broadcasters (Host + Co-hosts) in responsive grid
+              return GridView.builder(
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: totalBroadcasters > 2 ? 2 : 1,
+                  childAspectRatio: totalBroadcasters == 2 ? 1.0 : 0.9,
                 ),
+                itemCount: totalBroadcasters,
+                itemBuilder: (context, index) {
+                  // If co-host, render local camera as the last tile
+                  if (isCo && index == controller.remoteUids.length) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.indigoAccent, width: 1.0),
+                      ),
+                      child: Stack(
+                        children: [
+                          AgoraVideoView(
+                            controller: VideoViewController(
+                              rtcEngine: controller.engine,
+                              canvas: const VideoCanvas(uid: 0),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.indigoAccent,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                "You (Co-Host)",
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final uid = controller.remoteUids[index];
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white24, width: 0.5),
+                    ),
+                    child: AgoraVideoView(
+                      controller: VideoViewController.remote(
+                        rtcEngine: controller.engine,
+                        canvas: VideoCanvas(uid: uid),
+                        connection: RtcConnection(channelId: controller.roomId),
+                      ),
+                    ),
+                  );
+                },
               );
             }),
           ),
@@ -124,6 +193,46 @@ class LivePlayerView extends GetView<LivePlayerController> {
               ],
             ),
           ),
+          Obx(() {
+            if (controller.isCohost.value) {
+              return Container(
+                margin: EdgeInsets.only(right: 8.w),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.videocam, color: Colors.white, size: 12),
+                    SizedBox(width: 4.w),
+                    Text("CO-HOST", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              );
+            }
+            return GestureDetector(
+              onTap: controller.requestToStream,
+              child: Container(
+                margin: EdgeInsets.only(right: 8.w),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: Colors.indigoAccent.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: Colors.white30, width: 0.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.mic, color: Colors.white, size: 12),
+                    SizedBox(width: 4.w),
+                    Text("Join Live", style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            );
+          }),
           IconButton(
             onPressed: () => Get.back(),
             icon: const Icon(Icons.close, color: Colors.white),
@@ -144,8 +253,17 @@ class LivePlayerView extends GetView<LivePlayerController> {
             reverse: true, // Show latest messages at the bottom
             itemBuilder: (context, index) {
               final msg = controller.liveMessages[index];
-              final username = msg['user']?['username'] ?? "User";
-              final text = msg['message'] ?? "";
+              final userObj = msg is Map
+                  ? (msg['user'] is Map ? msg['user'] : msg)
+                  : {};
+              final username = userObj['username'] ??
+                  userObj['full_name'] ??
+                  userObj['name'] ??
+                  "User";
+              final text = (msg is Map
+                      ? (msg['message'] ?? msg['content'] ?? msg['text'])
+                      : msg.toString()) ??
+                  "";
               return Padding(
                 padding: EdgeInsets.only(bottom: 8.h),
                 child: Row(
@@ -224,6 +342,46 @@ class LivePlayerView extends GetView<LivePlayerController> {
             ),
           ),
           SizedBox(width: 8.w),
+          Obx(() {
+            if (!controller.isCohost.value) return const SizedBox.shrink();
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () => controller.toggleMic(),
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: controller.isMicMuted.value ? Colors.redAccent : Colors.indigoAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      controller.isMicMuted.value ? Icons.mic_off : Icons.mic,
+                      color: Colors.white,
+                      size: 18.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                GestureDetector(
+                  onTap: () => controller.toggleCamera(),
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: controller.isCamOff.value ? Colors.redAccent : Colors.indigoAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      controller.isCamOff.value ? Icons.videocam_off : Icons.videocam,
+                      color: Colors.white,
+                      size: 18.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+              ],
+            );
+          }),
           GestureDetector(
             onTap: () => controller.sendReaction('like'),
             child: Icon(

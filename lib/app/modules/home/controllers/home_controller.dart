@@ -51,8 +51,11 @@ class HomeController extends GetxController {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // It could be a simple {"count": 5} or {"unread_count": 5} or paginated format
-        unreadNotificationCount.value = data['count'] ?? data['unread_count'] ?? 0;
+        if (data is List) {
+          unreadNotificationCount.value = data.length;
+        } else if (data is Map) {
+          unreadNotificationCount.value = data['count'] ?? data['unread_count'] ?? 0;
+        }
       }
     } catch (e) {
       print("Error fetching unread notification count: $e");

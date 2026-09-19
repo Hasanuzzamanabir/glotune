@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/services/pip_service.dart';
@@ -62,6 +63,7 @@ class CreateController extends GetxController {
   Timer? _memberPollTimer;
   Timer? _messagePollTimer;
   Timer? _liveDurationTimer;
+  WebSocket? _liveWs;
   final userProfile = Rxn<UserProfile>();
   final streamPrivacy = "Public".obs;
   final latencyMode = "Normal".obs;
@@ -902,6 +904,9 @@ class CreateController extends GetxController {
           fetchLiveMessages();
         });
 
+        // Connect Host WebSocket for real-time signaling
+        _connectLiveWebSocket();
+
         // Navigate to the live stream view
         navigateTo("LiveStream");
       } else {
@@ -1507,9 +1512,45 @@ class CreateController extends GetxController {
       }
       _memberPollTimer?.cancel();
       _messagePollTimer?.cancel();
+      try {
+        _liveWs?.close();
+        _liveWs = null;
+      } catch (_) {}
       isLiveEngineInitialized.value = false;
 
       _cleanupAndNavigateToCamera();
+    }
+  }
+
+  void _connectLiveWebSocket() {
+    try {
+      final authService = Get.find<AuthService>();
+      final token = authService.accessToken.value;
+      if (liveRoomId.value.isEmpty) return;
+
+      final parsed = Uri.parse(ApiConstants.baseUrl);
+      final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
+      final wsUrl = '$wsScheme://${parsed.host}${parsed.hasPort ? ':${parsed.port}' : ''}/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
+
+      print("[DEBUG LIVE WS] Host connecting to: $wsUrl");
+      WebSocket.connect(wsUrl).then((ws) {
+        _liveWs = ws;
+        print("[DEBUG LIVE WS] Host connected successfully");
+        ws.listen((event) {
+          try {
+            final data = jsonDecode(event.toString());
+            print("[DEBUG LIVE WS Event]: $data");
+          } catch (_) {}
+        }, onError: (err) {
+          print("[DEBUG LIVE WS] Stream error: $err");
+        }, onDone: () {
+          print("[DEBUG LIVE WS] Stream closed");
+        });
+      }).catchError((err) {
+        print("[DEBUG LIVE WS] Connect error: $err");
+      });
+    } catch (e) {
+      print("[DEBUG LIVE WS] Connect exception: $e");
     }
   }
 
@@ -1518,28 +1559,60 @@ class CreateController extends GetxController {
     print(
       "[DEBUG LIVE] Inviting co-host user: $userId to room: ${liveRoomId.value}",
     );
+
+    // 1. Send immediate real-time invitation over WebSocket so guest receives it instantly
+    try {
+      if (_liveWs != null) {
+        final inviteWsPayload = jsonEncode({
+          "type": "cohost_invite",
+          "action": "invite",
+          "target_user_id": userId,
+          "user_id": userId,
+          "username": liveRoomData.value?['host']?['username'] ?? "Host",
+          "host_username": liveRoomData.value?['host']?['username'] ?? "Host",
+          "room_id": liveRoomId.value,
+        });
+        _liveWs!.add(inviteWsPayload);
+        print("[DEBUG LIVE WS] Sent cohost_invite via WebSocket: $inviteWsPayload");
+      }
+    } catch (wsErr) {
+      print("[DEBUG LIVE WS] Error sending invite via WS: $wsErr");
+    }
+
+    // 2. Also notify backend API (tries invite-cohost, then cohost-invites fallback)
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
 
-      final url = Uri.parse(
+      final endpoints = [
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/invite/',
         '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/invite-cohost/',
-      );
-      final response = await apiClient.post(
-        url,
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({"user_id": userId}),
-      );
+        '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/cohost-invites/',
+      ];
 
-      print(
-        "[DEBUG LIVE] inviteGuest response: ${response.statusCode} - ${response.body}",
-      );
+      for (final ep in endpoints) {
+        try {
+          final res = await apiClient.post(
+            Uri.parse(ep),
+            headers: {
+              if (token != null) 'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              "user_ids": [userId],
+              "user_id": userId,
+            }),
+          );
+          print("[DEBUG LIVE] inviteGuest at $ep response: ${res.statusCode} - ${res.body}");
+          if (res.statusCode == 200 || res.statusCode == 201) {
+            break;
+          }
+        } catch (_) {}
+      }
+
       Get.snackbar(
         "Invitation",
-        "Invite sent to co-host!",
+        "Co-host invitation sent!",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.white,
         colorText: Colors.black,
@@ -1548,7 +1621,7 @@ class CreateController extends GetxController {
       print("[DEBUG LIVE] Exception in inviteGuest: $e");
       Get.snackbar(
         "Invitation",
-        "Invite request sent!",
+        "Co-host invitation sent!",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.white,
         colorText: Colors.black,
