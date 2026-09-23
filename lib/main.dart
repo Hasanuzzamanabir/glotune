@@ -8,6 +8,7 @@ import 'app/core/services/auth_service.dart';
 import 'app/core/services/interaction_service.dart';
 import 'app/core/services/pip_service.dart';
 import 'app/core/services/notification_websocket_service.dart';
+import 'app/core/services/live_game_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,7 @@ void main() async {
   Get.put(InteractionService());
   Get.put(PipService());
   Get.put(NotificationWebSocketService());
+  Get.put(LiveGameService());
 
   runApp(
     ScreenUtilInit(

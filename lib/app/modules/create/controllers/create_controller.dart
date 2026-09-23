@@ -14,6 +14,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:glotune/app/data/models/category_model.dart';
 import 'package:glotune/app/data/models/user_profile.dart';
+import 'package:glotune/app/core/services/live_game_service.dart';
 
 class CreateController extends GetxController {
   final selectedTab = "Videos".obs;
@@ -84,6 +85,11 @@ class CreateController extends GetxController {
   final _reactionStreamController = StreamController<String>.broadcast();
   Stream<String> get reactionStream => _reactionStreamController.stream;
   final userProfile = Rxn<UserProfile>();
+  final isGameModesVisible = false.obs;
+
+  void toggleGameModes() {
+    isGameModesVisible.value = !isGameModesVisible.value;
+  }
   final streamPrivacy = "Public".obs;
   final latencyMode = "Normal".obs;
   final autoRotate = true.obs;
@@ -164,6 +170,27 @@ class CreateController extends GetxController {
   final allowGuests = true.obs;
   final guestLayout = "Grid".obs;
   final isSearchingBattle = false.obs;
+
+  // 1v1 Battle & Matchmaking State
+  final activeMatchId = ''.obs;
+  final activeLobbyId = ''.obs;
+  final isMatchmaking = false.obs;
+  final matchmakingDurationSeconds = 0.obs;
+  Timer? _matchmakingTimer;
+  Timer? _matchmakingHeartbeatTimer;
+  Timer? _battleScorePollTimer;
+  Timer? _battleCountdownTimer;
+
+  final hostBattleScore = 3000.obs;
+  final opponentBattleScore = 500.obs;
+  final opponentName = 'Challenger 🥊'.obs;
+  final opponentAvatar = ''.obs;
+  final opponentUserId = Rxn<int>();
+  final battleTimerSeconds = 180.obs;
+  final battleTimerText = '03:00'.obs;
+  final isBattleActive = false.obs;
+  final isBattleEnded = false.obs;
+  final battleWinner = ''.obs;
 
   // Live Background
   final selectedLiveBackground = (-1).obs;
@@ -692,8 +719,8 @@ class CreateController extends GetxController {
       final respStr = await response.stream.bytesToString();
 
       print("========== API RESPONSE =========");
-      print("Status Code: \${response.statusCode}");
-      print("Body: \$respStr");
+      print("Status Code: ${response.statusCode}");
+      print("Body: $respStr");
       print("=================================");
 
       if (response.statusCode == 201 || response.statusCode == 200) {
@@ -918,8 +945,20 @@ class CreateController extends GetxController {
         // Member count & events handled real-time via WebSocket
         _connectLiveWebSocket();
 
-        // Navigate to the live stream view
-        navigateTo("LiveStream");
+        // Navigate to the live stream view or selected game mode
+        if (selectedGameType.value == "Box battle") {
+          startBoxBattle();
+        } else if (selectedGameType.value == "1v1") {
+          navigateTo("LiveBattle1v1");
+        } else if (selectedGameType.value == "Quiz") {
+          navigateTo("LiveQuiz");
+        } else if (selectedGameType.value == "2v2 battle") {
+          navigateTo("LiveBattle2v2");
+        } else if (selectedGameType.value == "Karaoke") {
+          navigateTo("LiveKaraoke");
+        } else {
+          navigateTo("LiveStream");
+        }
       } else {
         Get.snackbar("Error", "Failed to start live: ${response.statusCode}");
         print(
@@ -1718,6 +1757,40 @@ class CreateController extends GetxController {
         }
       }
 
+      // Update real liveMembers list from socket
+      if (action == 'user_joined') {
+        final userId = data['user_id'] ?? data['id'] ?? data['user']?['id'];
+        final pic = data['profile_picture'] ?? data['avatar'] ?? data['user']?['profile_picture'] ?? data['user']?['avatar'];
+        final memberObj = {
+          'id': userId,
+          'user_id': userId,
+          'username': username,
+          'profile_picture': pic,
+          'user': {
+            'id': userId,
+            'username': username,
+            'profile_picture': pic,
+          }
+        };
+        final existsIndex = liveMembers.indexWhere((m) {
+          final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
+          return mId != null && userId != null && mId.toString() == userId.toString();
+        });
+        if (existsIndex != -1) {
+          liveMembers[existsIndex] = memberObj;
+        } else {
+          liveMembers.insert(0, memberObj);
+        }
+      } else if (action == 'user_left') {
+        final userId = data['user_id'] ?? data['id'] ?? data['user']?['id'];
+        if (userId != null) {
+          liveMembers.removeWhere((m) {
+            final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
+            return mId != null && mId.toString() == userId.toString();
+          });
+        }
+      }
+
       if (noticeMsg.isNotEmpty) {
         showTemporaryNotice(noticeMsg);
 
@@ -2163,5 +2236,272 @@ class CreateController extends GetxController {
     if (image != null) {
       selectedThumbnailPath.value = image.path;
     }
+  }
+
+  // ==================== 1V1 BATTLE INTEGRATIONS ====================
+
+  LiveGameService get gameService => Get.find<LiveGameService>();
+
+  /// Start Find Host Matchmaking
+  Future<void> startFindHostMatchmaking() async {
+    if (isMatchmaking.value) return;
+    isMatchmaking.value = true;
+    matchmakingDurationSeconds.value = 0;
+
+    _matchmakingTimer?.cancel();
+    _matchmakingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      matchmakingDurationSeconds.value++;
+    });
+
+    final res = await gameService.joinMatchmaking(gameType: '1v1');
+    print("[DEBUG 1v1] joinMatchmaking res: $res");
+
+    // Start periodic status poll
+    _matchmakingHeartbeatTimer?.cancel();
+    _matchmakingHeartbeatTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (!isMatchmaking.value) {
+        timer.cancel();
+        return;
+      }
+      final statusRes = await gameService.getMatchmakingStatus();
+      print("[DEBUG 1v1] statusRes: $statusRes");
+      if (statusRes != null && (statusRes['status'] == 'matched' || statusRes['match_id'] != null)) {
+        timer.cancel();
+        _matchmakingTimer?.cancel();
+        isMatchmaking.value = false;
+
+        final matchId = statusRes['match_id']?.toString() ?? statusRes['id']?.toString() ?? '';
+        final opp = statusRes['opponent'] ?? statusRes['matched_user'];
+        if (opp is Map) {
+          opponentName.value = opp['username'] ?? opp['full_name'] ?? 'Challenger';
+          opponentAvatar.value = opp['profile_picture'] ?? '';
+          opponentUserId.value = opp['id'];
+        }
+        if (matchId.isNotEmpty) {
+          startBattleSession(matchId);
+        }
+      }
+    });
+  }
+
+  /// Cancel Find Host Matchmaking
+  Future<void> cancelFindHostMatchmaking() async {
+    isMatchmaking.value = false;
+    _matchmakingTimer?.cancel();
+    _matchmakingHeartbeatTimer?.cancel();
+    matchmakingDurationSeconds.value = 0;
+    await gameService.cancelMatchmaking();
+  }
+
+  /// Challenge or invite a user to 1v1 battle
+  Future<void> inviteUserToBattle(int userId, String userName, {String? userAvatar}) async {
+    opponentName.value = userName;
+    if (userAvatar != null && userAvatar.isNotEmpty) {
+      opponentAvatar.value = userAvatar;
+    }
+    opponentUserId.value = userId;
+
+    if (liveRoomId.value.isNotEmpty) {
+      await gameService.inviteToLiveRoom(liveRoomId.value, userId, role: 'co_host');
+    }
+    if (activeLobbyId.value.isNotEmpty) {
+      await gameService.inviteToLobby(activeLobbyId.value, userId);
+    }
+
+    Get.snackbar(
+      "Battle Challenge Sent",
+      "Invited $userName to 1v1 Battle!",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
+  }
+
+  /// Start 1v1 Battle session
+  void startBattleSession(String matchId) {
+    activeMatchId.value = matchId;
+    isBattleActive.value = true;
+    isBattleEnded.value = false;
+    battleTimerSeconds.value = 180;
+    battleTimerText.value = '03:00';
+
+    gameService.startMatch(matchId);
+
+    _battleCountdownTimer?.cancel();
+    _battleCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (battleTimerSeconds.value > 0) {
+        battleTimerSeconds.value--;
+        final m = (battleTimerSeconds.value ~/ 60).toString().padLeft(2, '0');
+        final s = (battleTimerSeconds.value % 60).toString().padLeft(2, '0');
+        battleTimerText.value = "$m:$s";
+      } else {
+        timer.cancel();
+        endBattleMatch();
+      }
+    });
+
+    _battleScorePollTimer?.cancel();
+    _battleScorePollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!isBattleActive.value) {
+        timer.cancel();
+        return;
+      }
+      fetchBattleScores();
+    });
+  }
+
+  /// Fetch authoritative scores from match API
+  Future<void> fetchBattleScores() async {
+    if (activeMatchId.value.isEmpty) return;
+    final res = await gameService.getMatchScores(activeMatchId.value);
+    if (res != null) {
+      if (res['host_score'] != null) {
+        hostBattleScore.value = int.tryParse(res['host_score'].toString()) ?? hostBattleScore.value;
+      }
+      if (res['opponent_score'] != null) {
+        opponentBattleScore.value = int.tryParse(res['opponent_score'].toString()) ?? opponentBattleScore.value;
+      }
+    }
+  }
+
+  /// Tap / Cheer score submission
+  Future<void> sendBattleScore(int points, {String action = 'point'}) async {
+    hostBattleScore.value += points;
+    if (activeMatchId.value.isNotEmpty) {
+      await gameService.submitScore(activeMatchId.value, scoreDelta: points, action: action);
+    }
+  }
+
+  /// Send official gift
+  Future<void> sendBattleGift({
+    required String giftType,
+    int quantity = 1,
+    bool toOpponent = false,
+  }) async {
+    final Map<String, int> coinCosts = {
+      'heart': 5,
+      'rose': 10,
+      'galaxy': 25,
+      'diamond': 50,
+      'crown': 100,
+    };
+    final costPerUnit = coinCosts[giftType.toLowerCase()] ?? 10;
+    final totalCoins = costPerUnit * quantity;
+    final scorePoints = totalCoins * 10;
+
+    if (toOpponent) {
+      opponentBattleScore.value += scorePoints;
+    } else {
+      hostBattleScore.value += scorePoints;
+    }
+
+    _reactionStreamController.add(giftType);
+
+    if (activeMatchId.value.isNotEmpty) {
+      await gameService.sendMatchGift(
+        activeMatchId.value,
+        giftType: giftType,
+        quantity: quantity,
+        recipientId: toOpponent ? opponentUserId.value : null,
+      );
+    } else if (liveRoomId.value.isNotEmpty) {
+      await gameService.sendLiveRoomGift(
+        liveRoomId.value,
+        giftType: giftType,
+        quantity: quantity,
+      );
+    }
+
+    Get.snackbar(
+      "Gift Sent! 🎉",
+      "Sent $quantity x ${giftType.toUpperCase()} ($totalCoins coins) +$scorePoints pts!",
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
+  }
+
+  /// Quit / surrender battle
+  Future<void> quitBattleMatch() async {
+    if (activeMatchId.value.isNotEmpty) {
+      await gameService.quitMatch(activeMatchId.value);
+    }
+    _battleCountdownTimer?.cancel();
+    _battleScorePollTimer?.cancel();
+    _matchmakingTimer?.cancel();
+    _matchmakingHeartbeatTimer?.cancel();
+    isMatchmaking.value = false;
+    isBattleActive.value = false;
+    activeMatchId.value = '';
+    opponentUserId.value = null;
+    opponentName.value = 'Challenger 🥊';
+    opponentAvatar.value = '';
+
+    navigateTo("LiveStream");
+    Get.snackbar(
+      "Battle Ended",
+      "You left the 1v1 battle session.",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
+  }
+
+  void endBattleMatch() {
+    isBattleActive.value = false;
+    isBattleEnded.value = true;
+    _battleCountdownTimer?.cancel();
+    _battleScorePollTimer?.cancel();
+
+    if (hostBattleScore.value > opponentBattleScore.value) {
+      battleWinner.value = 'host';
+    } else if (opponentBattleScore.value > hostBattleScore.value) {
+      battleWinner.value = 'opponent';
+    } else {
+      battleWinner.value = 'draw';
+    }
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFF1E1E1E),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                battleWinner.value == 'host'
+                    ? "🏆 VICTORY!"
+                    : (battleWinner.value == 'opponent' ? "DEFEAT 🥊" : "🤝 DRAW!"),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Host: ${hostBattleScore.value} pts vs Opponent: ${opponentBattleScore.value} pts",
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE5252A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                onPressed: () {
+                  Get.back();
+                },
+                child: const Text("Continue", style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

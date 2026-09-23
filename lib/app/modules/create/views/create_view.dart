@@ -712,17 +712,10 @@ class CreateView extends GetView<CreateController> {
                   final isSelected = controller.selectedGameType.value == game;
                   return GestureDetector(
                     onTap: () {
-                      controller.selectedGameType.value = game;
-                      if (game == "Box battle") {
-                        controller.navigateTo("LiveBoxBattle");
-                      } else if (game == "1v1") {
-                        controller.navigateTo("LiveBattle1v1");
-                      } else if (game == "Quiz") {
-                        controller.navigateTo("LiveQuiz");
-                      } else if (game == "2v2 battle") {
-                        controller.navigateTo("LiveBattle2v2");
-                      } else if (game == "Karaoke") {
-                        controller.navigateTo("LiveKaraoke");
+                      if (controller.selectedGameType.value == game) {
+                        controller.selectedGameType.value = "";
+                      } else {
+                        controller.selectedGameType.value = game;
                       }
                     },
                     child: Container(

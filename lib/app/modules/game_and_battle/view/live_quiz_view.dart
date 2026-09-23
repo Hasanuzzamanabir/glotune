@@ -458,71 +458,152 @@ class LiveQuizView extends GetView<CreateController> {
   }
 
   Widget _buildChatList() {
-    final chatEvents = [
-      {"user": "@kay", "text": "shared the live", "isAction": true},
-      {"user": "@sambrant", "text": "joined the LIVE 😍", "isAction": true},
-      {"user": "@kay", "text": "shared the live", "isAction": true},
-      {"user": "@sambrant", "text": "sent you a Rose 🌹", "isAction": true},
-      {"user": "@elisa", "text": "I am always enjoying", "isAction": false},
-      {"user": "@sambrant", "text": "sent you a Galaxy 🌌", "isAction": true},
-      {"user": "@sam", "text": "joined the LIVE", "isAction": true},
-    ];
+    return Obx(() {
+      final messages = controller.liveMessages;
 
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-      itemCount: chatEvents.length,
-      itemBuilder: (context, index) {
-        final item = chatEvents[index];
-        return Padding(
-          padding: EdgeInsets.only(bottom: 6.h),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(14.r),
+      if (messages.isEmpty) {
+        final mockEvents = [
+          {
+            "user": " ",
+            "text": "Stream Has been Started",
+            "isAction": false,
+          },
+        ];
+
+        return ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+          itemCount: mockEvents.length,
+          itemBuilder: (context, index) {
+            final item = mockEvents[index];
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(14.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 9.r,
+                        backgroundImage: const AssetImage(
+                          'assets/images/user_avatar.png',
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            if ((item['user'] as String).trim().isNotEmpty)
+                              TextSpan(
+                                text: "${item['user']} ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10.sp,
+                                ),
+                              ),
+                            TextSpan(
+                              text: item['text'] as String,
+                              style: TextStyle(
+                                color: item['isAction'] == true
+                                    ? Colors.orangeAccent
+                                    : Colors.white70,
+                                fontSize: 10.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 9.r,
-                    backgroundImage: const AssetImage(
-                      'assets/images/user_avatar.png',
+            );
+          },
+        );
+      }
+
+      return ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+        reverse: true,
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final msg = messages[index];
+          final text = (msg is Map
+                  ? (msg['message'] ?? msg['content'] ?? msg['text'])
+                  : msg.toString()) ??
+              "";
+          final userObj = msg is Map
+              ? (msg['user'] is Map ? msg['user'] : msg)
+              : {};
+          final username =
+              userObj['username'] ??
+              userObj['full_name'] ??
+              userObj['name'] ??
+              "Viewer";
+          final avatar = userObj['profile_picture'] ?? userObj['avatar'];
+          final isAction =
+              msg is Map &&
+              (msg['type'] == 'member_action' || msg['is_system'] == true);
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: 6.h),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(14.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 9.r,
+                      backgroundImage: (avatar != null &&
+                              avatar.toString().trim().isNotEmpty)
+                          ? NetworkImage(avatar.toString())
+                          : const AssetImage('assets/images/user_avatar.png')
+                              as ImageProvider,
                     ),
-                  ),
-                  SizedBox(width: 6.w),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "${item['user']} ",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10.sp,
+                    SizedBox(width: 6.w),
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "@$username ",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10.sp,
+                            ),
                           ),
-                        ),
-                        TextSpan(
-                          text: item['text'] as String,
-                          style: TextStyle(
-                            color: item['isAction'] == true
-                                ? Colors.orangeAccent
-                                : Colors.white70,
-                            fontSize: 10.sp,
+                          TextSpan(
+                            text: text,
+                            style: TextStyle(
+                              color: isAction
+                                  ? Colors.orangeAccent
+                                  : Colors.white70,
+                              fontSize: 10.sp,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    });
   }
 
   Widget _buildBottomActionBar() {

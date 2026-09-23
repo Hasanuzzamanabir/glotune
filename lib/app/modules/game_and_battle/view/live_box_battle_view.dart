@@ -22,11 +22,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF4A0E0E),
-                Color(0xFF6B1414),
-                Color(0xFF2C0707),
-              ],
+              colors: [Color(0xFF4A0E0E), Color(0xFF6B1414), Color(0xFF2C0707)],
             ),
           ),
           child: SafeArea(
@@ -67,7 +63,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
                     backgroundImage: (pic != null && pic.isNotEmpty)
                         ? NetworkImage(pic)
                         : const AssetImage('assets/images/user_avatar.png')
-                            as ImageProvider,
+                              as ImageProvider,
                   );
                 }),
                 SizedBox(width: 6.w),
@@ -78,10 +74,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
                       final user = controller.userProfile.value;
                       final name =
                           (user?.fullName != null && user!.fullName!.isNotEmpty)
-                              ? user.fullName!
-                              : (controller.liveTitle.value.isNotEmpty
-                                  ? controller.liveTitle.value
-                                  : "Angelina M");
+                          ? user.fullName!
+                          : (controller.liveTitle.value.isNotEmpty
+                                ? controller.liveTitle.value
+                                : "Angelina M");
                       return Text(
                         name,
                         style: TextStyle(
@@ -134,10 +130,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
             ),
           ),
           const Spacer(),
-          CircleAvatar(
-            radius: 12.r,
-            backgroundImage: const AssetImage('assets/images/user_avatar.png'),
-          ),
+          Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 16.sp),
           SizedBox(width: 4.w),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
@@ -147,7 +140,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
             ),
             child: Obx(
               () => Text(
-                "${controller.liveMemberCount.value > 0 ? controller.liveMemberCount.value : 387}",
+                "${controller.liveMemberCount.value}",
                 style: TextStyle(color: Colors.white, fontSize: 10.sp),
               ),
             ),
@@ -201,10 +194,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
                 children: [
                   Text(
                     "@username",
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 11.sp,
-                    ),
+                    style: TextStyle(color: Colors.white54, fontSize: 11.sp),
                   ),
                   const Spacer(),
                   const Icon(Icons.search, color: Colors.white54, size: 16),
@@ -213,11 +203,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
             ),
           ),
           SizedBox(width: 8.w),
-          Icon(
-            Icons.cloud_upload_outlined,
-            color: Colors.white70,
-            size: 20.sp,
-          ),
+          Icon(Icons.cloud_upload_outlined, color: Colors.white70, size: 20.sp),
           SizedBox(width: 8.w),
           Icon(Icons.flag_outlined, color: Colors.white70, size: 20.sp),
           SizedBox(width: 8.w),
@@ -274,7 +260,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
                               fit: BoxFit.cover,
                             )
                           : const DecorationImage(
-                              image: AssetImage('assets/images/user_avatar.png'),
+                              image: AssetImage(
+                                'assets/images/user_avatar.png',
+                              ),
                               fit: BoxFit.cover,
                             ),
                     ),
@@ -286,7 +274,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
                   top: 8.h,
                   left: 8.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 3.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(12.r),
@@ -308,7 +299,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
                   right: 8.w,
                   child: Obx(
                     () => Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.redAccent.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(12.r),
@@ -330,7 +324,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
                   bottom: 8.h,
                   left: 8.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(10.r),
@@ -431,7 +428,8 @@ class LiveBoxBattleView extends GetView<CreateController> {
     }
 
     // Occupied Slot
-    final guestName = (slot['username'] != null && slot['username'].toString().isNotEmpty)
+    final guestName =
+        (slot['username'] != null && slot['username'].toString().isNotEmpty)
         ? slot['username'].toString()
         : "Guest $slotNumber";
     final giftTotal = slot['gift_total'] ?? 0;
@@ -540,7 +538,8 @@ class LiveBoxBattleView extends GetView<CreateController> {
     Map<String, dynamic> slot,
   ) {
     final slotNumber = slot['slot_number'] as int;
-    final guestName = (slot['username'] != null && slot['username'].toString().isNotEmpty)
+    final guestName =
+        (slot['username'] != null && slot['username'].toString().isNotEmpty)
         ? slot['username'].toString()
         : "Guest $slotNumber";
     final micEnabled = slot['mic_on'] != false;
@@ -572,7 +571,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
               children: [
                 CircleAvatar(
                   radius: 18.r,
-                  backgroundImage: const AssetImage('assets/images/user_avatar.png'),
+                  backgroundImage: const AssetImage(
+                    'assets/images/user_avatar.png',
+                  ),
                 ),
                 SizedBox(width: 10.w),
                 Expanded(
@@ -589,7 +590,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
                       ),
                       Text(
                         "Occupying Slot #$slotNumber",
-                        style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
@@ -623,7 +627,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
               leading: const Icon(Icons.person_remove, color: Colors.red),
               title: const Text(
                 "Remove from Box",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               onTap: () {
                 Get.back();
@@ -641,16 +648,14 @@ class LiveBoxBattleView extends GetView<CreateController> {
     return Obx(() {
       final messages = controller.liveMessages;
 
-      // If empty, show default active demo items matching Page 2 UI
+      // If empty, show Stream Has been Started
       if (messages.isEmpty) {
         final mockEvents = [
-          {"user": "@kay", "text": "shared the live", "isAction": true},
-          {"user": "@sambrant", "text": "joined the LIVE 😍", "isAction": true},
-          {"user": "@kay", "text": "shared the live", "isAction": true},
-          {"user": "@sambrant", "text": "sent you a Rose 🌹", "isAction": true},
-          {"user": "@elisa", "text": "I am always enjoying", "isAction": false},
-          {"user": "@sambrant", "text": "sent you a Galaxy 🌌", "isAction": true},
-          {"user": "@sam", "text": "joined the LIVE", "isAction": true},
+          {
+            "user": " ",
+            "text": "Stream Has been Started",
+            "isAction": false,
+          },
         ];
 
         return ListView.builder(
@@ -663,7 +668,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(14.r),
@@ -681,14 +689,15 @@ class LiveBoxBattleView extends GetView<CreateController> {
                       RichText(
                         text: TextSpan(
                           children: [
-                            TextSpan(
-                              text: "${item['user']} ",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10.sp,
+                            if ((item['user'] as String).trim().isNotEmpty)
+                              TextSpan(
+                                text: "${item['user']} ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10.sp,
+                                ),
                               ),
-                            ),
                             TextSpan(
                               text: item['text'] as String,
                               style: TextStyle(
@@ -716,7 +725,8 @@ class LiveBoxBattleView extends GetView<CreateController> {
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final msg = messages[index];
-          final text = (msg is Map
+          final text =
+              (msg is Map
                   ? (msg['message'] ?? msg['content'] ?? msg['text'])
                   : msg.toString()) ??
               "";
@@ -884,10 +894,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
             Obx(
               () => ListTile(
                 leading: Icon(
-                  controller.isMicMuted.value
-                      ? Icons.mic_off
-                      : Icons.mic,
-                  color: controller.isMicMuted.value ? Colors.red : Colors.green,
+                  controller.isMicMuted.value ? Icons.mic_off : Icons.mic,
+                  color: controller.isMicMuted.value
+                      ? Colors.red
+                      : Colors.green,
                 ),
                 title: Text(
                   controller.isMicMuted.value
@@ -914,7 +924,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
               leading: const Icon(Icons.cancel_outlined, color: Colors.red),
               title: const Text(
                 "End Box Battle",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               onTap: () {
                 Get.back();
@@ -957,7 +970,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
             ),
             SizedBox(height: 12.h),
             ListTile(
-              leading: const Icon(Icons.grid_view_rounded, color: AppColors.primary),
+              leading: const Icon(
+                Icons.grid_view_rounded,
+                color: AppColors.primary,
+              ),
               title: const Text(
                 "Box Battle (8 Boxes)",
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -1136,13 +1152,15 @@ class LiveBoxBattleView extends GetView<CreateController> {
                   final user = m is Map && m['user'] is Map
                       ? m['user']
                       : (m is Map ? m : {});
-                  final name = (user['full_name'] ??
-                          user['name'] ??
-                          user['username'] ??
-                          "")
-                      .toString()
-                      .toLowerCase();
-                  final idStr = (user['id'] ?? user['user_id'] ?? "").toString();
+                  final name =
+                      (user['full_name'] ??
+                              user['name'] ??
+                              user['username'] ??
+                              "")
+                          .toString()
+                          .toLowerCase();
+                  final idStr = (user['id'] ?? user['user_id'] ?? "")
+                      .toString();
                   return name.contains(query) || idStr.contains(query);
                 }).toList();
 
@@ -1151,11 +1169,18 @@ class LiveBoxBattleView extends GetView<CreateController> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.people_outline, size: 48.sp, color: Colors.grey[400]),
+                        Icon(
+                          Icons.people_outline,
+                          size: 48.sp,
+                          color: Colors.grey[400],
+                        ),
                         SizedBox(height: 10.h),
                         Text(
                           "No active viewers found",
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13.sp),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13.sp,
+                          ),
                         ),
                       ],
                     ),
@@ -1170,13 +1195,16 @@ class LiveBoxBattleView extends GetView<CreateController> {
                     final user = member is Map && member['user'] is Map
                         ? member['user']
                         : (member is Map ? member : {});
-                    final name = user['full_name'] ??
+                    final name =
+                        user['full_name'] ??
                         user['name'] ??
                         user['username'] ??
                         "Viewer ${index + 1}";
-                    final userId = user['id'] ?? (member is Map ? member['user_id'] : null);
-                    final pic = user['profile_picture_url'] ??
-                        user['profile_picture'];
+                    final userId =
+                        user['id'] ??
+                        (member is Map ? member['user_id'] : null);
+                    final pic =
+                        user['profile_picture_url'] ?? user['profile_picture'];
 
                     return ListTile(
                       contentPadding: EdgeInsets.symmetric(
@@ -1185,10 +1213,11 @@ class LiveBoxBattleView extends GetView<CreateController> {
                       ),
                       leading: CircleAvatar(
                         radius: 20.r,
-                        backgroundImage: (pic != null && pic.toString().isNotEmpty)
+                        backgroundImage:
+                            (pic != null && pic.toString().isNotEmpty)
                             ? NetworkImage(pic.toString())
                             : const AssetImage('assets/images/user_avatar.png')
-                                as ImageProvider,
+                                  as ImageProvider,
                       ),
                       title: Text(
                         name,
@@ -1197,7 +1226,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
                           fontSize: 14.sp,
                         ),
                       ),
-                      subtitle: Text("ID: $userId", style: TextStyle(fontSize: 11.sp)),
+                      subtitle: Text(
+                        "ID: $userId",
+                        style: TextStyle(fontSize: 11.sp),
+                      ),
                       trailing: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6B1414),
@@ -1248,10 +1280,7 @@ class LiveBoxBattleView extends GetView<CreateController> {
           "Are you sure you want to end Box Battle? You will return to normal live broadcast.",
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
