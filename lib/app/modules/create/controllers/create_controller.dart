@@ -133,7 +133,7 @@ class CreateController extends GetxController {
 
   // Live Game Sub-menu & Selection State
   final showGameOptions = false.obs;
-  final selectedGameType = "Box battle".obs;
+  final selectedGameType = "".obs;
   final selectedLiveAction = "".obs;
 
   final gameOptionsList = [
@@ -143,7 +143,7 @@ class CreateController extends GetxController {
     "2v2 battle",
     "Karaoke",
   ];
-  // Quiz Category State
+  // Quiz Category & Live Quiz Game State
   final selectedQuizCategory = "Corporate and Business".obs;
   final quizCategoriesList = [
     "Entertainment and Pop Culture",
@@ -152,6 +152,88 @@ class CreateController extends GetxController {
     "Media and Journalism",
     "Politics and Governance",
   ];
+
+  // Authoritative Live Quiz Game State
+  final quizGameId = ''.obs;
+  final quizGameStatus = 'WAITING_FOR_CATEGORY'.obs;
+  final quizCategories = <Map<String, dynamic>>[
+    {
+      "id": "148d91e3-557a-4c76-a427-feebd079fb2c",
+      "name": "Entertainment and Pop Culture",
+      "description": "Music, cinema, television, celebrities, and global pop culture trivia.",
+      "sort_order": 1,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "8899e3a2-c59d-4eed-878f-871ad09bd980",
+      "name": "Corporate and Business",
+      "description": "Global markets, corporate giants, finance, entrepreneurship, and economics.",
+      "sort_order": 2,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "a624ddd4-1933-45ac-9a1e-868f4797128b",
+      "name": "Sport and Athletics",
+      "description": "Football, basketball, tennis, the Olympics, and legendary sports records.",
+      "sort_order": 3,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "edde6ae3-bf54-40d0-8320-5ee9329a4170",
+      "name": "Media and Journalism",
+      "description": "Broadcasting, news organizations, investigative reporting, ethics, and press history.",
+      "sort_order": 4,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "32337c06-51f3-4864-8169-2f476c9942c9",
+      "name": "Politics and Governance",
+      "description": "World governments, international relations, constitutions, and political history.",
+      "sort_order": 5,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "35aebcda-d98c-4347-978b-c789e44df0b5",
+      "name": "Science and Technology",
+      "description": "Physics, chemistry, astronomy, computer science, and modern technological innovations.",
+      "sort_order": 6,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+  ].obs;
+  final isLoadingQuizCategories = false.obs;
+  final selectedQuizCategoryId = '148d91e3-557a-4c76-a427-feebd079fb2c'.obs;
+  final selectedQuizCategoryName = 'Entertainment and Pop Culture'.obs;
+
+  // Active Round & Question State
+  final activeQuizRoundId = ''.obs;
+  final activeQuizRoundNo = 0.obs;
+  final activeQuizQuestion = Rxn<Map<String, dynamic>>();
+  final activeQuizAnswers = <Map<String, dynamic>>[].obs;
+  final quizDeadlineAt = Rxn<DateTime>();
+  final quizTimerSeconds = 30.obs;
+  final quizTimerText = '00:30'.obs;
+  final isQuizRoundActive = false.obs;
+  final isQuizScored = false.obs;
+  final selectedAnswerOption = ''.obs;
+  final isAnswerSubmitted = false.obs;
+  final correctAnswerOption = ''.obs;
+  final firstCorrectUserId = Rxn<int>();
+
+  // Participants & Rewards ($a + $b) from API
+  final quizParticipants = <Map<String, dynamic>>[].obs;
+  final quizRewards = <Map<String, dynamic>>[].obs;
+  final totalFanGiftsEarned = 0.0.obs;
+  final totalReleasedRewards = 0.0.obs;
+  final hostShareEarnings = 0.0.obs;
+
+  Timer? _quizRoundTimer;
+  WebSocket? _quizWs;
 
   void toggleGameMenu() {
     showGameOptions.value = !showGameOptions.value;
@@ -1525,6 +1607,28 @@ class CreateController extends GetxController {
     _typingTimer?.cancel();
     _temporaryNoticeTimer?.cancel();
     temporaryNotice.value = "";
+    selectedGameType.value = "";
+    showGameOptions.value = false;
+    _quizRoundTimer?.cancel();
+    try {
+      _quizWs?.close();
+    } catch (_) {}
+    _quizWs = null;
+    quizGameId.value = "";
+    quizGameStatus.value = "WAITING_FOR_CATEGORY";
+    isQuizRoundActive.value = false;
+    activeQuizRoundId.value = "";
+    activeQuizRoundNo.value = 0;
+    activeQuizQuestion.value = null;
+    activeQuizAnswers.clear();
+    quizParticipants.clear();
+    selectedAnswerOption.value = "";
+    isAnswerSubmitted.value = false;
+    isQuizScored.value = false;
+    correctAnswerOption.value = "";
+    firstCorrectUserId.value = null;
+    selectedQuizCategoryId.value = "";
+    selectedQuizCategoryName.value = "";
     navigateTo("Camera");
     initCamera(); // Restore flutter camera
   }
@@ -2198,6 +2302,549 @@ class CreateController extends GetxController {
 
   void openMusic() {
     // Handled by the View
+  }
+
+  // ==================== LIVE QUIZ GAME METHODS ====================
+
+  /// Initialize or join Quiz Game instance for current live room
+  Future<void> initOrJoinQuizGame([String? targetLiveId]) async {
+    final roomId = (targetLiveId != null && targetLiveId.isNotEmpty)
+        ? targetLiveId
+        : (liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d');
+    if (liveRoomId.value.isEmpty) {
+      liveRoomId.value = roomId;
+    }
+    print("[DEBUG LIVE QUIZ] Initializing Quiz Game for room: $roomId");
+
+    try {
+      // 1. Fetch available categories from API
+      await fetchQuizCategories();
+
+      // 2. Create or connect to quiz game instance on server
+      final gameRes = await gameService.createQuizGame(roomId);
+      if (gameRes != null) {
+        final id = gameRes['id'] ?? gameRes['game_id'];
+        if (id != null) {
+          quizGameId.value = id.toString();
+        }
+        quizGameStatus.value = gameRes['status']?.toString() ?? 'WAITING_FOR_CATEGORY';
+        print("[DEBUG LIVE QUIZ] Quiz game created/found. ID: ${quizGameId.value}, status: ${quizGameStatus.value}");
+
+        if (gameRes['active_category'] is Map) {
+          selectedQuizCategoryId.value = gameRes['active_category']['id']?.toString() ?? '';
+          selectedQuizCategoryName.value = gameRes['active_category']['name']?.toString() ?? '';
+        }
+
+        if (gameRes['participants'] is List) {
+          quizParticipants.value = List<Map<String, dynamic>>.from(gameRes['participants']);
+        }
+
+        if (gameRes['active_round'] is Map) {
+          final round = gameRes['active_round'];
+          activeQuizRoundId.value = (round['id'] ?? round['round_id'])?.toString() ?? '';
+          activeQuizRoundNo.value = round['round_no'] ?? 1;
+
+          if (round['question'] is Map) {
+            activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+            List<dynamic>? answersList;
+            if (round['question']['answers'] is List && (round['question']['answers'] as List).isNotEmpty) {
+              answersList = round['question']['answers'];
+            } else if (round['answers'] is List && (round['answers'] as List).isNotEmpty) {
+              answersList = round['answers'];
+            }
+            if (answersList != null) {
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(answersList);
+            }
+          }
+        }
+      }
+
+      // If category not selected yet, pick first category returned from API
+      if (selectedQuizCategoryId.value.isEmpty && quizCategories.isNotEmpty) {
+        selectedQuizCategoryId.value = quizCategories.first['id']?.toString() ?? '';
+        selectedQuizCategoryName.value = quizCategories.first['name']?.toString() ?? '';
+      }
+
+      // 3. Connect real-time WebSocket for Quiz events
+      if (quizGameId.value.isNotEmpty) {
+        _connectQuizWebSocket();
+        await recoverQuizState();
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] initOrJoinQuizGame error: $e");
+    }
+  }
+
+  /// 1. Fetch active quiz categories from backend
+  Future<void> fetchQuizCategories() async {
+    final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
+    try {
+      isLoadingQuizCategories.value = true;
+      final cats = await gameService.getQuizCategories(roomId);
+      print("[DEBUG LIVE QUIZ] Fetched ${cats.length} quiz categories from API");
+      if (cats.isNotEmpty) {
+        quizCategories.value = cats;
+        if (selectedQuizCategoryId.value.isEmpty) {
+          selectedQuizCategoryId.value = cats.first['id'].toString();
+          selectedQuizCategoryName.value = cats.first['name'].toString();
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] fetchQuizCategories error: $e");
+    } finally {
+      isLoadingQuizCategories.value = false;
+    }
+  }
+
+  /// 2. Host selects and locks category
+  Future<void> lockQuizCategory(String categoryId, String categoryName) async {
+    selectedQuizCategoryId.value = categoryId;
+    selectedQuizCategoryName.value = categoryName;
+
+    if (quizGameId.value.isNotEmpty) {
+      print("[DEBUG LIVE QUIZ] Locking category: $categoryName ($categoryId)");
+      final res = await gameService.lockQuizCategory(quizGameId.value, categoryId);
+      if (res != null) {
+        quizGameStatus.value = 'CATEGORY_LOCKED';
+      }
+    }
+
+    // Send action over WebSocket
+    _sendQuizWsAction({
+      'action': 'lock_category',
+      'category_id': categoryId,
+    });
+
+    Get.snackbar(
+      "Category Selected",
+      "Quiz Category: $categoryName",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
+  }
+
+  /// 3. Host starts next 30-second round
+  Future<void> startQuizRound() async {
+    if (quizGameId.value.isEmpty) {
+      await initOrJoinQuizGame();
+    }
+    if (quizGameId.value.isEmpty) {
+      Get.snackbar("Notice", "Starting quiz session on server...");
+      return;
+    }
+
+    // Automatically lock category if still waiting for category
+    if (selectedQuizCategoryId.value.isNotEmpty && quizGameStatus.value == 'WAITING_FOR_CATEGORY') {
+      await lockQuizCategory(selectedQuizCategoryId.value, selectedQuizCategoryName.value);
+    }
+
+    // Reset round answers & choices
+    selectedAnswerOption.value = '';
+    isAnswerSubmitted.value = false;
+    correctAnswerOption.value = '';
+    isQuizScored.value = false;
+    firstCorrectUserId.value = null;
+
+    try {
+      print("[DEBUG LIVE QUIZ] Starting round for game: ${quizGameId.value}");
+      final res = await gameService.startQuizRound(quizGameId.value);
+      if (res != null) {
+        activeQuizRoundId.value = res['id']?.toString() ?? '';
+        activeQuizRoundNo.value = res['round_no'] ?? (activeQuizRoundNo.value + 1);
+        quizGameStatus.value = 'QUESTION_ACTIVE';
+        isQuizRoundActive.value = true;
+
+        if (res['question'] is Map) {
+          activeQuizQuestion.value = Map<String, dynamic>.from(res['question']);
+          List<dynamic>? answersList;
+          if (res['question']['answers'] is List && (res['question']['answers'] as List).isNotEmpty) {
+            answersList = res['question']['answers'];
+          } else if (res['answers'] is List && (res['answers'] as List).isNotEmpty) {
+            answersList = res['answers'];
+          }
+          if (answersList != null) {
+            activeQuizAnswers.value = List<Map<String, dynamic>>.from(answersList);
+          }
+        }
+
+        if (res['deadline_at'] != null) {
+          quizDeadlineAt.value = DateTime.tryParse(res['deadline_at'].toString());
+        }
+
+        _startQuizCountdownTimer(30);
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] startQuizRound error: $e");
+    }
+
+    _sendQuizWsAction({'action': 'start_round'});
+  }
+
+  void _startQuizCountdownTimer(int seconds) {
+    _quizRoundTimer?.cancel();
+    quizTimerSeconds.value = seconds;
+    quizTimerText.value = "00:${seconds.toString().padLeft(2, '0')}";
+
+    _quizRoundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (quizTimerSeconds.value > 1) {
+        quizTimerSeconds.value--;
+        quizTimerText.value = "00:${quizTimerSeconds.value.toString().padLeft(2, '0')}";
+      } else {
+        quizTimerSeconds.value = 0;
+        quizTimerText.value = "00:00";
+        timer.cancel();
+        isQuizRoundActive.value = false;
+
+        // Auto-score round when 30-second server deadline expires
+        scoreQuizRound();
+      }
+    });
+  }
+
+  /// 4. Participant submits an answer (A-D)
+  Future<void> submitQuizAnswer(String optionCode) async {
+    if (isAnswerSubmitted.value || !isQuizRoundActive.value) return;
+    if (activeQuizRoundId.value.isEmpty || quizGameId.value.isEmpty) return;
+
+    selectedAnswerOption.value = optionCode;
+    isAnswerSubmitted.value = true;
+    final userId = userProfile.value?.id ?? 1;
+    final key = 'u${userId}_r${activeQuizRoundNo.value}_${DateTime.now().millisecondsSinceEpoch}';
+
+    print("[DEBUG LIVE QUIZ] Submitting answer: $optionCode for round: ${activeQuizRoundId.value}");
+
+    // Send real-time WebSocket answer for instant broadcast
+    _sendQuizWsAction({
+      'action': 'submit_answer',
+      'round_id': activeQuizRoundId.value,
+      'option_code': optionCode,
+      'idempotency_key': key,
+    });
+
+    try {
+      await gameService.submitQuizAnswer(
+        quizGameId.value,
+        activeQuizRoundId.value,
+        optionCode,
+        idempotencyKey: key,
+      );
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] submitQuizAnswer error: $e");
+    }
+  }
+
+  /// 5. Score round and distribute rewards
+  Future<void> scoreQuizRound() async {
+    if (quizGameId.value.isEmpty || activeQuizRoundId.value.isEmpty) return;
+    if (isQuizScored.value) return;
+    isQuizScored.value = true;
+    _quizRoundTimer?.cancel();
+    isQuizRoundActive.value = false;
+
+    print("[DEBUG LIVE QUIZ] Scoring round: ${activeQuizRoundId.value}");
+
+    _sendQuizWsAction({
+      'action': 'score_round',
+      'round_id': activeQuizRoundId.value,
+    });
+
+    try {
+      final res = await gameService.scoreQuizRound(
+        quizGameId.value,
+        activeQuizRoundId.value,
+      );
+      if (res != null) {
+        correctAnswerOption.value = res['correct_option']?.toString() ?? '';
+        firstCorrectUserId.value = res['first_correct_user_id'] is int
+            ? res['first_correct_user_id']
+            : int.tryParse(res['first_correct_user_id']?.toString() ?? '');
+
+        if (res['rewards'] is List) {
+          quizRewards.value = List<Map<String, dynamic>>.from(res['rewards']);
+
+          // Update guest display total & platform reward b
+          for (final r in quizRewards) {
+            final uid = r['user_id'];
+            final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+            if (idx != -1) {
+              final currentB = double.tryParse(quizParticipants[idx]['platform_reward_b']?.toString() ?? '0') ?? 0;
+              final added = double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
+              quizParticipants[idx]['platform_reward_b'] = (currentB + added);
+              quizParticipants[idx]['is_correct'] = true;
+            }
+          }
+          quizParticipants.refresh();
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] scoreQuizRound error: $e");
+    }
+  }
+
+  /// 6. Send fan gifts ($a$) to a quiz guest
+  Future<void> sendQuizGift(
+    int recipientUserId,
+    double amount, {
+    String giftType = 'GALAXY_STAR',
+  }) async {
+    if (quizGameId.value.isEmpty) return;
+    try {
+      final res = await gameService.sendQuizGift(
+        quizGameId.value,
+        recipientUserId: recipientUserId,
+        amount: amount,
+        giftType: giftType,
+      );
+      if (res != null) {
+        final idx = quizParticipants.indexWhere((p) => p['user_id'] == recipientUserId);
+        if (idx != -1) {
+          final currentA = double.tryParse(quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+          quizParticipants[idx]['fan_gifts_a'] = currentA + amount;
+          quizParticipants.refresh();
+        }
+        Get.snackbar("Gift Sent!", "Sent $giftType to participant", backgroundColor: Colors.white, colorText: Colors.black);
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] sendQuizGift error: $e");
+    }
+  }
+
+  /// 7. Recover full authoritative state
+  Future<void> recoverQuizState() async {
+    if (quizGameId.value.isEmpty) return;
+    _sendQuizWsAction({'action': 'get_state'});
+    try {
+      final state = await gameService.getQuizState(quizGameId.value);
+      if (state != null) {
+        quizGameStatus.value = state['status']?.toString() ?? 'ACTIVE';
+
+        if (state['active_category'] is Map) {
+          selectedQuizCategoryId.value = state['active_category']['id']?.toString() ?? '';
+          selectedQuizCategoryName.value = state['active_category']['name']?.toString() ?? '';
+        }
+
+        if (state['active_round'] is Map) {
+          final round = state['active_round'];
+          activeQuizRoundId.value = round['round_id']?.toString() ?? '';
+          activeQuizRoundNo.value = round['round_no'] ?? 1;
+
+          if (round['question'] is Map) {
+            activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+            if (round['question']['answers'] is List) {
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['question']['answers']);
+            }
+          }
+
+          if (round['status'] == 'QUESTION_ACTIVE') {
+            isQuizRoundActive.value = true;
+            final deadline = DateTime.tryParse(round['deadline_at']?.toString() ?? '');
+            if (deadline != null) {
+              final rem = deadline.difference(DateTime.now()).inSeconds;
+              if (rem > 0) {
+                _startQuizCountdownTimer(rem);
+              }
+            }
+          }
+        }
+
+        if (state['participants'] is List) {
+          quizParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] recoverQuizState error: $e");
+    }
+  }
+
+  /// 8. End Quiz Game Session
+  Future<void> endQuizGame() async {
+    if (quizGameId.value.isEmpty) {
+      navigateTo("LiveStream");
+      return;
+    }
+
+    try {
+      _quizRoundTimer?.cancel();
+      isQuizRoundActive.value = false;
+
+      _sendQuizWsAction({'action': 'end_game'});
+
+      final res = await gameService.endQuizGame(quizGameId.value);
+      if (res != null) {
+        totalFanGiftsEarned.value = double.tryParse(res['total_fan_gifts']?.toString() ?? '0') ?? 0;
+        totalReleasedRewards.value = double.tryParse(res['total_released_rewards']?.toString() ?? '0') ?? 0;
+        hostShareEarnings.value = double.tryParse(res['host_share_earnings']?.toString() ?? '0') ?? 0;
+
+        _showQuizEndSummaryDialog();
+      } else {
+        navigateTo("LiveStream");
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] endQuizGame error: $e");
+      navigateTo("LiveStream");
+    }
+  }
+
+  void _showQuizEndSummaryDialog() {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFF1E1E1E),
+        child: Padding(
+          padding: const EdgeInsets.all(22.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Quiz Session Ended 🏆",
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildStatRow(Icons.card_giftcard, "Total Fan Gifts (a)", "${totalFanGiftsEarned.value}"),
+              const SizedBox(height: 10),
+              _buildStatRow(Icons.emoji_events_outlined, "Platform Rewards (b)", "${totalReleasedRewards.value}"),
+              const SizedBox(height: 10),
+              _buildStatRow(Icons.monetization_on_outlined, "Host Earnings", "${hostShareEarnings.value}"),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B1818),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  minimumSize: const Size(double.infinity, 42),
+                ),
+                onPressed: () {
+                  Get.back();
+                  navigateTo("LiveStream");
+                },
+                child: const Text("Return to Live", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  // ==================== LIVE QUIZ WEBSOCKET ====================
+
+  void _connectQuizWebSocket() {
+    if (quizGameId.value.isEmpty) return;
+    try {
+      final authService = Get.find<AuthService>();
+      final token = authService.accessToken.value;
+
+      final parsed = Uri.parse(ApiConstants.baseUrl);
+      final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
+      final portStr = parsed.hasPort ? ':${parsed.port}' : '';
+      final wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
+
+      print("[DEBUG LIVE QUIZ WS] Connecting to Quiz WebSocket: $wsUrl");
+      WebSocket.connect(wsUrl).then((ws) {
+        _quizWs = ws;
+        print("[DEBUG LIVE QUIZ WS] Connected successfully!");
+        ws.listen((event) {
+          try {
+            final data = jsonDecode(event.toString());
+            print("[DEBUG LIVE QUIZ WS Event]: $data");
+            if (data is Map<String, dynamic>) {
+              _handleQuizWsEvent(data);
+            }
+          } catch (e) {
+            print("[DEBUG LIVE QUIZ WS] Parse error: $e");
+          }
+        }, onError: (err) {
+          print("[DEBUG LIVE QUIZ WS] Stream error: $err");
+          _quizWs = null;
+        }, onDone: () {
+          print("[DEBUG LIVE QUIZ WS] Stream closed");
+          _quizWs = null;
+        });
+      }).catchError((err) {
+        print("[DEBUG LIVE QUIZ WS] Connect error: $err");
+      });
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ WS] Exception connecting: $e");
+    }
+  }
+
+  void _sendQuizWsAction(Map<String, dynamic> payload) {
+    try {
+      if (_quizWs != null) {
+        _quizWs!.add(jsonEncode(payload));
+        print("[DEBUG LIVE QUIZ WS] Sent action: $payload");
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ WS] Send error: $e");
+    }
+  }
+
+  void _handleQuizWsEvent(Map<String, dynamic> data) {
+    final event = data['event']?.toString() ?? data['type']?.toString();
+
+    switch (event) {
+      case 'ROUND_STARTED':
+        activeQuizRoundId.value = data['round_id']?.toString() ?? '';
+        selectedAnswerOption.value = '';
+        isAnswerSubmitted.value = false;
+        correctAnswerOption.value = '';
+        isQuizScored.value = false;
+        isQuizRoundActive.value = true;
+        _startQuizCountdownTimer(30);
+        break;
+
+      case 'QUESTION_ACTIVE':
+        isQuizRoundActive.value = true;
+        if (data['question'] is Map) {
+          activeQuizQuestion.value = Map<String, dynamic>.from(data['question']);
+        }
+        if (data['answers'] is List) {
+          activeQuizAnswers.value = List<Map<String, dynamic>>.from(data['answers']);
+        }
+        _startQuizCountdownTimer(30);
+        break;
+
+      case 'ANSWER_SELECTED':
+        final uid = data['user_id'];
+        final option = data['option_code']?.toString() ?? '';
+        final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+        if (idx != -1) {
+          quizParticipants[idx]['selected_option'] = option;
+          quizParticipants.refresh();
+        }
+        break;
+
+      case 'ANSWER_LOCKED':
+        final uid = data['user_id'];
+        final isCorrect = data['result'] == 'CORRECT';
+        final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+        if (idx != -1) {
+          quizParticipants[idx]['is_correct'] = isCorrect;
+          quizParticipants.refresh();
+        }
+        break;
+
+      case 'ROUND_RESULT':
+        isQuizRoundActive.value = false;
+        firstCorrectUserId.value = data['first_correct_user_id'] is int
+            ? data['first_correct_user_id']
+            : int.tryParse(data['first_correct_user_id']?.toString() ?? '');
+        if (data['rewards'] is List) {
+          quizRewards.value = List<Map<String, dynamic>>.from(data['rewards']);
+        }
+        break;
+
+      case 'ROUND_ENDED':
+        isQuizRoundActive.value = false;
+        _quizRoundTimer?.cancel();
+        break;
+
+      case 'GAME_ENDED':
+        isQuizRoundActive.value = false;
+        _quizRoundTimer?.cancel();
+        break;
+    }
   }
 
   void navigateTo(String step) => currentStep.value = step;

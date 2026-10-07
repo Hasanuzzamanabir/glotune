@@ -390,4 +390,201 @@ class LiveGameService extends GetxService {
     }
     return [];
   }
+
+  // ==================== LIVE QUIZ GAME ====================
+
+  /// 1. List active categories for live room
+  Future<List<Map<String, dynamic>>> getQuizCategories(String liveId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}live/$liveId/games/quiz/categories/');
+      final response = await apiClient.get(url, headers: _headers);
+      if (kDebugMode) {
+        print("[LiveGameService] getQuizCategories [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        } else if (data is Map && data['results'] is List) {
+          return List<Map<String, dynamic>>.from(data['results']);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] getQuizCategories error: $e");
+    }
+    return [];
+  }
+
+  /// 2. Host creates a new Quiz Game instance for the Live Room
+  Future<Map<String, dynamic>?> createQuizGame(String liveId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}live/$liveId/games/quiz/');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] createQuizGame [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+      try {
+        final err = jsonDecode(response.body);
+        if (err is Map<String, dynamic> && (err['id'] != null || err['game_id'] != null)) {
+          return err;
+        }
+      } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] createQuizGame error: $e");
+    }
+    return null;
+  }
+
+  /// 3. Host selects & locks a category for the game session
+  Future<Map<String, dynamic>?> lockQuizCategory(String gameId, String categoryId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/category/');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({'category_id': categoryId}),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] lockQuizCategory [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] lockQuizCategory error: $e");
+    }
+    return null;
+  }
+
+  /// 4. Host starts the next 30-second round
+  Future<Map<String, dynamic>?> startQuizRound(String gameId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/start-round/');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] startQuizRound [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] startQuizRound error: $e");
+    }
+    return null;
+  }
+
+  /// 5. Participant submits an answer (A–D)
+  Future<Map<String, dynamic>?> submitQuizAnswer(
+    String gameId,
+    String roundId,
+    String optionCode, {
+    String? idempotencyKey,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/rounds/$roundId/answer/');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'option_code': optionCode,
+          'idempotency_key': idempotencyKey ?? 'ans_${DateTime.now().millisecondsSinceEpoch}',
+        }),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] submitQuizAnswer [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] submitQuizAnswer error: $e");
+    }
+    return null;
+  }
+
+  /// 6. Server / Host closes the round and computes scores and rewards
+  Future<Map<String, dynamic>?> scoreQuizRound(String gameId, String roundId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/rounds/$roundId/score/');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] scoreQuizRound [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] scoreQuizRound error: $e");
+    }
+    return null;
+  }
+
+  /// 7. Send fan gifts ($a$) to a quiz guest
+  Future<Map<String, dynamic>?> sendQuizGift(
+    String gameId, {
+    required int recipientUserId,
+    required double amount,
+    String giftType = 'GALAXY_STAR',
+    String? idempotencyKey,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/gift/');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'recipient_user_id': recipientUserId,
+          'amount': amount.toStringAsFixed(2),
+          'gift_type': giftType,
+          'idempotency_key': idempotencyKey ?? 'gift_${DateTime.now().millisecondsSinceEpoch}',
+        }),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] sendQuizGift [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] sendQuizGift error: $e");
+    }
+    return null;
+  }
+
+  /// 8. Recover full authoritative state after network disconnect
+  Future<Map<String, dynamic>?> getQuizState(String gameId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/state/');
+      final response = await apiClient.get(url, headers: _headers);
+      if (kDebugMode) {
+        print("[LiveGameService] getQuizState [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] getQuizState error: $e");
+    }
+    return null;
+  }
+
+  /// 9. Host or admin ends game; evaluates reward holds & host share
+  Future<Map<String, dynamic>?> endQuizGame(String gameId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.quizGames}$gameId/end/');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] endQuizGame [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] endQuizGame error: $e");
+    }
+    return null;
+  }
 }

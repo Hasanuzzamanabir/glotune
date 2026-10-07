@@ -20,4 +20,7 @@ class ApiConstants {
   // Users & Friends for Challenge
   static const String authUserList = 'auth/user-list/';
   static const String friendsList = 'friends/list/';
+
+  // Live Quiz Game
+  static const String quizGames = 'games/quiz/';
 }
