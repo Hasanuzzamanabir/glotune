@@ -35,6 +35,132 @@ class LivePlayerController extends GetxController {
   final errorMessage = "".obs;
 
   final liveMessages = [].obs;
+  final liveMembers = <dynamic>[].obs;
+  String? _pendingSessionJoin;
+
+  // Dynamic live streaming type from streamer ("live", "box battle", "1v1", "2v2", "quiz", "karaoke")
+  final currentLiveType = 'live'.obs;
+
+  // Box Battle state
+  final boxSlots = <Map<String, dynamic>>[].obs;
+  final boxBattleTimerSeconds = 90.obs;
+  final battleScoreHost = 100.obs;
+  final battleScoreGuest = 100.obs;
+
+  // Quiz state
+  final quizQuestion = <String, dynamic>{
+    'category': 'Entertainment & Pop Culture',
+    'question': 'Which pop star released the record-breaking album "Midnights"?',
+    'options': ['Taylor Swift', 'Dua Lipa', 'Beyonce', 'Billie Eilish'],
+    'correct_option': 'Taylor Swift',
+  }.obs;
+  final quizSelectedOption = Rxn<String>();
+  final quizTimeLeft = 15.obs;
+
+  // Karaoke state
+  final karaokeTitle = "Acoustic Pop Jam".obs;
+  final karaokeLyrics = "Sing along with the live host... 🎵\nCause we are golden hours under neon lights".obs;
+
+  void initBoxBattleSlots() {
+    if (boxSlots.isNotEmpty) return;
+    for (int i = 1; i <= 8; i++) {
+      boxSlots.add({
+        'slot_number': i,
+        'status': 'VACANT',
+        'user_id': null,
+        'guest_id': null,
+        'username': null,
+        'profile_picture': null,
+        'gift_total': 0,
+        'bonus_total': 0,
+        'mic_on': true,
+        'camera_on': true,
+      });
+    }
+  }
+
+  void updateLiveType(dynamic rawType) {
+    if (rawType == null) return;
+    final str = rawType.toString().toLowerCase().trim();
+    String newType = 'live';
+    if (str.contains('box')) {
+      newType = 'box battle';
+    } else if (str.contains('1v1')) {
+      newType = '1v1';
+    } else if (str.contains('2v2')) {
+      newType = '2v2';
+    } else if (str.contains('quiz')) {
+      newType = 'quiz';
+    } else if (str.contains('karaoke')) {
+      newType = 'karaoke';
+    } else {
+      newType = 'live';
+    }
+
+    if (currentLiveType.value != newType) {
+      currentLiveType.value = newType;
+      print("[LivePlayer WS] Streamer switched live type to: $newType");
+      showTemporaryNotice("Stream switched to ${newType.toUpperCase()}");
+
+      if (newType == 'box battle') {
+        initBoxBattleSlots();
+      }
+
+      // Auto join this session so viewer is registered on socket
+      joinSession(newType);
+    }
+  }
+
+  void selectQuizOption(String option) {
+    quizSelectedOption.value = option;
+    showTemporaryNotice("You voted: $option");
+    if (_chatWs != null) {
+      try {
+        _chatWs!.add(jsonEncode({
+          "action": "quiz_answer",
+          "selected_option": option,
+          "room_id": roomId,
+        }));
+      } catch (_) {}
+    }
+  }
+
+  /// Send session join event to WebSocket:
+  /// e.g. {"action": "join", "type": "box battle"}
+  void joinSession(String sessionType) {
+    String normalized = sessionType.toLowerCase().trim();
+    if (normalized == 'box' || normalized.contains('box battle')) {
+      normalized = 'box battle';
+    } else if (normalized.contains('1v1')) {
+      normalized = '1v1';
+    } else if (normalized.contains('2v2')) {
+      normalized = '2v2';
+    } else if (normalized.contains('quiz')) {
+      normalized = 'quiz';
+    } else if (normalized.contains('karaoke')) {
+      normalized = 'karaoke';
+    } else {
+      normalized = 'live';
+    }
+
+    final payload = jsonEncode({
+      "action": "join",
+      "type": normalized,
+    });
+
+    if (_chatWs != null) {
+      try {
+        _chatWs!.add(payload);
+        print("[LivePlayer WS] Sent join session: $payload");
+      } catch (e) {
+        print("[LivePlayer WS] Error sending join session: $e");
+      }
+    } else {
+      print("[LivePlayer WS] Socket not yet connected, queuing join session: $normalized");
+      _pendingSessionJoin = normalized;
+    }
+  }
+
   final typingNotice = "".obs;
   Timer? _typingTimer;
   final temporaryNotice = "".obs;
@@ -229,6 +355,10 @@ class LivePlayerController extends GetxController {
       if (data['host'] is Map<String, dynamic>) {
         hostProfilePic.value = data['host']['profile_picture'] ?? '';
       }
+      final rawType = data['game_type'] ?? data['battle_type'] ?? data['type'] ?? data['current_game_type'];
+      if (rawType != null) {
+        updateLiveType(rawType);
+      }
     } else {
       print("Failed to fetch room details: ${response.statusCode}");
       throw Exception("Failed to load room");
@@ -249,6 +379,12 @@ class LivePlayerController extends GetxController {
       void listenWs(WebSocket ws) {
         _chatWs = ws;
         print("[LivePlayer WS] Connected successfully to: ${ws.toString()}");
+        
+        // Immediately send join session to socket
+        final sessionToJoin = _pendingSessionJoin ?? 'live';
+        _pendingSessionJoin = null;
+        joinSession(sessionToJoin);
+
         ws.listen((event) {
           try {
             final data = jsonDecode(event.toString());
@@ -290,6 +426,27 @@ class LivePlayerController extends GetxController {
     print("[LivePlayer] Processing event: $data");
     final type = data['type']?.toString();
     final action = data['action']?.toString();
+
+    // 0. Session status & notification event (e.g. joined box battle, quiz, 1v1, 2v2, live, karaoke)
+    if (type == 'session_status' ||
+        type == 'session_status_notification' ||
+        action == 'join' ||
+        action == 'session_status' ||
+        action == 'session_status_notification') {
+      _handleSessionStatusEvent(data);
+      return;
+    }
+
+    // 0b. Detect battle/game start or live type changes
+    if (type == 'battle_started' || action == 'battle_started' || type == 'game_started' || action == 'game_started') {
+      final bType = data['battle_type'] ?? data['game_type'] ?? 'box battle';
+      updateLiveType(bType);
+    } else if (type == 'battle_ended' || action == 'battle_ended' || type == 'game_ended' || action == 'game_ended') {
+      updateLiveType('live');
+    } else if (type == 'change_live_type' || action == 'change_live_type' || type == 'live_type' || action == 'live_type') {
+      final lType = data['live_type'] ?? data['game_type'] ?? 'live';
+      updateLiveType(lType);
+    }
 
     // 1. Message event
     if (type == 'message' || action == 'message') {
@@ -516,6 +673,106 @@ class LivePlayerController extends GetxController {
         (action == 'approved' || data['status'] == 'approved')) {
       print("[LivePlayer] Stream request approved! Auto-accepting cohost...");
       acceptCohostInvitation();
+    }
+  }
+
+  void _handleSessionStatusEvent(Map<String, dynamic> data) {
+    print("[LivePlayer WS] Handling session status event: $data");
+    final type = data['type']?.toString();
+    final status = data['status']?.toString() ?? 'join';
+    final gameType = data['game_type']?.toString() ?? 'session';
+    final username = data['username']?.toString() ?? 'User';
+    final userId = data['user_id'];
+    final profilePic = data['profile_picture']?.toString();
+    final rawMsg = data['message']?.toString();
+    final displayMsg = (rawMsg != null && rawMsg.trim().isNotEmpty)
+        ? (rawMsg.startsWith('@') ? rawMsg : '@$username $rawMsg')
+        : '@$username joined $gameType';
+    final time = data['timestamp']?.toString() ?? DateTime.now().toIso8601String();
+
+    // Resolve full image URL if relative path
+    String? resolvedPic = profilePic;
+    if (resolvedPic != null && resolvedPic.isNotEmpty && !resolvedPic.startsWith('http')) {
+      final origin = Uri.parse(ApiConstants.baseUrl).origin;
+      resolvedPic = '$origin${resolvedPic.startsWith('/') ? '' : '/'}$resolvedPic';
+    }
+
+    // 1. Insert into liveMessages for chat feed
+    final chatItem = {
+      'id': 'sess_${userId}_${DateTime.now().millisecondsSinceEpoch}',
+      'message': displayMsg,
+      'text': displayMsg,
+      'username': username,
+      'user_id': userId,
+      'profile_picture': resolvedPic,
+      'timestamp': time,
+      'is_system': true,
+      'is_session_notification': true,
+      'game_type': gameType,
+      'status': status,
+      'type': type,
+    };
+    liveMessages.insert(0, chatItem);
+
+    // 2. Show floating temporary notice
+    showTemporaryNotice(displayMsg);
+
+    // 3. Update Participant Part:
+    final memberObj = {
+      'id': userId,
+      'user_id': userId,
+      'username': username,
+      'profile_picture': resolvedPic,
+      'game_type': gameType,
+      'user': {
+        'id': userId,
+        'username': username,
+        'profile_picture': resolvedPic,
+      }
+    };
+    final memberIdx = liveMembers.indexWhere((m) {
+      final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
+      return mId != null && userId != null && mId.toString() == userId.toString();
+    });
+    if (memberIdx != -1) {
+      liveMembers[memberIdx] = memberObj;
+    } else {
+      liveMembers.insert(0, memberObj);
+      if (liveMembers.length > memberCount.value) {
+        memberCount.value = liveMembers.length;
+      }
+    }
+
+    // 4. Update streaming view type to match session/game
+    if (gameType.isNotEmpty && gameType != 'session') {
+      updateLiveType(gameType);
+    }
+
+    // 5. Update Box Battle guest slots if game_type is box battle
+    final normalizedGameType = gameType.toLowerCase().trim();
+    if (normalizedGameType.contains('box')) {
+      initBoxBattleSlots();
+      final existingSlotIdx = boxSlots.indexWhere((s) {
+        final sUid = s['user_id'] ?? s['guest_id'] ?? s['uid'];
+        return sUid != null && userId != null && sUid.toString() == userId.toString();
+      });
+      if (existingSlotIdx == -1) {
+        final vacantIdx = boxSlots.indexWhere((s) => s['status'] == 'VACANT');
+        if (vacantIdx != -1) {
+          final updated = Map<String, dynamic>.from(boxSlots[vacantIdx]);
+          updated['status'] = 'OCCUPIED';
+          updated['user_id'] = userId;
+          updated['guest_id'] = userId;
+          updated['uid'] = userId is int ? userId : int.tryParse(userId.toString());
+          updated['username'] = username;
+          updated['profile_picture'] = resolvedPic;
+          updated['gift_total'] = 0;
+          updated['bonus_total'] = 0;
+          updated['mic_on'] = true;
+          updated['camera_on'] = true;
+          boxSlots[vacantIdx] = updated;
+        }
+      }
     }
   }
 

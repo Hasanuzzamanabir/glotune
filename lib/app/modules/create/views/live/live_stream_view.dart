@@ -16,11 +16,12 @@ class LiveStreamView extends GetView<CreateController> {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.liveRoomId.value.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.joinSession("live");
+      if (controller.liveRoomId.value.isNotEmpty) {
         controller.fetchLiveParticipants();
-      });
-    }
+      }
+    });
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -824,12 +825,18 @@ class LiveStreamView extends GetView<CreateController> {
           final userObj = msg is Map
               ? (msg['user'] is Map ? msg['user'] : msg)
               : {};
+          final isSession = msg is Map &&
+              (msg['is_session_notification'] == true ||
+                  msg['type'] == 'session_status_notification' ||
+                  msg['type'] == 'session_status');
           final username =
               userObj['username'] ??
               userObj['full_name'] ??
               userObj['name'] ??
               "Viewer";
-          final avatar = userObj['profile_picture'] ?? userObj['avatar'];
+          final avatar = (msg is Map ? msg['profile_picture'] : null) ??
+              userObj['profile_picture'] ??
+              userObj['avatar'];
           final isAction =
               msg is Map &&
               (msg['type'] == 'member_action' || msg['is_system'] == true);
@@ -837,11 +844,13 @@ class LiveStreamView extends GetView<CreateController> {
           return Padding(
             padding: EdgeInsets.only(bottom: 6.h),
             child: _buildCommentPill(
-              username: "@$username",
+              username: isSession ? "" : "@$username",
               message: text,
-              type: isAction
-                  ? "join_dark"
-                  : (index % 3 == 0 ? "chat_peach" : "chat_white"),
+              type: isSession
+                  ? "session"
+                  : (isAction
+                      ? "join_dark"
+                      : (index % 3 == 0 ? "chat_peach" : "chat_white")),
               avatarUrl: avatar?.toString(),
             ),
           );
@@ -857,11 +866,19 @@ class LiveStreamView extends GetView<CreateController> {
     required String type,
     String? avatarUrl,
   }) {
-    Color bgColor;
+    Color? bgColor;
     Color userColor;
     Color textColor;
+    Gradient? gradient;
 
     switch (type) {
+      case "session":
+        gradient = const LinearGradient(
+          colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+        );
+        userColor = Colors.white;
+        textColor = Colors.white;
+        break;
       case "rose":
       case "chat_white":
         bgColor = Colors.white.withValues(alpha: 0.95);
@@ -888,6 +905,7 @@ class LiveStreamView extends GetView<CreateController> {
         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
         decoration: BoxDecoration(
           color: bgColor,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(

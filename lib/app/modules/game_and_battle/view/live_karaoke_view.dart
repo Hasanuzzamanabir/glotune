@@ -8,6 +8,9 @@ class LiveKaraokeView extends GetView<CreateController> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.joinSession("karaoke");
+    });
     return Scaffold(
       backgroundColor: const Color(0xFF6B1414),
       body: SafeArea(
@@ -517,6 +520,10 @@ class LiveKaraokeView extends GetView<CreateController> {
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final msg = messages[index];
+          final isSessionNotif = msg is Map &&
+              (msg['is_session_notification'] == true ||
+                  msg['type'] == 'session_status_notification' ||
+                  msg['type'] == 'session_status');
           final text = (msg is Map
                   ? (msg['message'] ?? msg['content'] ?? msg['text'])
                   : msg.toString()) ??
@@ -529,10 +536,62 @@ class LiveKaraokeView extends GetView<CreateController> {
               userObj['full_name'] ??
               userObj['name'] ??
               "Viewer";
-          final avatar = userObj['profile_picture'] ?? userObj['avatar'];
+          final avatar = (msg is Map ? msg['profile_picture'] : null) ??
+              userObj['profile_picture'] ??
+              userObj['avatar'];
           final isAction =
               msg is Map &&
               (msg['type'] == 'member_action' || msg['is_system'] == true);
+
+          if (isSessionNotif) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF7C3AED).withValues(alpha: 0.85),
+                        const Color(0xFFDB2777).withValues(alpha: 0.85),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 9.r,
+                        backgroundImage: (avatar != null &&
+                                avatar.toString().trim().isNotEmpty)
+                            ? NetworkImage(avatar.toString())
+                            : const AssetImage('assets/images/user_avatar.png')
+                                as ImageProvider,
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
 
           return Padding(
             padding: EdgeInsets.only(bottom: 6.h),

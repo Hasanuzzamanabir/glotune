@@ -1690,6 +1690,56 @@ class CreateController extends GetxController {
     }
   }
 
+  String? _pendingSessionJoin;
+
+  /// Send session join event to WebSocket:
+  /// e.g. {"action": "join", "type": "box battle"}
+  void joinSession(String sessionType) {
+    String normalized = sessionType.toLowerCase().trim();
+    if (normalized == 'box' || normalized.contains('box battle')) {
+      normalized = 'box battle';
+    } else if (normalized.contains('1v1')) {
+      normalized = '1v1';
+    } else if (normalized.contains('2v2')) {
+      normalized = '2v2';
+    } else if (normalized.contains('quiz')) {
+      normalized = 'quiz';
+    } else if (normalized.contains('karaoke')) {
+      normalized = 'karaoke';
+    } else {
+      normalized = 'live';
+    }
+
+    final payload = jsonEncode({
+      "action": "join",
+      "type": normalized,
+    });
+
+    final changeTypePayload = jsonEncode({
+      "action": "change_live_type",
+      "type": "change_live_type",
+      "live_type": normalized,
+      "game_type": normalized,
+      "room_id": liveRoomId.value,
+    });
+
+    if (_liveWs != null) {
+      try {
+        _liveWs!.add(payload);
+        _liveWs!.add(changeTypePayload);
+        print("[DEBUG LIVE WS] Sent join session: $payload & change type: $changeTypePayload");
+      } catch (e) {
+        print("[DEBUG LIVE WS] Error sending join session: $e");
+      }
+    } else {
+      print("[DEBUG LIVE WS] Socket not yet connected, queuing join session: $normalized");
+      _pendingSessionJoin = normalized;
+      if (liveRoomId.value.isNotEmpty) {
+        _connectLiveWebSocket();
+      }
+    }
+  }
+
   void _connectLiveWebSocket() {
     try {
       final authService = Get.find<AuthService>();
@@ -1705,6 +1755,21 @@ class CreateController extends GetxController {
       void listenWs(WebSocket ws) {
         _liveWs = ws;
         print("[DEBUG LIVE WS] Host connected successfully to: ${ws.toString()}");
+
+        // Send queued or default session join
+        final joinType = _pendingSessionJoin ?? (isBoxBattleActive.value ? "box battle" : "live");
+        final joinPayload = jsonEncode({
+          "action": "join",
+          "type": joinType,
+        });
+        try {
+          ws.add(joinPayload);
+          print("[DEBUG LIVE WS] Sent join on connect: $joinPayload");
+        } catch (e) {
+          print("[DEBUG LIVE WS] Error sending join on connect: $e");
+        }
+        _pendingSessionJoin = null;
+
         ws.listen((event) {
           try {
             final data = jsonDecode(event.toString());
@@ -1958,6 +2023,124 @@ class CreateController extends GetxController {
     } else if (type == 'battle_ended' || action == 'battle_ended') {
       endBoxBattle();
     }
+
+    // 8. Session status & join notifications
+    else if (type == 'session_status' || type == 'session_status_notification') {
+      _handleSessionStatusEvent(data);
+    }
+  }
+
+  void _handleSessionStatusEvent(Map<String, dynamic> data) {
+    print("[DEBUG LIVE WS] Handling session status event: $data");
+    final type = data['type']?.toString();
+    final status = data['status']?.toString() ?? 'join';
+    final gameType = data['game_type']?.toString() ?? 'session';
+    final username = data['username']?.toString() ?? 'User';
+    final userId = data['user_id'];
+    final profilePic = data['profile_picture']?.toString();
+    final rawMsg = data['message']?.toString();
+    final displayMsg = (rawMsg != null && rawMsg.trim().isNotEmpty)
+        ? (rawMsg.startsWith('@') ? rawMsg : '@$username $rawMsg')
+        : '@$username joined $gameType';
+    final time = data['timestamp']?.toString() ?? DateTime.now().toIso8601String();
+
+    // Resolve full image URL if relative path
+    String? resolvedPic = profilePic;
+    if (resolvedPic != null && resolvedPic.isNotEmpty && !resolvedPic.startsWith('http')) {
+      final origin = Uri.parse(ApiConstants.baseUrl).origin;
+      resolvedPic = '$origin${resolvedPic.startsWith('/') ? '' : '/'}$resolvedPic';
+    }
+
+    // 1. Insert into liveMessages for chat feed
+    final chatItem = {
+      'id': 'sess_${userId}_${DateTime.now().millisecondsSinceEpoch}',
+      'message': displayMsg,
+      'text': displayMsg,
+      'username': username,
+      'user_id': userId,
+      'profile_picture': resolvedPic,
+      'timestamp': time,
+      'is_system': true,
+      'is_session_notification': true,
+      'game_type': gameType,
+      'status': status,
+      'type': type,
+    };
+    liveMessages.insert(0, chatItem);
+
+    // 2. Show floating temporary notice / banner
+    showTemporaryNotice(displayMsg);
+
+    // 3. Update Participant Part:
+    // 3a. Add to liveMembers list
+    final memberObj = {
+      'id': userId,
+      'user_id': userId,
+      'username': username,
+      'profile_picture': resolvedPic,
+      'game_type': gameType,
+      'user': {
+        'id': userId,
+        'username': username,
+        'profile_picture': resolvedPic,
+      }
+    };
+    final memberIdx = liveMembers.indexWhere((m) {
+      final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
+      return mId != null && userId != null && mId.toString() == userId.toString();
+    });
+    if (memberIdx != -1) {
+      liveMembers[memberIdx] = memberObj;
+    } else {
+      liveMembers.insert(0, memberObj);
+      liveMemberCount.value = liveMembers.length;
+    }
+
+    // 3b. Update Box Battle guest slots if game_type is "box battle"
+    final normalizedGameType = gameType.toLowerCase().trim();
+    if (normalizedGameType.contains('box')) {
+      final existingSlotIdx = boxSlots.indexWhere((s) {
+        final sUid = s['user_id'] ?? s['guest_id'] ?? s['uid'];
+        return sUid != null && userId != null && sUid.toString() == userId.toString();
+      });
+      if (existingSlotIdx == -1) {
+        final vacantIdx = boxSlots.indexWhere((s) => s['status'] == 'VACANT');
+        if (vacantIdx != -1) {
+          final slotNum = boxSlots[vacantIdx]['slot_number'];
+          final updated = Map<String, dynamic>.from(boxSlots[vacantIdx]);
+          updated['status'] = 'OCCUPIED';
+          updated['user_id'] = userId;
+          updated['guest_id'] = userId;
+          updated['uid'] = userId is int ? userId : int.tryParse(userId.toString());
+          updated['username'] = username;
+          updated['profile_picture'] = resolvedPic;
+          updated['gift_total'] = 0;
+          updated['bonus_total'] = 0;
+          updated['mic_on'] = true;
+          updated['camera_on'] = true;
+          boxSlots[vacantIdx] = updated;
+        }
+      }
+    }
+
+    // 3c. Update Quiz participants if game_type is "quiz"
+    if (normalizedGameType.contains('quiz')) {
+      final existsInQuiz = quizParticipants.any((p) {
+        final pId = p['user_id'] ?? p['id'];
+        return pId != null && userId != null && pId.toString() == userId.toString();
+      });
+      if (!existsInQuiz && userId != null) {
+        quizParticipants.add({
+          'user_id': userId,
+          'username': username,
+          'profile_picture': resolvedPic,
+          'fan_gifts_a': 0,
+          'platform_reward_b': 0,
+          'selected_option': null,
+          'is_correct': false,
+        });
+      }
+    }
   }
 
   Future<void> inviteGuest(dynamic userId) async {
@@ -2167,12 +2350,14 @@ class CreateController extends GetxController {
       }
     } catch (_) {}
 
+    joinSession("box battle");
     navigateTo("LiveBoxBattle");
   }
 
   void endBoxBattle() {
     isBoxBattleActive.value = false;
     _boxBattleTimer?.cancel();
+    joinSession("live");
 
     try {
       if (_liveWs != null) {
@@ -2847,7 +3032,22 @@ class CreateController extends GetxController {
     }
   }
 
-  void navigateTo(String step) => currentStep.value = step;
+  void navigateTo(String step) {
+    currentStep.value = step;
+    if (step == "LiveBoxBattle") {
+      joinSession("box battle");
+    } else if (step == "LiveBattle1v1") {
+      joinSession("1v1");
+    } else if (step == "LiveBattle2v2") {
+      joinSession("2v2");
+    } else if (step == "LiveQuiz") {
+      joinSession("quiz");
+    } else if (step == "LiveKaraoke") {
+      joinSession("karaoke");
+    } else if (step == "LiveStream") {
+      joinSession("live");
+    }
+  }
 
   Future<void> pickMediaFromGallery() async {
     // Reset thumbnail on new media pick
