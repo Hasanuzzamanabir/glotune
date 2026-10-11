@@ -235,6 +235,40 @@ class CreateController extends GetxController {
   Timer? _quizRoundTimer;
   WebSocket? _quizWs;
 
+  // ==================== LIVE KARAOKE GAME STATE ====================
+  final karaokeGameId = ''.obs;
+  final karaokeGameStatus = 'WAITING_FOR_SINGER'.obs;
+  final karaokeActivePerformance = Rxn<Map<String, dynamic>>();
+  final karaokePerformanceId = ''.obs;
+  final karaokeCurrentSinger = ''.obs;
+  final karaokeCurrentSingerId = 0.obs;
+  final karaokeCurrentSingerSeat = '1'.obs;
+  final karaokeCurrentTrackId = ''.obs;
+  final karaokeCurrentTrackTitle = ''.obs;
+  final karaokeCurrentTrackArtist = ''.obs;
+  final karaokeCurrentTrackType = 'INSTRUMENTAL'.obs; // 'MUSIC' or 'INSTRUMENTAL'
+  final karaokeAudioUrl = ''.obs;
+  final karaokePlaybackToken = ''.obs;
+  final karaokeDurationMs = 0.obs;
+  final karaokeIsRewardEligible = false.obs;
+  final karaokeTimerSeconds = 0.obs;
+  final karaokeTimerText = '00:00'.obs;
+  final isKaraokePerformanceActive = false.obs;
+  final karaokeCurrentLyricLine = 0.obs;
+  final karaokeCurrentLyricText = ''.obs;
+  final karaokeLyricsList = <Map<String, dynamic>>[].obs;
+  final karaokeParticipants = <Map<String, dynamic>>[].obs;
+  final karaokeCatalog = <Map<String, dynamic>>[].obs;
+  final isKaraokeCatalogLoading = false.obs;
+  final karaokeHeldReward = 0.0.obs;
+  final karaokeTotalFanGifts = 0.0.obs;
+  final karaokeTotalReleasedRewards = 0.0.obs;
+  final karaokeTotalForfeitedRewards = 0.0.obs;
+  final karaokeHostShareEarnings = 0.0.obs;
+
+  Timer? _karaokeTimer;
+  WebSocket? _karaokeWs;
+
   void toggleGameMenu() {
     showGameOptions.value = !showGameOptions.value;
     if (showGameOptions.value) {
@@ -3321,6 +3355,563 @@ class CreateController extends GetxController {
         _showQuizEndSummaryDialog();
         break;
     }
+  }
+
+  // ==================== LIVE KARAOKE GAME METHODS ====================
+
+  /// Initialize or join Karaoke Game instance for current live room
+  Future<void> initOrJoinKaraokeGame([String? targetLiveId]) async {
+    if (karaokeGameId.value.isNotEmpty && _karaokeWs != null) {
+      return;
+    }
+    final roomId = (targetLiveId != null && targetLiveId.isNotEmpty)
+        ? targetLiveId
+        : (liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc');
+    if (liveRoomId.value.isEmpty) {
+      liveRoomId.value = roomId;
+    }
+    print("[DEBUG LIVE KARAOKE] Initializing Karaoke Game for room: $roomId");
+
+    try {
+      // 1. Fetch available tracks catalog from API
+      await fetchKaraokeCatalog();
+
+      // 2. Connect 100% Real-Time WebSocket Karaoke Engine
+      _connectKaraokeWebSocket();
+
+      // 3. Fallback / supplementary init via REST API
+      final res = await gameService.initOrGetKaraokeGame(roomId);
+      if (res != null) {
+        final id = res['id'] ?? res['game_id'];
+        if (id != null) {
+          karaokeGameId.value = id.toString();
+        }
+        karaokeGameStatus.value = res['status']?.toString() ?? 'WAITING_FOR_SINGER';
+        print("[DEBUG LIVE KARAOKE] Karaoke game created/found. ID: ${karaokeGameId.value}, status: ${karaokeGameStatus.value}");
+
+        if (res['participants'] is List) {
+          karaokeParticipants.value = List<Map<String, dynamic>>.from(res['participants']);
+        }
+
+        if (res['active_performance'] is Map) {
+          final perf = Map<String, dynamic>.from(res['active_performance']);
+          karaokeActivePerformance.value = perf;
+          karaokePerformanceId.value = perf['id']?.toString() ?? '';
+          karaokeCurrentSinger.value = perf['performer_username']?.toString() ?? '';
+          karaokeCurrentSingerId.value = perf['performer_id'] is int ? perf['performer_id'] : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
+          karaokeCurrentTrackTitle.value = perf['track_title']?.toString() ?? '';
+          karaokeCurrentTrackArtist.value = perf['track_artist']?.toString() ?? '';
+          karaokeCurrentTrackType.value = perf['content_type']?.toString() ?? 'INSTRUMENTAL';
+          karaokeIsRewardEligible.value = perf['is_reward_eligible'] == true;
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE] initOrJoinKaraokeGame error: $e");
+    }
+  }
+
+  /// Connect to Authoritative Real-Time Live Karaoke WebSocket
+  void _connectKaraokeWebSocket() {
+    if (_karaokeWs != null) {
+      try {
+        _karaokeWs!.close();
+      } catch (_) {}
+      _karaokeWs = null;
+    }
+
+    try {
+      final auth = Get.find<AuthService>();
+      final token = auth.accessToken.value;
+      final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc';
+
+      final parsed = Uri.parse(ApiConstants.baseUrl);
+      final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
+      final portStr = parsed.hasPort ? ':${parsed.port}' : '';
+
+      final String wsUrl;
+      if (roomId.isNotEmpty) {
+        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/karaoke/?token=${token ?? ''}';
+      } else if (karaokeGameId.value.isNotEmpty) {
+        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
+      } else {
+        return;
+      }
+
+      print("[DEBUG LIVE KARAOKE WS] Connecting to Karaoke WebSocket: $wsUrl");
+      WebSocket.connect(wsUrl).then((ws) {
+        _karaokeWs = ws;
+        print("[DEBUG LIVE KARAOKE WS] Connected successfully!");
+
+        // Request authoritative state
+        _sendKaraokeWsAction({'action': 'get_state'});
+
+        ws.listen((event) {
+          try {
+            final data = jsonDecode(event.toString());
+            print("[DEBUG LIVE KARAOKE WS Event]: $data");
+            if (data is Map<String, dynamic>) {
+              _handleKaraokeWsEvent(data);
+            }
+          } catch (e) {
+            print("[DEBUG LIVE KARAOKE WS] Parse error: $e");
+          }
+        }, onError: (err) {
+          print("[DEBUG LIVE KARAOKE WS] Stream error: $err");
+          _karaokeWs = null;
+        }, onDone: () {
+          print("[DEBUG LIVE KARAOKE WS] Stream closed");
+          _karaokeWs = null;
+        });
+      }).catchError((err) {
+        print("[DEBUG LIVE KARAOKE WS] Connect error: $err");
+        if (karaokeGameId.value.isNotEmpty && !wsUrl.contains('live-karaoke')) {
+          final fallbackUrl = '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
+          print("[DEBUG LIVE KARAOKE WS] Trying fallback URL: $fallbackUrl");
+          WebSocket.connect(fallbackUrl).then((ws) {
+            _karaokeWs = ws;
+            _sendKaraokeWsAction({'action': 'get_state'});
+            ws.listen((event) {
+              try {
+                final data = jsonDecode(event.toString());
+                if (data is Map<String, dynamic>) _handleKaraokeWsEvent(data);
+              } catch (_) {}
+            }, onError: (_) => _karaokeWs = null, onDone: () => _karaokeWs = null);
+          }).catchError((_) {});
+        }
+      });
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE WS] Exception connecting: $e");
+    }
+  }
+
+  void _sendKaraokeWsAction(Map<String, dynamic> payload) {
+    try {
+      if (_karaokeWs != null) {
+        _karaokeWs!.add(jsonEncode(payload));
+        print("[DEBUG LIVE KARAOKE WS] Sent action: $payload");
+      }
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE WS] Send error: $e");
+    }
+  }
+
+  void _handleKaraokeWsEvent(Map<String, dynamic> data) {
+    final event = data['event']?.toString() ?? data['type']?.toString();
+    final Map<String, dynamic> payload = data['payload'] is Map
+        ? Map<String, dynamic>.from(data['payload'])
+        : data;
+
+    print("[DEBUG LIVE KARAOKE WS] Processing event: $event");
+
+    switch (event) {
+      case 'connection_ack':
+      case 'CONNECTED':
+        if (data['game_id'] != null) {
+          karaokeGameId.value = data['game_id'].toString();
+        }
+        if (data['state'] is Map) {
+          final state = Map<String, dynamic>.from(data['state']);
+          karaokeGameStatus.value = state['status']?.toString() ?? 'WAITING_FOR_SINGER';
+          if (state['participants'] is List) {
+            karaokeParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+          }
+          if (state['active_performance'] is Map) {
+            final perf = Map<String, dynamic>.from(state['active_performance']);
+            karaokeActivePerformance.value = perf;
+            karaokePerformanceId.value = perf['id']?.toString() ?? '';
+            karaokeCurrentSinger.value = perf['performer_username']?.toString() ?? '';
+            karaokeCurrentSingerId.value = perf['performer_id'] is int ? perf['performer_id'] : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
+            karaokeCurrentTrackTitle.value = perf['track_title']?.toString() ?? '';
+            karaokeCurrentTrackArtist.value = perf['track_artist']?.toString() ?? '';
+            karaokeCurrentTrackType.value = perf['content_type']?.toString() ?? 'INSTRUMENTAL';
+            karaokeIsRewardEligible.value = perf['is_reward_eligible'] == true;
+          }
+        }
+        break;
+
+      case 'SINGER_ASSIGNED':
+        karaokePerformanceId.value = payload['performance_id']?.toString() ?? '';
+        karaokeCurrentSinger.value = payload['performer_username']?.toString() ?? 'Guest';
+        karaokeCurrentSingerId.value = payload['performer_id'] is int ? payload['performer_id'] : (int.tryParse(payload['performer_id']?.toString() ?? '') ?? 0);
+        karaokeCurrentSingerSeat.value = payload['seat']?.toString() ?? '1';
+        karaokeGameStatus.value = 'SINGER_ASSIGNED';
+
+        // Update participant in grid
+        final uid = karaokeCurrentSingerId.value;
+        final idx = karaokeParticipants.indexWhere((p) => p['user_id'] == uid);
+        if (idx != -1) {
+          karaokeParticipants[idx]['role'] = 'SINGER';
+          karaokeParticipants.refresh();
+        }
+
+        Get.snackbar(
+          "Singer Assigned 🎤",
+          "@${karaokeCurrentSinger.value} is up next to sing!",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.pinkAccent,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'TRACK_SELECTED':
+        karaokeCurrentTrackId.value = payload['track_id']?.toString() ?? '';
+        karaokeCurrentTrackTitle.value = payload['title']?.toString() ?? '';
+        karaokeCurrentTrackArtist.value = payload['artist']?.toString() ?? '';
+        karaokeCurrentTrackType.value = payload['type']?.toString() ?? 'INSTRUMENTAL';
+        karaokeDurationMs.value = payload['duration_ms'] ?? 200000;
+        karaokeIsRewardEligible.value = payload['is_reward_eligible'] == true;
+        karaokeGameStatus.value = 'TRACK_SELECTED';
+
+        Get.snackbar(
+          "Track Selected 🎵",
+          "${karaokeCurrentTrackTitle.value} by ${karaokeCurrentTrackArtist.value}",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.deepPurpleAccent,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'PLAYBACK_PREPARED':
+        karaokePlaybackToken.value = payload['playback_token']?.toString() ?? '';
+        karaokeAudioUrl.value = payload['audio_url']?.toString() ?? '';
+        karaokeDurationMs.value = payload['duration_ms'] ?? karaokeDurationMs.value;
+        if (payload['lyrics'] is List) {
+          karaokeLyricsList.value = List<Map<String, dynamic>>.from(payload['lyrics']);
+        }
+        karaokeGameStatus.value = 'PLAYBACK_PREPARED';
+        break;
+
+      case 'PERFORMANCE_STARTED':
+        isKaraokePerformanceActive.value = true;
+        karaokeGameStatus.value = 'PERFORMANCE_ACTIVE';
+        final durMs = payload['duration_ms'] ?? karaokeDurationMs.value;
+        final durSec = (durMs is int && durMs > 0) ? (durMs ~/ 1000) : 180;
+        _startKaraokeCountdownTimer(durSec);
+        break;
+
+      case 'LYRIC_LINE_CHANGED':
+        karaokeCurrentLyricLine.value = payload['line_no'] ?? (karaokeCurrentLyricLine.value + 1);
+        karaokeCurrentLyricText.value = payload['text']?.toString() ?? '';
+        break;
+
+      case 'PERFORMANCE_COMPLETED':
+        isKaraokePerformanceActive.value = false;
+        _karaokeTimer?.cancel();
+        karaokeGameStatus.value = 'COMPLETED';
+        Get.snackbar(
+          "Performance Completed! 🌟",
+          "Bravo! Song performance finished.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'REWARD_PENDING':
+        karaokeHeldReward.value = double.tryParse(payload['amount']?.toString() ?? '3.0') ?? 3.0;
+        final rUid = payload['user_id'];
+        final rIdx = karaokeParticipants.indexWhere((p) => p['user_id'] == rUid);
+        if (rIdx != -1) {
+          final curB = double.tryParse(karaokeParticipants[rIdx]['platform_reward_b']?.toString() ?? '0') ?? 0;
+          karaokeParticipants[rIdx]['platform_reward_b'] = (curB + karaokeHeldReward.value).toStringAsFixed(2);
+          karaokeParticipants.refresh();
+        }
+        Get.snackbar(
+          "Reward on Hold ⏳",
+          "Earned ${karaokeHeldReward.value} coins (Platform Reward b on hold until 1000 fan threshold)",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.amber,
+          colorText: Colors.black,
+        );
+        break;
+
+      case 'REWARD_RELEASED':
+        Get.snackbar(
+          "Reward Released! 💰",
+          "Threshold satisfied! Held rewards released to wallet.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'REWARD_FORFEITED':
+        Get.snackbar(
+          "Reward Forfeited ⚠️",
+          "Fan gifts under 1000 threshold. Platform reward forfeited.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'GIFT_SENT':
+        final recId = payload['receiver_user_id'] ?? payload['recipient_id'];
+        final amt = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0;
+        final gIdx = karaokeParticipants.indexWhere((p) => p['user_id'] == recId);
+        if (gIdx != -1) {
+          final curA = double.tryParse(karaokeParticipants[gIdx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+          karaokeParticipants[gIdx]['fan_gifts_a'] = (curA + amt).toStringAsFixed(2);
+          karaokeParticipants.refresh();
+        }
+        karaokeTotalFanGifts.value += amt;
+        break;
+
+      case 'GAME_ENDED':
+        isKaraokePerformanceActive.value = false;
+        _karaokeTimer?.cancel();
+        karaokeGameStatus.value = 'ENDED';
+        karaokeTotalFanGifts.value = double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ?? karaokeTotalFanGifts.value;
+        karaokeTotalReleasedRewards.value = double.tryParse(payload['total_released_rewards']?.toString() ?? '0') ?? 0;
+        karaokeTotalForfeitedRewards.value = double.tryParse(payload['total_forfeited_rewards']?.toString() ?? '0') ?? 0;
+        karaokeHostShareEarnings.value = double.tryParse(payload['host_share_earnings']?.toString() ?? '0') ?? 0;
+        _showKaraokeEndSummaryDialog();
+        break;
+    }
+  }
+
+  void _startKaraokeCountdownTimer(int totalSec) {
+    _karaokeTimer?.cancel();
+    karaokeTimerSeconds.value = totalSec;
+    karaokeTimerText.value =
+        '${(totalSec ~/ 60).toString().padLeft(2, '0')}:${(totalSec % 60).toString().padLeft(2, '0')}';
+
+    _karaokeTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (karaokeTimerSeconds.value > 1) {
+        karaokeTimerSeconds.value--;
+        final m = karaokeTimerSeconds.value ~/ 60;
+        final s = karaokeTimerSeconds.value % 60;
+        karaokeTimerText.value = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      } else {
+        karaokeTimerSeconds.value = 0;
+        karaokeTimerText.value = '00:00';
+        isKaraokePerformanceActive.value = false;
+        t.cancel();
+      }
+    });
+  }
+
+  /// Browse Admin-Published Music or Instrumental tracks
+  Future<void> fetchKaraokeCatalog({String? type, String? query}) async {
+    isKaraokeCatalogLoading.value = true;
+    final rId = liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc';
+    try {
+      final list = await gameService.getKaraokeCatalog(rId, type: type, q: query);
+      if (list.isNotEmpty) {
+        karaokeCatalog.value = list;
+      } else if (karaokeCatalog.isEmpty) {
+        // Fallback default tracks catalog if server returns empty list
+        karaokeCatalog.value = [
+          {
+            "id": "7649d2cb-6ff5-4ea5-8968-3d1fe5a4b706",
+            "title": "Blinding Lights (Beat Instrumental)",
+            "artist": "The Weeknd",
+            "content_type": "INSTRUMENTAL",
+            "duration_ms": 200000,
+            "status": "PUBLISHED",
+            "audio_url": "https://assets.glotune.com/audio/instrumental/blinding_lights_beat.mp3"
+          },
+          {
+            "id": "8931b4fc-21a4-4df1-8012-4c28fe9021e1",
+            "title": "Shape of You (Acoustic Pop)",
+            "artist": "Ed Sheeran",
+            "content_type": "MUSIC",
+            "duration_ms": 233000,
+            "status": "PUBLISHED",
+            "audio_url": "https://assets.glotune.com/audio/music/shape_of_you.mp3"
+          },
+          {
+            "id": "9042c1ab-43b9-4112-98ab-10ef87a09123",
+            "title": "Someone Like You (Piano Instrumental)",
+            "artist": "Adele",
+            "content_type": "INSTRUMENTAL",
+            "duration_ms": 285000,
+            "status": "PUBLISHED",
+            "audio_url": "https://assets.glotune.com/audio/instrumental/someone_like_you_piano.mp3"
+          },
+        ];
+      }
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE] fetchKaraokeCatalog error: $e");
+    } finally {
+      isKaraokeCatalogLoading.value = false;
+    }
+  }
+
+  /// Host Assigns Singer Slot
+  Future<void> assignKaraokeSinger(int guestUserId, String seat) async {
+    _sendKaraokeWsAction({
+      "action": "assign_singer",
+      "guest_user_id": guestUserId,
+      "seat": seat,
+    });
+    if (karaokeGameId.value.isNotEmpty) {
+      await gameService.assignKaraokeSinger(
+        karaokeGameId.value,
+        guestUserId: guestUserId,
+        seat: seat,
+      );
+    }
+  }
+
+  /// Assigned Guest Selects Track
+  Future<void> selectKaraokeTrack(String trackId, String contentType) async {
+    _sendKaraokeWsAction({
+      "action": "select_track",
+      "performance_id": karaokePerformanceId.value,
+      "track_id": trackId,
+      "content_type": contentType,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.selectKaraokeTrack(
+        karaokePerformanceId.value,
+        trackId: trackId,
+        contentType: contentType,
+      );
+    }
+  }
+
+  /// Prepare Playback Session
+  Future<void> prepareKaraokePlayback() async {
+    _sendKaraokeWsAction({
+      "action": "prepare_playback",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.prepareKaraokePlayback(karaokePerformanceId.value);
+    }
+  }
+
+  /// Start Performance
+  Future<void> startKaraokePerformance() async {
+    _sendKaraokeWsAction({
+      "action": "start_performance",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.startKaraokePerformance(karaokePerformanceId.value);
+    }
+  }
+
+  /// Lyric Synchronization
+  void advanceKaraokeLyric({
+    required int lineNo,
+    required int startMs,
+    required int endMs,
+    required String text,
+  }) {
+    _sendKaraokeWsAction({
+      "action": "advance_lyric",
+      "performance_id": karaokePerformanceId.value,
+      "line_no": lineNo,
+      "start_ms": startMs,
+      "end_ms": endMs,
+      "text": text,
+    });
+  }
+
+  /// Complete Performance
+  Future<void> completeKaraokePerformance({bool force = false}) async {
+    _sendKaraokeWsAction({
+      "action": "complete_performance",
+      "performance_id": karaokePerformanceId.value,
+      "force": force,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.completeKaraokePerformance(
+        karaokePerformanceId.value,
+        force: force,
+      );
+    }
+  }
+
+  /// Singer Quits Early
+  Future<void> leaveKaraokePerformance({String reason = 'SINGER_QUIT'}) async {
+    _sendKaraokeWsAction({
+      "action": "leave_performance",
+      "performance_id": karaokePerformanceId.value,
+      "reason": reason,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.leaveKaraokePerformance(
+        karaokePerformanceId.value,
+        reason: reason,
+      );
+    }
+  }
+
+  /// Host Removes Singer Early
+  Future<void> removeKaraokeSinger({String reason = 'INTERRUPTED_BY_HOST'}) async {
+    _sendKaraokeWsAction({
+      "action": "remove_singer",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.removeKaraokeSinger(
+        karaokePerformanceId.value,
+        reason: reason,
+      );
+    }
+  }
+
+  /// Send Fan Gift (Source a)
+  Future<void> sendKaraokeGift({
+    required int receiverUserId,
+    required double amount,
+    String giftType = 'KARAOKE_MIC',
+  }) async {
+    _sendKaraokeWsAction({
+      "action": "send_gift",
+      "receiver_user_id": receiverUserId,
+      "amount": amount,
+      "gift_type": giftType,
+    });
+    if (karaokeGameId.value.isNotEmpty) {
+      await gameService.sendKaraokeGift(
+        karaokeGameId.value,
+        receiverUserId: receiverUserId,
+        amount: amount,
+        giftType: giftType,
+      );
+    }
+  }
+
+  /// Host Ends Game Session
+  Future<void> endKaraokeGame({String reason = 'HOST_ENDED'}) async {
+    _sendKaraokeWsAction({
+      "action": "end_game",
+      "reason": reason,
+    });
+    if (karaokeGameId.value.isNotEmpty) {
+      await gameService.endKaraokeGame(karaokeGameId.value, reason: reason);
+    }
+  }
+
+  void _showKaraokeEndSummaryDialog() {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        backgroundColor: const Color(0xFF1E293B),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("🏆 Karaoke Session Complete", style: TextStyle(color: Colors.white, fontSize: 18.0, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16.0),
+              Text("Total Fan Gifts: ${karaokeTotalFanGifts.value}", style: const TextStyle(color: Colors.cyanAccent)),
+              Text("Platform Rewards Released: ${karaokeTotalReleasedRewards.value}", style: const TextStyle(color: Colors.greenAccent)),
+              Text("Host Share (10%): ${karaokeHostShareEarnings.value}", style: const TextStyle(color: Colors.amberAccent)),
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: () => Get.back(),
+                child: const Text("Awesome!"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void navigateTo(String step) {

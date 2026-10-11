@@ -23,4 +23,9 @@ class ApiConstants {
 
   // Live Quiz Game
   static const String quizGames = 'games/quiz/';
+
+  // Live Karaoke Game
+  static const String karaokeGames = 'games/karaoke/';
+  static const String performances = 'performances/';
 }
+

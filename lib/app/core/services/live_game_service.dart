@@ -587,4 +587,306 @@ class LiveGameService extends GetxService {
     }
     return null;
   }
+
+  // ==================== LIVE KARAOKE GAME ====================
+
+  /// 2.1. Initialize / Retrieve Karaoke Game for a live room
+  Future<Map<String, dynamic>?> initOrGetKaraokeGame(String liveId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}live/$liveId/games/karaoke/');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] initOrGetKaraokeGame [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] initOrGetKaraokeGame error: $e");
+    }
+    return null;
+  }
+
+  /// 2.2. Search / List Tracks Catalog (type: MUSIC or INSTRUMENTAL)
+  Future<List<Map<String, dynamic>>> getKaraokeCatalog(
+    String liveId, {
+    String? type,
+    String? q,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (type != null && type.isNotEmpty) queryParams['type'] = type;
+      if (q != null && q.isNotEmpty) queryParams['q'] = q;
+
+      final uri = Uri.parse('${ApiConstants.baseUrl}live/$liveId/games/karaoke/catalog')
+          .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
+      final response = await apiClient.get(uri, headers: _headers);
+      if (kDebugMode) {
+        print("[LiveGameService] getKaraokeCatalog [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return List<Map<String, dynamic>>.from(decoded);
+        } else if (decoded is Map && decoded['results'] is List) {
+          return List<Map<String, dynamic>>.from(decoded['results']);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] getKaraokeCatalog error: $e");
+    }
+    return [];
+  }
+
+  /// 2.3. Host Assigns Singer Slot
+  Future<Map<String, dynamic>?> assignKaraokeSinger(
+    String gameId, {
+    required int guestUserId,
+    required String seat,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}games/$gameId/assign-singer');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'guest_user_id': guestUserId,
+          'seat': seat,
+        }),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] assignKaraokeSinger [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] assignKaraokeSinger error: $e");
+    }
+    return null;
+  }
+
+  /// 2.4. Assigned Guest Selects Track
+  Future<Map<String, dynamic>?> selectKaraokeTrack(
+    String performanceId, {
+    required String trackId,
+    required String contentType,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/select-track');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'track_id': trackId,
+          'content_type': contentType,
+        }),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] selectKaraokeTrack [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] selectKaraokeTrack error: $e");
+    }
+    return null;
+  }
+
+  /// 2.5. Prepare Playback Session
+  Future<Map<String, dynamic>?> prepareKaraokePlayback(String performanceId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/prepare');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] prepareKaraokePlayback [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] prepareKaraokePlayback error: $e");
+    }
+    return null;
+  }
+
+  /// 2.6. Start Performance
+  Future<Map<String, dynamic>?> startKaraokePerformance(String performanceId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/start');
+      final response = await apiClient.post(url, headers: _headers, body: jsonEncode({}));
+      if (kDebugMode) {
+        print("[LiveGameService] startKaraokePerformance [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] startKaraokePerformance error: $e");
+    }
+    return null;
+  }
+
+  /// 2.7. Complete Performance
+  Future<Map<String, dynamic>?> completeKaraokePerformance(
+    String performanceId, {
+    bool force = false,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/complete');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({'force': force}),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] completeKaraokePerformance [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] completeKaraokePerformance error: $e");
+    }
+    return null;
+  }
+
+  /// 2.8. Early Leave by Singer
+  Future<Map<String, dynamic>?> leaveKaraokePerformance(
+    String performanceId, {
+    String reason = 'SINGER_QUIT',
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/leave');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({'reason': reason}),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] leaveKaraokePerformance [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] leaveKaraokePerformance error: $e");
+    }
+    return null;
+  }
+
+  /// 2.8. Host Removes Singer
+  Future<Map<String, dynamic>?> removeKaraokeSinger(
+    String performanceId, {
+    String reason = 'INTERRUPTED_BY_HOST',
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/remove-singer');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({'reason': reason}),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] removeKaraokeSinger [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] removeKaraokeSinger error: $e");
+    }
+    return null;
+  }
+
+  /// 2.9. Send Fan Gift (Source a)
+  Future<Map<String, dynamic>?> sendKaraokeGift(
+    String gameId, {
+    required int receiverUserId,
+    required double amount,
+    String giftType = 'KARAOKE_MIC',
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}games/$gameId/gift');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({
+          'receiver_user_id': receiverUserId,
+          'amount': amount,
+          'gift_type': giftType,
+        }),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] sendKaraokeGift [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] sendKaraokeGift error: $e");
+    }
+    return null;
+  }
+
+  /// 2.10. Reconnect / Game State Snapshot
+  Future<Map<String, dynamic>?> getKaraokeState(String gameId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}games/$gameId/state');
+      final response = await apiClient.get(url, headers: _headers);
+      if (kDebugMode) {
+        print("[LiveGameService] getKaraokeState [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] getKaraokeState error: $e");
+    }
+    return null;
+  }
+
+  /// 2.10. Performance State Snapshot
+  Future<Map<String, dynamic>?> getPerformanceState(String performanceId) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}performances/$performanceId/state');
+      final response = await apiClient.get(url, headers: _headers);
+      if (kDebugMode) {
+        print("[LiveGameService] getPerformanceState [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] getPerformanceState error: $e");
+    }
+    return null;
+  }
+
+  /// 2.11. End Game & 1000 Fan-Gift Threshold Settlement
+  Future<Map<String, dynamic>?> endKaraokeGame(
+    String gameId, {
+    String reason = 'HOST_ENDED',
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}games/$gameId/end');
+      final response = await apiClient.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({'reason': reason}),
+      );
+      if (kDebugMode) {
+        print("[LiveGameService] endKaraokeGame [${response.statusCode}]: ${response.body}");
+      }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      if (kDebugMode) print("[LiveGameService] endKaraokeGame error: $e");
+    }
+    return null;
+  }
 }
+

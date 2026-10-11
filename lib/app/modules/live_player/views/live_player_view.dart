@@ -1437,82 +1437,385 @@ class LivePlayerView extends GetView<LivePlayerController> {
         child: Column(
           children: [
             SizedBox(height: 54.h),
-            Expanded(
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 14.w),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.r),
-                  color: Colors.black,
-                  border: Border.all(color: Colors.pinkAccent.withValues(alpha: 0.5), width: 1.5),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16.r),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (hasRemote && hostUid != null)
-                        AgoraVideoView(
-                          controller: VideoViewController.remote(
-                            rtcEngine: controller.engine,
-                            canvas: VideoCanvas(uid: hostUid),
-                            connection: RtcConnection(channelId: controller.roomId),
+            SizedBox(
+              height: 340.h,
+              child: Row(
+                children: [
+                  // Left Side: Host Video + Track Details & Synced Lyrics
+                  Expanded(
+                    flex: 5,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (hasRemote && hostUid != null)
+                          AgoraVideoView(
+                            controller: VideoViewController.remote(
+                              rtcEngine: controller.engine,
+                              canvas: VideoCanvas(uid: hostUid),
+                              connection: RtcConnection(channelId: controller.roomId),
+                            ),
+                          )
+                        else
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.black87,
+                              image: DecorationImage(
+                                image: AssetImage('assets/images/user_avatar.png'),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
-                        )
-                      else
-                        const Center(
-                          child: CircleAvatar(
-                            radius: 36,
-                            backgroundImage: AssetImage('assets/images/user_avatar.png'),
-                          ),
-                        ),
-                      // Karaoke Floating Lyrics Card
-                      Positioned(
-                        bottom: 12.h,
-                        left: 12.w,
-                        right: 12.w,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: Colors.pinkAccent, width: 1),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.music_note, color: Colors.pinkAccent, size: 16),
-                                  SizedBox(width: 4.w),
-                                  Obx(() => Text(
-                                    controller.karaokeTitle.value,
-                                    style: TextStyle(color: Colors.pinkAccent, fontSize: 11.sp, fontWeight: FontWeight.bold),
-                                  )),
+
+                        // Gradient Overlay
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.4),
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.85),
                                 ],
                               ),
-                              SizedBox(height: 4.h),
-                              Obx(() => Text(
-                                controller.karaokeLyrics.value,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              )),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        // Host Badge
+                        Positioned(
+                          top: 8.h,
+                          left: 8.w,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.95),
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.bolt, color: Colors.black, size: 12),
+                                SizedBox(width: 3.w),
+                                Text(
+                                  "Host • Karaoke",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Live Countdown Timer Badge
+                        Positioned(
+                          top: 8.h,
+                          right: 8.w,
+                          child: Obx(() => Container(
+                            padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: controller.isKaraokePerformanceActive.value
+                                  ? const Color(0xFFE50914)
+                                  : Colors.black87,
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            child: Text(
+                              "VS ${controller.karaokeTimerText.value}",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )),
+                        ),
+
+                        // Track Details & Real-Time Synced Lyrics
+                        Positioned(
+                          bottom: 8.h,
+                          left: 8.w,
+                          right: 8.w,
+                          child: Obx(() {
+                            final title = controller.karaokeTitle.value;
+                            final artist = controller.karaokeArtist.value;
+                            final lyrics = controller.karaokeLyrics.value;
+                            final isInstrumental = controller.karaokeContentType.value == 'INSTRUMENTAL';
+                            final isEligible = controller.isRewardEligible.value;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Floating Synced Lyrics
+                                if (lyrics.isNotEmpty)
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                    margin: EdgeInsets.only(bottom: 4.h),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.75),
+                                      borderRadius: BorderRadius.circular(8.r),
+                                      border: Border.all(color: Colors.pinkAccent, width: 1),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.music_note, color: Colors.pinkAccent, size: 12),
+                                        SizedBox(width: 4.w),
+                                        Expanded(
+                                          child: Text(
+                                            lyrics,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.bold,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                // Track Information Card
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(color: Colors.white24, width: 0.8),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                                            decoration: BoxDecoration(
+                                              color: isInstrumental ? Colors.amber : Colors.purpleAccent,
+                                              borderRadius: BorderRadius.circular(4.r),
+                                            ),
+                                            child: Text(
+                                              isInstrumental ? "INSTRUMENTAL" : "MUSIC",
+                                              style: TextStyle(color: Colors.black, fontSize: 7.sp, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          if (isEligible) ...[
+                                            SizedBox(width: 4.w),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                borderRadius: BorderRadius.circular(4.r),
+                                              ),
+                                              child: Text(
+                                                "REWARD ELIGIBLE (b)",
+                                                style: TextStyle(color: Colors.white, fontSize: 7.sp, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      SizedBox(height: 3.h),
+                                      Text(
+                                        title.isNotEmpty ? title : "Awaiting Track Selection",
+                                        style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (artist.isNotEmpty)
+                                        Text(
+                                          "Artist: $artist",
+                                          style: TextStyle(color: Colors.white70, fontSize: 8.5.sp),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+
+                  Container(width: 1.w, color: Colors.white24),
+
+                  // Right Side: 8-Participant Slots Grid
+                  Expanded(
+                    flex: 5,
+                    child: Obx(() {
+                      final participants = controller.karaokeParticipants.toList();
+                      final remoteUids = controller.remoteUids.toList();
+
+                      return GridView.count(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.95,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: List.generate(8, (index) {
+                          if (index < participants.length) {
+                            final p = participants[index];
+                            final name = p['username']?.toString() ?? "Guest ${index + 1}";
+                            final fanA = p['fan_gifts_a'] ?? "0.00";
+                            final platB = p['platform_reward_b'] ?? "0.00";
+                            final score = "$fanA + $platB";
+                            final uid = p['user_id'] is int
+                                ? p['user_id'] as int
+                                : int.tryParse(p['user_id']?.toString() ?? '') ?? 0;
+                            final isSinger = controller.karaokeCurrentSingerId.value == uid && uid > 0;
+
+                            return _buildViewerKaraokeSlot(
+                              name: name,
+                              score: score,
+                              userId: uid,
+                              isSinger: isSinger,
+                            );
+                          }
+
+                          if (index < remoteUids.length) {
+                            final remoteUid = remoteUids[index];
+                            final isSinger = controller.karaokeCurrentSingerId.value == remoteUid;
+                            return _buildViewerKaraokeSlot(
+                              name: "Guest $remoteUid",
+                              score: "0.00 + 0.00",
+                              userId: remoteUid,
+                              isSinger: isSinger,
+                            );
+                          }
+
+                          return _buildQuizVacantSeatSlot(index + 1);
+                        }),
+                      );
+                    }),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 180.h),
           ],
         ),
+      ),
+    );
+  }
+
+  // MARK: - Viewer Karaoke Participant Slot
+  Widget _buildViewerKaraokeSlot({
+    required String name,
+    required String score,
+    required int userId,
+    bool isSinger = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF23252E),
+        border: Border.all(
+          color: isSinger ? Colors.pinkAccent : Colors.white12,
+          width: isSinger ? 1.5 : 0.5,
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (controller.remoteUids.contains(userId))
+            AgoraVideoView(
+              controller: VideoViewController.remote(
+                rtcEngine: controller.engine,
+                canvas: VideoCanvas(uid: userId),
+                connection: RtcConnection(channelId: controller.roomId),
+              ),
+            )
+          else
+            Image.asset(
+              'assets/images/user_avatar.png',
+              fit: BoxFit.cover,
+            ),
+
+          // Top-left: a + b Score (Fan Gifts + Platform Reward)
+          Positioned(
+            top: 2.h,
+            left: 2.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                score,
+                style: TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 7.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Top-right: Microphone Badge if Current Singer
+          if (isSinger)
+            Positioned(
+              top: 2.h,
+              right: 2.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                decoration: BoxDecoration(
+                  color: Colors.pinkAccent,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.mic, color: Colors.white, size: 8.sp),
+                    SizedBox(width: 2.w),
+                    Text("SINGER", style: TextStyle(color: Colors.white, fontSize: 6.5.sp, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+
+          // Bottom-right: Name with Pink Gift Icon
+          Positioned(
+            bottom: 2.h,
+            right: 2.w,
+            child: GestureDetector(
+              onTap: () {
+                controller.sendKaraokeGift(
+                  receiverUserId: userId,
+                  amount: 100.0,
+                  giftType: 'KARAOKE_MIC',
+                );
+                controller.showTemporaryNotice("Sent 100 Coins gift to $name 🎁");
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 7.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 2.w),
+                    const Icon(Icons.add_circle, color: Colors.pinkAccent, size: 8),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
