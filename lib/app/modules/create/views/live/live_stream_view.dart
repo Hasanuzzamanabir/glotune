@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 import '../../controllers/create_controller.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:glotune/app/modules/live_player/views/widgets/floating_reactions.dart';
@@ -410,12 +411,9 @@ class LiveStreamView extends GetView<CreateController> {
         children: [
           Obx(() {
             final pic = controller.userProfile.value?.profilePictureUrl;
-            return CircleAvatar(
+            return ImageUtils.safeCircleAvatar(
               radius: 14.r,
-              backgroundImage: (pic != null && pic.isNotEmpty)
-                  ? NetworkImage(pic)
-                  : const AssetImage('assets/images/user_avatar.png')
-                        as ImageProvider,
+              imageUrl: pic,
             );
           }),
           SizedBox(width: 6.w),
@@ -569,10 +567,10 @@ class LiveStreamView extends GetView<CreateController> {
                       shape: BoxShape.circle,
                       border: Border.all(color: wineBackground, width: 1.5),
                     ),
-                    child: CircleAvatar(
+                    child: ImageUtils.safeCircleAvatar(
                       radius: 13.r,
                       backgroundColor: Colors.white24,
-                      backgroundImage: NetworkImage(viewerImages[i]),
+                      imageUrl: viewerImages[i],
                     ),
                   ),
                 ),
@@ -646,15 +644,10 @@ class LiveStreamView extends GetView<CreateController> {
             Container(
               decoration: BoxDecoration(
                 color: Colors.black,
-                image: (pic != null && pic.isNotEmpty)
-                    ? DecorationImage(
-                        image: NetworkImage(pic),
-                        fit: BoxFit.cover,
-                      )
-                    : const DecorationImage(
-                        image: AssetImage('assets/images/user_avatar.png'),
-                        fit: BoxFit.cover,
-                      ),
+                image: DecorationImage(
+                  image: ImageUtils.safeImageProvider(pic),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             Center(
@@ -918,13 +911,10 @@ class LiveStreamView extends GetView<CreateController> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
+            ImageUtils.safeCircleAvatar(
               radius: 9.r,
               backgroundColor: Colors.grey.shade400,
-              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                  ? NetworkImage(avatarUrl)
-                  : const AssetImage('assets/images/user_avatar.png')
-                        as ImageProvider,
+              imageUrl: avatarUrl,
             ),
             SizedBox(width: 6.w),
             RichText(
@@ -1645,12 +1635,9 @@ class LiveStreamView extends GetView<CreateController> {
                             : null);
 
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            (avatar != null && avatar.toString().isNotEmpty)
-                            ? NetworkImage(avatar.toString())
-                            : const AssetImage('assets/images/user_avatar.png')
-                                  as ImageProvider,
+                      leading: ImageUtils.safeCircleAvatar(
+                        radius: 20.r,
+                        imageUrl: avatar?.toString(),
                       ),
                       title: Text(
                         name,
@@ -1763,12 +1750,9 @@ class LiveStreamView extends GetView<CreateController> {
                     final isHost = role.toString().toLowerCase() == "host";
 
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            (avatar != null && avatar.toString().isNotEmpty)
-                            ? NetworkImage(avatar.toString())
-                            : const AssetImage('assets/images/user_avatar.png')
-                                  as ImageProvider,
+                      leading: ImageUtils.safeCircleAvatar(
+                        radius: 20.r,
+                        imageUrl: avatar?.toString(),
                       ),
                       title: Text(
                         name,

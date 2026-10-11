@@ -9,24 +9,24 @@ class LoggingClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers['ngrok-skip-browser-warning'] = 'true';
     if (kDebugMode) {
-      print('================ HTTP REQUEST ================');
-      print('${request.method} ${request.url}');
-      print('Headers: ${request.headers}');
-      if (request is http.Request) {
-        print('Body: ${request.body}');
+      print('🌐 ================ [API REQUEST] ================');
+      print('🌐 ${request.method} ${request.url}');
+      print('🌐 Headers: ${request.headers}');
+      if (request is http.Request && request.body.isNotEmpty) {
+        print('🌐 Body: ${request.body}');
       }
-      print('==============================================');
+      print('🌐 ==================================================');
     }
 
     final response = await _inner.send(request);
 
     if (kDebugMode) {
       final responseBody = await response.stream.bytesToString();
-      print('================ HTTP RESPONSE ===============');
-      print('${request.method} ${request.url}');
-      print('Status Code: ${response.statusCode}');
-      print('Body: $responseBody');
-      print('==============================================');
+      print('🌐 ================ [API RESPONSE] ===============');
+      print('🌐 ${request.method} ${request.url}');
+      print('🌐 Status Code: ${response.statusCode}');
+      print('🌐 Body: $responseBody');
+      print('🌐 ==================================================');
       
       // We must return a new StreamedResponse because the original stream was consumed
       return http.StreamedResponse(

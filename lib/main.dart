@@ -12,6 +12,18 @@ import 'app/core/services/live_game_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Filter out image resource service noise (404/502 broken media links) from console
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final exceptionStr = details.exception.toString();
+    if (details.library == 'image resource service' ||
+        exceptionStr.contains('HttpException: Invalid statusCode') ||
+        exceptionStr.contains('NetworkImageLoadException')) {
+      return;
+    }
+    FlutterError.presentError(details);
+  };
+
   await Get.putAsync(() => AuthService().init());
   Get.put(InteractionService());
   Get.put(PipService());

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 import 'package:glotune/app/modules/create/controllers/create_controller.dart';
 
 class LiveQuizView extends GetView<CreateController> {
@@ -54,12 +55,9 @@ class LiveQuizView extends GetView<CreateController> {
                   children: [
                     Obx(() {
                       final pic = controller.userProfile.value?.profilePictureUrl;
-                      return CircleAvatar(
+                      return ImageUtils.safeCircleAvatar(
                         radius: 14.r,
-                        backgroundImage: (pic != null && pic.isNotEmpty)
-                            ? NetworkImage(pic)
-                            : const AssetImage('assets/images/user_avatar.png')
-                                as ImageProvider,
+                        imageUrl: pic,
                       );
                     }),
                     SizedBox(width: 6.w),
@@ -356,12 +354,10 @@ class LiveQuizView extends GetView<CreateController> {
                   return Container(
                     decoration: BoxDecoration(
                       color: Colors.black87,
-                      image: (pic != null && pic.isNotEmpty)
-                          ? DecorationImage(image: NetworkImage(pic), fit: BoxFit.cover)
-                          : const DecorationImage(
-                              image: AssetImage('assets/images/user_avatar.png'),
-                              fit: BoxFit.cover,
-                            ),
+                      image: DecorationImage(
+                        image: ImageUtils.safeImageProvider(pic),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   );
                 }),
@@ -1011,13 +1007,9 @@ class LiveQuizView extends GetView<CreateController> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircleAvatar(
+                      ImageUtils.safeCircleAvatar(
                         radius: 9.r,
-                        backgroundImage: (avatar != null &&
-                                avatar.toString().trim().isNotEmpty)
-                            ? NetworkImage(avatar.toString())
-                            : const AssetImage('assets/images/user_avatar.png')
-                                as ImageProvider,
+                        imageUrl: avatar?.toString(),
                       ),
                       SizedBox(width: 6.w),
                       Text(
@@ -1048,13 +1040,9 @@ class LiveQuizView extends GetView<CreateController> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircleAvatar(
+                    ImageUtils.safeCircleAvatar(
                       radius: 9.r,
-                      backgroundImage: (avatar != null &&
-                              avatar.toString().trim().isNotEmpty)
-                          ? NetworkImage(avatar.toString())
-                          : const AssetImage('assets/images/user_avatar.png')
-                              as ImageProvider,
+                      imageUrl: avatar?.toString(),
                     ),
                     SizedBox(width: 6.w),
                     RichText(

@@ -2,8 +2,8 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 import 'package:glotune/app/modules/create/controllers/create_controller.dart';
 
 class LiveBoxBattleView extends GetView<CreateController> {
@@ -62,12 +62,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
               children: [
                 Obx(() {
                   final pic = controller.userProfile.value?.profilePictureUrl;
-                  return CircleAvatar(
+                  return ImageUtils.safeCircleAvatar(
                     radius: 14.r,
-                    backgroundImage: (pic != null && pic.isNotEmpty)
-                        ? NetworkImage(pic)
-                        : const AssetImage('assets/images/user_avatar.png')
-                              as ImageProvider,
+                    imageUrl: pic,
                   );
                 }),
                 SizedBox(width: 6.w),
@@ -479,15 +476,10 @@ class LiveBoxBattleView extends GetView<CreateController> {
             else
               Container(
                 decoration: BoxDecoration(
-                  image: (slot['profile_picture'] != null && slot['profile_picture'].toString().isNotEmpty)
-                      ? DecorationImage(
-                          image: CachedNetworkImageProvider(slot['profile_picture'].toString()),
-                          fit: BoxFit.cover,
-                        )
-                      : const DecorationImage(
-                          image: AssetImage('assets/images/user_avatar.png'),
-                          fit: BoxFit.cover,
-                        ),
+                  image: DecorationImage(
+                    image: ImageUtils.safeImageProvider(slot['profile_picture']?.toString()),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
 
@@ -780,11 +772,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircleAvatar(
+                      ImageUtils.safeCircleAvatar(
                         radius: 9.r,
-                        backgroundImage: (pic != null && pic.isNotEmpty)
-                            ? CachedNetworkImageProvider(pic) as ImageProvider
-                            : const AssetImage('assets/images/user_avatar.png'),
+                        imageUrl: pic,
                       ),
                       SizedBox(width: 6.w),
                       Text(
@@ -815,11 +805,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircleAvatar(
+                    ImageUtils.safeCircleAvatar(
                       radius: 9.r,
-                      backgroundImage: (pic != null && pic.isNotEmpty)
-                          ? CachedNetworkImageProvider(pic) as ImageProvider
-                          : const AssetImage('assets/images/user_avatar.png'),
+                      imageUrl: pic,
                     ),
                     SizedBox(width: 6.w),
                     RichText(
@@ -1423,11 +1411,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
 
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
+                      leading: ImageUtils.safeCircleAvatar(
                         radius: 18.r,
-                        backgroundImage: (avatar != null && avatar.toString().isNotEmpty)
-                            ? CachedNetworkImageProvider(avatar.toString()) as ImageProvider
-                            : const AssetImage('assets/images/user_avatar.png'),
+                        imageUrl: avatar?.toString(),
                       ),
                       title: Text(
                         name,

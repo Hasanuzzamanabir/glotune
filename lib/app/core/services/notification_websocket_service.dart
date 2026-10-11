@@ -42,22 +42,22 @@ class NotificationWebSocketService extends GetxService {
       final portStr = parsed.hasPort ? ':${parsed.port}' : '';
       final wsUrl = '$wsScheme://${parsed.host}$portStr/api/ws/notifications/?token=$token';
 
-      print("[NotificationWS] Connecting to: $wsUrl");
+      print("📡 [NotificationWS] Connecting to: $wsUrl");
       WebSocket.connect(wsUrl).then((ws) {
         _ws = ws;
         isConnected.value = true;
-        print("[NotificationWS] Connected successfully!");
+        print("📡 [NotificationWS] Connected successfully!");
 
         ws.listen(
           (event) {
             try {
               final data = jsonDecode(event.toString());
-              print("[NotificationWS] Received event: $data");
+              print("📡 [NotificationWS] Received event: $data");
               if (data is Map<String, dynamic>) {
                 _handleNotificationEvent(data);
               }
             } catch (e) {
-              print("[NotificationWS] Error parsing message: $e");
+              print("📡 [NotificationWS] Error parsing message: $e");
             }
           },
           onError: (err) {
