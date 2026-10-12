@@ -40,25 +40,48 @@ class VideoCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[800],
-                image: thumbnailUrl.isNotEmpty
-                    ? DecorationImage(
-                        image: thumbnailUrl.startsWith('http')
-                            ? CachedNetworkImageProvider(thumbnailUrl)
-                                  as ImageProvider
-                            : AssetImage(thumbnailUrl),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
+                image: DecorationImage(
+                  image: thumbnailUrl.isNotEmpty
+                      ? (thumbnailUrl.startsWith('http')
+                          ? CachedNetworkImageProvider(thumbnailUrl) as ImageProvider
+                          : AssetImage(thumbnailUrl))
+                      : const AssetImage('assets/images/video_thumb_1.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: thumbnailUrl.isEmpty
-                  ? Center(
-                      child: Icon(
-                        Icons.videocam,
-                        color: Colors.white54,
-                        size: 48.sp,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.3),
+                          ],
+                        ),
                       ),
-                    )
-                  : null,
+                    ),
+                  ),
+                  if (thumbnailUrl.isEmpty)
+                    Center(
+                      child: Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32.sp,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             Positioned(
               bottom: 12.h,

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:glotune/app/core/network/api_client.dart';
 import 'package:glotune/app/core/values/api_constants.dart';
 import 'package:glotune/app/core/services/auth_service.dart';
+import 'package:glotune/app/modules/home/controllers/home_controller.dart';
 
 class NotificationsController extends GetxController {
   final selectedIndex = 0.obs;
@@ -33,13 +34,18 @@ class NotificationsController extends GetxController {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final results = data['results'] as List;
+        final results = (data['results'] as List?) ?? [];
         notifications.value = results.cast<Map<String, dynamic>>();
+
+        // BR_020: If notifications list is empty, reset unread count to 0
+        if (notifications.isEmpty && Get.isRegistered<HomeController>()) {
+          Get.find<HomeController>().unreadNotificationCount.value = 0;
+        }
       } else {
-        print("Failed to fetch notifications: ${response.statusCode} ${response.body}");
+        debugPrint("Failed to fetch notifications: ${response.statusCode} ${response.body}");
       }
     } catch (e) {
-      print("Error fetching notifications: $e");
+      debugPrint("Error fetching notifications: $e");
     } finally {
       isLoading.value = false;
     }
@@ -122,7 +128,7 @@ class NotificationsController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error marking notification $id as read: $e");
+      debugPrint("Error marking notification $id as read: $e");
     }
   }
 

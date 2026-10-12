@@ -442,9 +442,76 @@ class OnboardingView extends GetView<OnboardingController> {
       subtitle: "Please review and accept our terms to proceed.",
       onNext: controller.nextStep,
       children: [
-        Text(
-          "Before proceeding, please review and agree to our Terms and conditions and Privacy policy.",
-          style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+        // BR_016: Linked Terms & Conditions and Privacy Policy
+        Wrap(
+          children: [
+            Text(
+              "Before proceeding, please review and agree to our ",
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+            ),
+            GestureDetector(
+              onTap: () {
+                Get.defaultDialog(
+                  title: "Terms & Conditions",
+                  content: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(12.w),
+                      child: const Text(
+                        "Welcome to GloTune! By using our app, you agree to follow our community guidelines, respect intellectual property, and comply with all applicable terms of service.",
+                      ),
+                    ),
+                  ),
+                  textConfirm: "Close",
+                  confirmTextColor: Colors.white,
+                  onConfirm: () => Get.back(),
+                );
+              },
+              child: Text(
+                "Terms and conditions",
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            Text(
+              " and ",
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+            ),
+            GestureDetector(
+              onTap: () {
+                Get.defaultDialog(
+                  title: "Privacy Policy",
+                  content: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(12.w),
+                      child: const Text(
+                        "GloTune Privacy Policy: We prioritize your privacy and data security. We do not sell your personal data to third parties.",
+                      ),
+                    ),
+                  ),
+                  textConfirm: "Close",
+                  confirmTextColor: Colors.white,
+                  onConfirm: () => Get.back(),
+                );
+              },
+              child: Text(
+                "Privacy policy",
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            Text(
+              ".",
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
+            ),
+          ],
         ),
         SizedBox(height: 24.h),
         Row(

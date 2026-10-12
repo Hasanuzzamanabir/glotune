@@ -54,7 +54,7 @@ class OnboardingController extends GetxController {
         availableCountries.value = countries;
       }
     } catch (e) {
-      print('Error fetching countries: $e');
+      debugPrint('Error fetching countries: $e');
     }
   }
 
@@ -73,7 +73,7 @@ class OnboardingController extends GetxController {
         availableCities.value = cities;
       }
     } catch (e) {
-      print('Error fetching cities: $e');
+      debugPrint('Error fetching cities: $e');
     }
   }
 
@@ -84,6 +84,53 @@ class OnboardingController extends GetxController {
   final isTermsAccepted = false.obs;
 
   void nextStep() {
+    // Step 1: Full Name validation (BR_013)
+    if (currentStep.value == 1) {
+      final name = fullNameController.text.trim();
+      if (name.isEmpty) {
+        Get.snackbar('Error', 'Please enter your full name', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+      if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(name)) {
+        Get.snackbar('Error', 'Full name can only contain alphabetic characters and spaces', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+    }
+
+    // Step 2: Username validation (BR_014)
+    if (currentStep.value == 2) {
+      final username = usernameController.text.trim();
+      if (username.isEmpty) {
+        Get.snackbar('Error', 'Please enter a username', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+      if (!RegExp(r'[a-zA-Z]').hasMatch(username)) {
+        Get.snackbar('Error', 'Username must contain at least one alphabetical letter', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+    }
+
+    // Step 3: Password validation (BR_015)
+    if (currentStep.value == 3) {
+      final password = passwordController.text;
+      if (password.length < 8) {
+        Get.snackbar('Error', 'Password must be at least 8 characters long', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+      final hasUpper = RegExp(r'[A-Z]').hasMatch(password);
+      final hasLower = RegExp(r'[a-z]').hasMatch(password);
+      final hasDigit = RegExp(r'[0-9]').hasMatch(password);
+      final hasSpecial = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password);
+      if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+        Get.snackbar(
+          'Error',
+          'Password must include uppercase, lowercase, numbers, and special symbols',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+    }
+
     if (currentStep.value < totalSteps) {
       currentStep.value++;
       pageController.nextPage(

@@ -56,8 +56,8 @@ class CreatePasswordController extends GetxController {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         Get.snackbar('Success', data['message'] ?? 'Password reset successfully', snackPosition: SnackPosition.BOTTOM);
-        // After successful reset, pop back to the existing login screen
-        Get.until((route) => route.settings.name == Routes.LOGIN);
+        // BR_018: Navigate to success page after resetting password
+        Get.offAllNamed(Routes.SUCCESS, arguments: {'flow': 'forgot'});
       } else {
         Get.snackbar('Error', data['message'] ?? 'Failed to reset password', snackPosition: SnackPosition.BOTTOM);
       }
