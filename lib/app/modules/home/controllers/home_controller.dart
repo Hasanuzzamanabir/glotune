@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/network/api_client.dart';
 import 'package:glotune/app/core/values/api_constants.dart';
@@ -41,7 +42,10 @@ class HomeController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      if (token == null) return;
+      if (token == null) {
+        unreadNotificationCount.value = 0;
+        return;
+      }
       
       final headers = {'Authorization': 'Bearer $token'};
       final response = await apiClient.get(
@@ -54,11 +58,17 @@ class HomeController extends GetxController {
         if (data is List) {
           unreadNotificationCount.value = data.length;
         } else if (data is Map) {
-          unreadNotificationCount.value = data['count'] ?? data['unread_count'] ?? 0;
+          final count = data['count'] ?? data['unread_count'] ?? 0;
+          unreadNotificationCount.value = (count is int) ? count : 0;
+        } else {
+          unreadNotificationCount.value = 0;
         }
+      } else {
+        unreadNotificationCount.value = 0;
       }
     } catch (e) {
-      print("Error fetching unread notification count: $e");
+      unreadNotificationCount.value = 0;
+      debugPrint("Error fetching unread notification count: $e");
     }
   }
 
@@ -82,10 +92,10 @@ class HomeController extends GetxController {
         userType.value = data['user_type'] ?? "";
         userAvatarUrl.value = data['profile_picture_url'] ?? data['profile_picture'] ?? data['avatar'] ?? "";
       } else {
-        print("Failed to fetch profile: ${response.statusCode} ${response.body}");
+        debugPrint("Failed to fetch profile: ${response.statusCode} ${response.body}");
       }
     } catch (e) {
-      print("Error fetching profile: $e");
+      debugPrint("Error fetching profile: $e");
     } finally {
       isProfileLoading.value = false;
     }
@@ -134,7 +144,7 @@ class HomeController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error fetching shop categories: $e");
+      debugPrint("Error fetching shop categories: $e");
     } finally {
       isShopCategoriesLoading.value = false;
     }
@@ -218,7 +228,7 @@ class HomeController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error fetching shop items: $e");
+      debugPrint("Error fetching shop items: $e");
     } finally {
       if (isRefresh) {
         isShopItemsLoading.value = false;
@@ -312,7 +322,7 @@ class HomeController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error fetching live rooms: $e");
+      debugPrint("Error fetching live rooms: $e");
     } finally {
       if (isRefresh) {
         isLiveRoomsLoading.value = false;
@@ -365,7 +375,7 @@ class HomeController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error fetching content list: $e");
+      debugPrint("Error fetching content list: $e");
     } finally {
       if (isRefresh) {
         isContentLoading.value = false;

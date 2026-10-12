@@ -87,8 +87,21 @@ class RegisterController extends GetxController {
           snackPosition: SnackPosition.BOTTOM);
       Get.toNamed(Routes.OTP, arguments: {'email': email, 'flow': 'register'});
     } else {
-      Get.snackbar('Error', data['message'] ?? 'Registration failed',
-          snackPosition: SnackPosition.BOTTOM);
+      String errorMessage = 'Registration failed';
+      if (data is Map) {
+        if (data['message'] != null) {
+          errorMessage = data['message'].toString();
+        } else if (data['email'] != null) {
+          errorMessage = data['email'] is List ? data['email'].first : data['email'].toString();
+        } else if (data['detail'] != null) {
+          errorMessage = data['detail'].toString();
+        } else if (data['error'] != null) {
+          errorMessage = data['error'].toString();
+        } else if (data['non_field_errors'] != null) {
+          errorMessage = data['non_field_errors'] is List ? data['non_field_errors'].first : data['non_field_errors'].toString();
+        }
+      }
+      Get.snackbar('Error', errorMessage, snackPosition: SnackPosition.BOTTOM);
     }
   }
 
@@ -114,8 +127,19 @@ class RegisterController extends GetxController {
         'flow': 'register'
       });
     } else {
-      Get.snackbar('Error', data['message'] ?? 'Registration failed',
-          snackPosition: SnackPosition.BOTTOM);
+      String errorMessage = 'Registration failed';
+      if (data is Map) {
+        if (data['message'] != null) {
+          errorMessage = data['message'].toString();
+        } else if (data['phone_number'] != null) {
+          errorMessage = data['phone_number'] is List ? data['phone_number'].first : data['phone_number'].toString();
+        } else if (data['detail'] != null) {
+          errorMessage = data['detail'].toString();
+        } else if (data['error'] != null) {
+          errorMessage = data['error'].toString();
+        }
+      }
+      Get.snackbar('Error', errorMessage, snackPosition: SnackPosition.BOTTOM);
     }
   }
 }

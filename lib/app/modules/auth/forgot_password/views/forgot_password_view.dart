@@ -51,7 +51,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               AuthTextField(
                 label: 'Email or Phone number',
                 hint: 'Enter your email or phone number',
-                icon: Icons.person_outline,
+                icon: Icons.email_outlined, // BR_008: Corrected email icon matching Figma
                 controller: controller.inputController,
               ).animate().fadeIn(delay: 400.ms),
 

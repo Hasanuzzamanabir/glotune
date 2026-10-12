@@ -25,7 +25,18 @@ class LoginView extends GetView<LoginController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: 40.h),
+              SizedBox(height: 20.h),
+              // App Logo (BR_004)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16.r),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 72.w,
+                  height: 72.h,
+                  fit: BoxFit.cover,
+                ),
+              ).animate().fadeIn(duration: 500.ms).scale(),
+              SizedBox(height: 20.h),
               Text(
                 'Welcome back',
                 style: TextStyle(
@@ -48,7 +59,7 @@ class LoginView extends GetView<LoginController> {
               AuthTextField(
                 label: 'Email or Phone number',
                 hint: 'Enter your email or phone number',
-                icon: Icons.person_outline,
+                icon: Icons.email_outlined, // BR_005: Corrected icon matching Figma
                 controller: controller.inputController,
               ).animate().fadeIn(delay: 400.ms),
               SizedBox(height: 20.h),

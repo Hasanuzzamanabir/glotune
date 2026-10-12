@@ -38,20 +38,52 @@ class VideoCard extends StatelessWidget {
             SizedBox(
               height: 210.h,
               width: double.infinity,
-              child: ImageUtils.safeNetworkImage(
-                imageUrl: thumbnailUrl,
-                fit: BoxFit.cover,
-                errorWidget: Container(
-                  color: Colors.grey[800],
-                  child: Center(
-                    child: Icon(
-                      Icons.videocam,
-                      color: Colors.white54,
-                      size: 48.sp,
-                    ),
-                  ),
+
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                image: DecorationImage(
+                  image: thumbnailUrl.isNotEmpty
+                      ? (thumbnailUrl.startsWith('http')
+                          ? CachedNetworkImageProvider(thumbnailUrl) as ImageProvider
+                          : AssetImage(thumbnailUrl))
+                      : const AssetImage('assets/images/video_thumb_1.png'),
+                  fit: BoxFit.cover,
                 ),
               ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.3),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (thumbnailUrl.isEmpty)
+                    Center(
+                      child: Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 32.sp,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
             ),
             Positioned(
               bottom: 12.h,

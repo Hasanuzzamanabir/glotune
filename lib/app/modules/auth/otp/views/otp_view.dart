@@ -35,34 +35,60 @@ class OtpView extends GetView<OtpController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: 40.h),
-                  Text(
-                    'OTP Verification',
-                    style: TextStyle(
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+              SizedBox(height: 30.h),
+              Text(
+                'OTP Verification',
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ).animate().fadeIn().slideY(begin: 0.2, end: 0),
+              SizedBox(height: 8.h),
+              Text(
+                'Verification code sent to your email. Enter the code below to verify your account.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+              SizedBox(height: 24.h),
+              
+              // BR_012: App security and context details
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.shield_outlined, color: AppColors.primary, size: 22.sp),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Text(
+                        'GloTune Security: Never share your OTP with anyone. Our team will never ask for your verification code.',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                     ),
-                  ).animate().fadeIn().slideY(begin: 0.2, end: 0),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Input the code sent to your email address',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: AppColors.textSecondary,
-                    ),
-                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
-                  SizedBox(height: 32.h),
-                  
-                  Pinput(
-                    length: 6,
-                    onChanged: (value) => controller.otp.value = value,
-                    defaultPinTheme: defaultPinTheme,
-                    focusedPinTheme: defaultPinTheme.copyDecorationWith(
-                      border: Border.all(color: AppColors.primary),
-                    ),
-                  ).animate().fadeIn(delay: 400.ms),
+                  ],
+                ),
+              ).animate().fadeIn(delay: 300.ms),
+              SizedBox(height: 24.h),
+              
+              Pinput(
+                length: 6,
+                onChanged: (value) => controller.otp.value = value,
+                defaultPinTheme: defaultPinTheme,
+                focusedPinTheme: defaultPinTheme.copyDecorationWith(
+                  border: Border.all(color: AppColors.primary),
+                ),
+              ).animate().fadeIn(delay: 400.ms),
                   
                   SizedBox(height: 16.h),
                   Obx(() => Text(

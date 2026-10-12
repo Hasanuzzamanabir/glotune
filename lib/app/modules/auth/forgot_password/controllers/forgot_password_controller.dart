@@ -23,6 +23,11 @@ class ForgotPasswordController extends GetxController {
       return;
     }
 
+    if (!GetUtils.isEmail(input) && !GetUtils.isPhoneNumber(input)) {
+      Get.snackbar('Error', 'Please enter a valid email address or phone number', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
     isLoading.value = true;
     try {
       if (GetUtils.isEmail(input)) {
@@ -53,7 +58,19 @@ class ForgotPasswordController extends GetxController {
       Get.snackbar('Success', data['message'] ?? 'OTP sent successfully', snackPosition: SnackPosition.BOTTOM);
       Get.toNamed(Routes.OTP, arguments: {'email': email, 'flow': 'forgot'});
     } else {
-      Get.snackbar('Error', data['message'] ?? 'Failed to send OTP', snackPosition: SnackPosition.BOTTOM);
+      String errorMessage = 'Failed to send OTP';
+      if (data is Map) {
+        if (data['message'] != null) {
+          errorMessage = data['message'].toString();
+        } else if (data['email'] != null) {
+          errorMessage = data['email'] is List ? data['email'].first : data['email'].toString();
+        } else if (data['detail'] != null) {
+          errorMessage = data['detail'].toString();
+        } else if (data['error'] != null) {
+          errorMessage = data['error'].toString();
+        }
+      }
+      Get.snackbar('Error', errorMessage, snackPosition: SnackPosition.BOTTOM);
     }
   }
 }
