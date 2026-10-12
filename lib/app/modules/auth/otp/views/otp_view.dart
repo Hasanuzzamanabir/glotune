@@ -14,12 +14,19 @@ class OtpView extends GetView<OtpController> {
     final defaultPinTheme = PinTheme(
       width: 56.w,
       height: 56.h,
-      textStyle: TextStyle(fontSize: 20.sp, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+      textStyle: TextStyle(
+        fontSize: 20.sp,
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.bold,
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(8.r),
       ),
     );
+
+    final args = Get.arguments ?? {};
+    final flow = args['flow'] ?? 'register';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -27,7 +34,10 @@ class OtpView extends GetView<OtpController> {
         backgroundColor: AppColors.primary,
         elevation: 0,
         leading: const BackButton(color: Colors.white),
-        title: const Text('FORGOT PASSWORD', style: TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(
+          flow == 'register' ? 'Verify Email' : 'FORGOT PASSWORD',
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -54,18 +64,24 @@ class OtpView extends GetView<OtpController> {
                 ),
               ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
               SizedBox(height: 24.h),
-              
+
               // BR_012: App security and context details
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.shield_outlined, color: AppColors.primary, size: 22.sp),
+                    Icon(
+                      Icons.shield_outlined,
+                      color: AppColors.primary,
+                      size: 22.sp,
+                    ),
                     SizedBox(width: 12.w),
                     Expanded(
                       child: Text(
@@ -80,7 +96,7 @@ class OtpView extends GetView<OtpController> {
                 ),
               ).animate().fadeIn(delay: 300.ms),
               SizedBox(height: 24.h),
-              
+
               Pinput(
                 length: 6,
                 onChanged: (value) => controller.otp.value = value,
@@ -89,63 +105,71 @@ class OtpView extends GetView<OtpController> {
                   border: Border.all(color: AppColors.primary),
                 ),
               ).animate().fadeIn(delay: 400.ms),
-                  
-                  SizedBox(height: 16.h),
-                  Obx(() => Text(
-                    controller.timerText,
+
+              SizedBox(height: 16.h),
+              Obx(
+                () => Text(
+                  controller.timerText,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 32.h),
+
+              Obx(
+                () => controller.isLoading.value
+                    ? SizedBox(
+                        height: 56.h,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      )
+                    : CustomButton(
+                        text: 'Verify',
+                        onPressed: controller.verifyOtp,
+                      ).animate().fadeIn(delay: 600.ms).scale(),
+              ),
+
+              SizedBox(height: 24.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Didn't receive code ",
                     style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
                       fontSize: 14.sp,
                     ),
-                  )),
-                  
-                  SizedBox(height: 32.h),
-                  
-                  Obx(() => controller.isLoading.value
-                      ? SizedBox(
-                          height: 56.h,
-                          child: const Center(
-                            child: CircularProgressIndicator(color: AppColors.primary),
-                          ),
-                        )
-                      : CustomButton(
-                          text: 'Verify',
-                          onPressed: controller.verifyOtp,
-                        ).animate().fadeIn(delay: 600.ms).scale()),
-                  
-                  SizedBox(height: 24.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Didn't receive code ",
+                  ),
+                  Obx(
+                    () => GestureDetector(
+                      onTap: controller.countdown.value == 0
+                          ? () => controller.startTimer()
+                          : null,
+                      child: Text(
+                        "Resend",
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: controller.countdown.value == 0
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.bold,
                           fontSize: 14.sp,
                         ),
                       ),
-                      Obx(() => GestureDetector(
-                        onTap: controller.countdown.value == 0 
-                            ? () => controller.startTimer() 
-                            : null,
-                        child: Text(
-                          "Resend",
-                          style: TextStyle(
-                            color: controller.countdown.value == 0 
-                                ? AppColors.primary 
-                                : AppColors.textSecondary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                      )),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        );
-      }
-    }
+        ),
+      ),
+    );
+  }
+}
