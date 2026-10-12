@@ -133,7 +133,7 @@ class CreateController extends GetxController {
 
   // Live Game Sub-menu & Selection State
   final showGameOptions = false.obs;
-  final selectedGameType = "Box battle".obs;
+  final selectedGameType = "".obs;
   final selectedLiveAction = "".obs;
 
   final gameOptionsList = [
@@ -143,7 +143,7 @@ class CreateController extends GetxController {
     "2v2 battle",
     "Karaoke",
   ];
-  // Quiz Category State
+  // Quiz Category & Live Quiz Game State
   final selectedQuizCategory = "Corporate and Business".obs;
   final quizCategoriesList = [
     "Entertainment and Pop Culture",
@@ -152,6 +152,122 @@ class CreateController extends GetxController {
     "Media and Journalism",
     "Politics and Governance",
   ];
+
+  // Authoritative Live Quiz Game State
+  final quizGameId = ''.obs;
+  final quizGameStatus = 'WAITING_FOR_CATEGORY'.obs;
+  final quizCategories = <Map<String, dynamic>>[
+    {
+      "id": "148d91e3-557a-4c76-a427-feebd079fb2c",
+      "name": "Entertainment and Pop Culture",
+      "description": "Music, cinema, television, celebrities, and global pop culture trivia.",
+      "sort_order": 1,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "8899e3a2-c59d-4eed-878f-871ad09bd980",
+      "name": "Corporate and Business",
+      "description": "Global markets, corporate giants, finance, entrepreneurship, and economics.",
+      "sort_order": 2,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "a624ddd4-1933-45ac-9a1e-868f4797128b",
+      "name": "Sport and Athletics",
+      "description": "Football, basketball, tennis, the Olympics, and legendary sports records.",
+      "sort_order": 3,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "edde6ae3-bf54-40d0-8320-5ee9329a4170",
+      "name": "Media and Journalism",
+      "description": "Broadcasting, news organizations, investigative reporting, ethics, and press history.",
+      "sort_order": 4,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "32337c06-51f3-4864-8169-2f476c9942c9",
+      "name": "Politics and Governance",
+      "description": "World governments, international relations, constitutions, and political history.",
+      "sort_order": 5,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+    {
+      "id": "35aebcda-d98c-4347-978b-c789e44df0b5",
+      "name": "Science and Technology",
+      "description": "Physics, chemistry, astronomy, computer science, and modern technological innovations.",
+      "sort_order": 6,
+      "status": "ACTIVE",
+      "question_count": 5,
+    },
+  ].obs;
+  final isLoadingQuizCategories = false.obs;
+  final selectedQuizCategoryId = '148d91e3-557a-4c76-a427-feebd079fb2c'.obs;
+  final selectedQuizCategoryName = 'Entertainment and Pop Culture'.obs;
+
+  // Active Round & Question State
+  final activeQuizRoundId = ''.obs;
+  final activeQuizRoundNo = 0.obs;
+  final activeQuizQuestion = Rxn<Map<String, dynamic>>();
+  final activeQuizAnswers = <Map<String, dynamic>>[].obs;
+  final quizDeadlineAt = Rxn<DateTime>();
+  final quizTimerSeconds = 30.obs;
+  final quizTimerText = '00:30'.obs;
+  final isQuizRoundActive = false.obs;
+  final isQuizScored = false.obs;
+  final selectedAnswerOption = ''.obs;
+  final isAnswerSubmitted = false.obs;
+  final correctAnswerOption = ''.obs;
+  final firstCorrectUserId = Rxn<int>();
+
+  // Participants & Rewards ($a + $b) from API
+  final quizParticipants = <Map<String, dynamic>>[].obs;
+  final quizRewards = <Map<String, dynamic>>[].obs;
+  final totalFanGiftsEarned = 0.0.obs;
+  final totalReleasedRewards = 0.0.obs;
+  final hostShareEarnings = 0.0.obs;
+
+  Timer? _quizRoundTimer;
+  WebSocket? _quizWs;
+
+  // ==================== LIVE KARAOKE GAME STATE ====================
+  final karaokeGameId = ''.obs;
+  final karaokeGameStatus = 'WAITING_FOR_SINGER'.obs;
+  final karaokeActivePerformance = Rxn<Map<String, dynamic>>();
+  final karaokePerformanceId = ''.obs;
+  final karaokeCurrentSinger = ''.obs;
+  final karaokeCurrentSingerId = 0.obs;
+  final karaokeCurrentSingerSeat = '1'.obs;
+  final karaokeCurrentTrackId = ''.obs;
+  final karaokeCurrentTrackTitle = ''.obs;
+  final karaokeCurrentTrackArtist = ''.obs;
+  final karaokeCurrentTrackType = 'INSTRUMENTAL'.obs; // 'MUSIC' or 'INSTRUMENTAL'
+  final karaokeAudioUrl = ''.obs;
+  final karaokePlaybackToken = ''.obs;
+  final karaokeDurationMs = 0.obs;
+  final karaokeIsRewardEligible = false.obs;
+  final karaokeTimerSeconds = 0.obs;
+  final karaokeTimerText = '00:00'.obs;
+  final isKaraokePerformanceActive = false.obs;
+  final karaokeCurrentLyricLine = 0.obs;
+  final karaokeCurrentLyricText = ''.obs;
+  final karaokeLyricsList = <Map<String, dynamic>>[].obs;
+  final karaokeParticipants = <Map<String, dynamic>>[].obs;
+  final karaokeCatalog = <Map<String, dynamic>>[].obs;
+  final isKaraokeCatalogLoading = false.obs;
+  final karaokeHeldReward = 0.0.obs;
+  final karaokeTotalFanGifts = 0.0.obs;
+  final karaokeTotalReleasedRewards = 0.0.obs;
+  final karaokeTotalForfeitedRewards = 0.0.obs;
+  final karaokeHostShareEarnings = 0.0.obs;
+
+  Timer? _karaokeTimer;
+  WebSocket? _karaokeWs;
 
   void toggleGameMenu() {
     showGameOptions.value = !showGameOptions.value;
@@ -317,7 +433,7 @@ class CreateController extends GetxController {
   }
 
   Future<void> initCamera() async {
-    if (isCameraInitialized.value) return;
+    if (isCameraInitialized.value || currentStep.value.startsWith("Live")) return;
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -343,7 +459,7 @@ class CreateController extends GetxController {
       await cameraController!.initialize();
       isCameraInitialized.value = true;
     } catch (e) {
-      print("Camera init error: \$e");
+      print("Camera init error: $e");
     }
   }
 
@@ -931,6 +1047,21 @@ class CreateController extends GetxController {
           colorText: Colors.black,
         );
 
+        // Navigate to the live stream view or selected game mode first to unmount CameraPreview
+        if (selectedGameType.value == "Box battle") {
+          navigateTo("LiveBoxBattle");
+        } else if (selectedGameType.value == "1v1") {
+          navigateTo("LiveBattle1v1");
+        } else if (selectedGameType.value == "Quiz") {
+          navigateTo("LiveQuiz");
+        } else if (selectedGameType.value == "2v2 battle") {
+          navigateTo("LiveBattle2v2");
+        } else if (selectedGameType.value == "Karaoke") {
+          navigateTo("LiveKaraoke");
+        } else {
+          navigateTo("LiveStream");
+        }
+
         // Initialize Agora
         if (agoraToken != null &&
             agoraToken.isNotEmpty &&
@@ -945,19 +1076,8 @@ class CreateController extends GetxController {
         // Member count & events handled real-time via WebSocket
         _connectLiveWebSocket();
 
-        // Navigate to the live stream view or selected game mode
         if (selectedGameType.value == "Box battle") {
           startBoxBattle();
-        } else if (selectedGameType.value == "1v1") {
-          navigateTo("LiveBattle1v1");
-        } else if (selectedGameType.value == "Quiz") {
-          navigateTo("LiveQuiz");
-        } else if (selectedGameType.value == "2v2 battle") {
-          navigateTo("LiveBattle2v2");
-        } else if (selectedGameType.value == "Karaoke") {
-          navigateTo("LiveKaraoke");
-        } else {
-          navigateTo("LiveStream");
         }
       } else {
         Get.snackbar("Error", "Failed to start live: ${response.statusCode}");
@@ -992,12 +1112,16 @@ class CreateController extends GetxController {
       return;
     }
 
-    // Release Flutter camera controller so Agora hardware layer can access camera
+    // Release Flutter camera controller so Agora hardware layer can access camera exclusively
     if (cameraController != null) {
       print("[DEBUG LIVE] Disposing Flutter camera controller...");
-      await cameraController!.dispose();
+      try {
+        await cameraController!.dispose();
+      } catch (_) {}
       cameraController = null;
       isCameraInitialized.value = false;
+      // Allow Android camera device manager time to finish closing CameraId-1
+      await Future.delayed(const Duration(milliseconds: 150));
     }
 
     // Request permissions
@@ -1525,6 +1649,28 @@ class CreateController extends GetxController {
     _typingTimer?.cancel();
     _temporaryNoticeTimer?.cancel();
     temporaryNotice.value = "";
+    selectedGameType.value = "";
+    showGameOptions.value = false;
+    _quizRoundTimer?.cancel();
+    try {
+      _quizWs?.close();
+    } catch (_) {}
+    _quizWs = null;
+    quizGameId.value = "";
+    quizGameStatus.value = "WAITING_FOR_CATEGORY";
+    isQuizRoundActive.value = false;
+    activeQuizRoundId.value = "";
+    activeQuizRoundNo.value = 0;
+    activeQuizQuestion.value = null;
+    activeQuizAnswers.clear();
+    quizParticipants.clear();
+    selectedAnswerOption.value = "";
+    isAnswerSubmitted.value = false;
+    isQuizScored.value = false;
+    correctAnswerOption.value = "";
+    firstCorrectUserId.value = null;
+    selectedQuizCategoryId.value = "";
+    selectedQuizCategoryName.value = "";
     navigateTo("Camera");
     initCamera(); // Restore flutter camera
   }
@@ -1586,11 +1732,83 @@ class CreateController extends GetxController {
     }
   }
 
+  String? _pendingSessionJoin;
+  String? _currentJoinedSession;
+  DateTime? _lastJoinSessionTime;
+  bool _isConnectingLiveWs = false;
+
+  /// Send session join event to WebSocket:
+  /// e.g. {"action": "join", "type": "box battle"}
+  void joinSession(String sessionType) {
+    String normalized = sessionType.toLowerCase().trim();
+    if (normalized == 'box' || normalized.contains('box battle')) {
+      normalized = 'box battle';
+    } else if (normalized.contains('1v1')) {
+      normalized = '1v1';
+    } else if (normalized.contains('2v2')) {
+      normalized = '2v2';
+    } else if (normalized.contains('quiz')) {
+      normalized = 'quiz';
+    } else if (normalized.contains('karaoke')) {
+      normalized = 'karaoke';
+    } else {
+      normalized = 'live';
+    }
+
+    final now = DateTime.now();
+    // Guard: Prevent sending duplicate join if already in this session
+    if (_currentJoinedSession == normalized &&
+        _lastJoinSessionTime != null &&
+        now.difference(_lastJoinSessionTime!).inSeconds < 5) {
+      print("[DEBUG LIVE WS] Suppressing duplicate join for '$normalized'");
+      return;
+    }
+
+    _currentJoinedSession = normalized;
+    _lastJoinSessionTime = now;
+
+    final payload = jsonEncode({
+      "action": "join",
+      "type": normalized,
+    });
+
+    final changeTypePayload = jsonEncode({
+      "action": "change_live_type",
+      "type": "change_live_type",
+      "live_type": normalized,
+      "game_type": normalized,
+      "room_id": liveRoomId.value,
+    });
+
+    if (_liveWs != null) {
+      try {
+        _liveWs!.add(payload);
+        _liveWs!.add(changeTypePayload);
+        print("[DEBUG LIVE WS] Sent join session: $payload & change type: $changeTypePayload");
+      } catch (e) {
+        print("[DEBUG LIVE WS] Error sending join session: $e");
+      }
+    } else {
+      print("[DEBUG LIVE WS] Socket not yet connected, queuing join session: $normalized");
+      _pendingSessionJoin = normalized;
+      if (liveRoomId.value.isNotEmpty) {
+        _connectLiveWebSocket();
+      }
+    }
+  }
+
   void _connectLiveWebSocket() {
+    if (liveRoomId.value.isEmpty) return;
+    if (_liveWs != null || _isConnectingLiveWs) {
+      print("[DEBUG LIVE WS] Already connected or connection in progress");
+      return;
+    }
+
+    _isConnectingLiveWs = true;
+
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      if (liveRoomId.value.isEmpty) return;
 
       final parsed = Uri.parse(ApiConstants.baseUrl);
       final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
@@ -1599,8 +1817,41 @@ class CreateController extends GetxController {
       final fallbackWsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
 
       void listenWs(WebSocket ws) {
+        _isConnectingLiveWs = false;
+        if (_liveWs != null && _liveWs != ws) {
+          try {
+            _liveWs!.close();
+          } catch (_) {}
+        }
         _liveWs = ws;
         print("[DEBUG LIVE WS] Host connected successfully to: ${ws.toString()}");
+
+        // Send queued or default session join ONLY ONCE
+        final joinType = _pendingSessionJoin ?? (isBoxBattleActive.value ? "box battle" : "live");
+        _pendingSessionJoin = null;
+        _currentJoinedSession = joinType;
+        _lastJoinSessionTime = DateTime.now();
+
+        final joinPayload = jsonEncode({
+          "action": "join",
+          "type": joinType,
+        });
+        final changeTypePayload = jsonEncode({
+          "action": "change_live_type",
+          "type": "change_live_type",
+          "live_type": joinType,
+          "game_type": joinType,
+          "room_id": liveRoomId.value,
+        });
+
+        try {
+          ws.add(joinPayload);
+          ws.add(changeTypePayload);
+          print("[DEBUG LIVE WS] Sent join on connect: $joinPayload");
+        } catch (e) {
+          print("[DEBUG LIVE WS] Error sending join on connect: $e");
+        }
+
         ws.listen((event) {
           try {
             final data = jsonDecode(event.toString());
@@ -1614,9 +1865,11 @@ class CreateController extends GetxController {
         }, onError: (err) {
           print("[DEBUG LIVE WS] Stream error: $err");
           _liveWs = null;
+          _isConnectingLiveWs = false;
         }, onDone: () {
           print("[DEBUG LIVE WS] Stream closed");
           _liveWs = null;
+          _isConnectingLiveWs = false;
         });
       }
 
@@ -1628,10 +1881,12 @@ class CreateController extends GetxController {
         WebSocket.connect(fallbackWsUrl).then((ws) {
           listenWs(ws);
         }).catchError((fallbackErr) {
+          _isConnectingLiveWs = false;
           print("[DEBUG LIVE WS] Fallback connect error: $fallbackErr");
         });
       });
     } catch (e) {
+      _isConnectingLiveWs = false;
       print("[DEBUG LIVE WS] Connect exception: $e");
     }
   }
@@ -1854,6 +2109,123 @@ class CreateController extends GetxController {
     } else if (type == 'battle_ended' || action == 'battle_ended') {
       endBoxBattle();
     }
+
+    // 8. Session status & join notifications
+    else if (type == 'session_status' || type == 'session_status_notification') {
+      _handleSessionStatusEvent(data);
+    }
+  }
+
+  void _handleSessionStatusEvent(Map<String, dynamic> data) {
+    print("[DEBUG LIVE WS] Handling session status event: $data");
+    final type = data['type']?.toString();
+    final status = data['status']?.toString() ?? 'join';
+    final gameType = data['game_type']?.toString() ?? 'session';
+    final username = data['username']?.toString() ?? 'User';
+    final userId = data['user_id'];
+    final profilePic = data['profile_picture']?.toString();
+    final rawMsg = data['message']?.toString();
+    final displayMsg = (rawMsg != null && rawMsg.trim().isNotEmpty)
+        ? (rawMsg.startsWith('@') ? rawMsg : '@$username $rawMsg')
+        : '@$username joined $gameType';
+    final time = data['timestamp']?.toString() ?? DateTime.now().toIso8601String();
+
+    // Resolve full image URL if relative path
+    String? resolvedPic = profilePic;
+    if (resolvedPic != null && resolvedPic.isNotEmpty && !resolvedPic.startsWith('http')) {
+      final origin = Uri.parse(ApiConstants.baseUrl).origin;
+      resolvedPic = '$origin${resolvedPic.startsWith('/') ? '' : '/'}$resolvedPic';
+    }
+
+    // 1. Insert into liveMessages for chat feed
+    final chatItem = {
+      'id': 'sess_${userId}_${DateTime.now().millisecondsSinceEpoch}',
+      'message': displayMsg,
+      'text': displayMsg,
+      'username': username,
+      'user_id': userId,
+      'profile_picture': resolvedPic,
+      'timestamp': time,
+      'is_system': true,
+      'is_session_notification': true,
+      'game_type': gameType,
+      'status': status,
+      'type': type,
+    };
+    liveMessages.insert(0, chatItem);
+
+    // 2. Show floating temporary notice / banner
+    showTemporaryNotice(displayMsg);
+
+    // 3. Update Participant Part:
+    // 3a. Add to liveMembers list
+    final memberObj = {
+      'id': userId,
+      'user_id': userId,
+      'username': username,
+      'profile_picture': resolvedPic,
+      'game_type': gameType,
+      'user': {
+        'id': userId,
+        'username': username,
+        'profile_picture': resolvedPic,
+      }
+    };
+    final memberIdx = liveMembers.indexWhere((m) {
+      final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
+      return mId != null && userId != null && mId.toString() == userId.toString();
+    });
+    if (memberIdx != -1) {
+      liveMembers[memberIdx] = memberObj;
+    } else {
+      liveMembers.insert(0, memberObj);
+      liveMemberCount.value = liveMembers.length;
+    }
+
+    // 3b. Update Box Battle guest slots if game_type is "box battle"
+    final normalizedGameType = gameType.toLowerCase().trim();
+    if (normalizedGameType.contains('box')) {
+      final existingSlotIdx = boxSlots.indexWhere((s) {
+        final sUid = s['user_id'] ?? s['guest_id'] ?? s['uid'];
+        return sUid != null && userId != null && sUid.toString() == userId.toString();
+      });
+      if (existingSlotIdx == -1) {
+        final vacantIdx = boxSlots.indexWhere((s) => s['status'] == 'VACANT');
+        if (vacantIdx != -1) {
+          final updated = Map<String, dynamic>.from(boxSlots[vacantIdx]);
+          updated['status'] = 'OCCUPIED';
+          updated['user_id'] = userId;
+          updated['guest_id'] = userId;
+          updated['uid'] = userId is int ? userId : int.tryParse(userId.toString());
+          updated['username'] = username;
+          updated['profile_picture'] = resolvedPic;
+          updated['gift_total'] = 0;
+          updated['bonus_total'] = 0;
+          updated['mic_on'] = true;
+          updated['camera_on'] = true;
+          boxSlots[vacantIdx] = updated;
+        }
+      }
+    }
+
+    // 3c. Update Quiz participants if game_type is "quiz"
+    if (normalizedGameType.contains('quiz')) {
+      final existsInQuiz = quizParticipants.any((p) {
+        final pId = p['user_id'] ?? p['id'];
+        return pId != null && userId != null && pId.toString() == userId.toString();
+      });
+      if (!existsInQuiz && userId != null) {
+        quizParticipants.add({
+          'user_id': userId,
+          'username': username,
+          'profile_picture': resolvedPic,
+          'fan_gifts_a': 0,
+          'platform_reward_b': 0,
+          'selected_option': null,
+          'is_correct': false,
+        });
+      }
+    }
   }
 
   Future<void> inviteGuest(dynamic userId) async {
@@ -2063,12 +2435,14 @@ class CreateController extends GetxController {
       }
     } catch (_) {}
 
+    joinSession("box battle");
     navigateTo("LiveBoxBattle");
   }
 
   void endBoxBattle() {
     isBoxBattleActive.value = false;
     _boxBattleTimer?.cancel();
+    joinSession("live");
 
     try {
       if (_liveWs != null) {
@@ -2200,7 +2574,1362 @@ class CreateController extends GetxController {
     // Handled by the View
   }
 
-  void navigateTo(String step) => currentStep.value = step;
+  // ==================== LIVE QUIZ GAME METHODS ====================
+
+  /// Initialize or join Quiz Game instance for current live room
+  Future<void> initOrJoinQuizGame([String? targetLiveId]) async {
+    if (quizGameId.value.isNotEmpty && _quizWs != null) {
+      return;
+    }
+    final roomId = (targetLiveId != null && targetLiveId.isNotEmpty)
+        ? targetLiveId
+        : (liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d');
+    if (liveRoomId.value.isEmpty) {
+      liveRoomId.value = roomId;
+    }
+    print("[DEBUG LIVE QUIZ] Initializing Quiz Game for room: $roomId");
+
+    try {
+      // 1. Fetch available categories from API
+      await fetchQuizCategories();
+
+      // 2. Connect 100% Real-Time WebSocket Live Quiz Engine
+      // Connecting via live_room_id automatically discovers or initializes the active quiz session
+      _connectQuizWebSocket();
+
+      // 3. Fallback / supplementary createQuizGame via REST
+      final gameRes = await gameService.createQuizGame(roomId);
+      if (gameRes != null) {
+        final id = gameRes['id'] ?? gameRes['game_id'];
+        if (id != null) {
+          quizGameId.value = id.toString();
+        }
+        quizGameStatus.value = gameRes['status']?.toString() ?? 'WAITING_FOR_CATEGORY';
+        print("[DEBUG LIVE QUIZ] Quiz game created/found. ID: ${quizGameId.value}, status: ${quizGameStatus.value}");
+
+        if (gameRes['active_category'] is Map) {
+          selectedQuizCategoryId.value = gameRes['active_category']['id']?.toString() ?? '';
+          selectedQuizCategoryName.value = gameRes['active_category']['name']?.toString() ?? '';
+        }
+
+        if (gameRes['participants'] is List) {
+          quizParticipants.value = List<Map<String, dynamic>>.from(gameRes['participants']);
+        }
+
+        if (gameRes['active_round'] is Map) {
+          final round = gameRes['active_round'];
+          activeQuizRoundId.value = (round['id'] ?? round['round_id'])?.toString() ?? '';
+          activeQuizRoundNo.value = round['round_no'] ?? 1;
+
+          if (round['question'] is Map) {
+            activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+            List<dynamic>? answersList;
+            if (round['question']['answers'] is List && (round['question']['answers'] as List).isNotEmpty) {
+              answersList = round['question']['answers'];
+            } else if (round['answers'] is List && (round['answers'] as List).isNotEmpty) {
+              answersList = round['answers'];
+            }
+            if (answersList != null) {
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(answersList);
+            }
+          }
+        }
+      }
+
+      // If category not selected yet, pick first category returned from API
+      if (selectedQuizCategoryId.value.isEmpty && quizCategories.isNotEmpty) {
+        selectedQuizCategoryId.value = quizCategories.first['id']?.toString() ?? '';
+        selectedQuizCategoryName.value = quizCategories.first['name']?.toString() ?? '';
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] initOrJoinQuizGame error: $e");
+    }
+  }
+
+  /// 1. Fetch active quiz categories from backend
+  Future<void> fetchQuizCategories() async {
+    final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
+    try {
+      isLoadingQuizCategories.value = true;
+      final cats = await gameService.getQuizCategories(roomId);
+      print("[DEBUG LIVE QUIZ] Fetched ${cats.length} quiz categories from API");
+      if (cats.isNotEmpty) {
+        quizCategories.value = cats;
+        if (selectedQuizCategoryId.value.isEmpty) {
+          selectedQuizCategoryId.value = cats.first['id'].toString();
+          selectedQuizCategoryName.value = cats.first['name'].toString();
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] fetchQuizCategories error: $e");
+    } finally {
+      isLoadingQuizCategories.value = false;
+    }
+  }
+
+  /// 2. Host selects and locks category
+  Future<void> lockQuizCategory(String categoryId, String categoryName) async {
+    selectedQuizCategoryId.value = categoryId;
+    selectedQuizCategoryName.value = categoryName;
+    quizGameStatus.value = 'CATEGORY_LOCKED';
+
+    print("[DEBUG LIVE QUIZ] Locking category: $categoryName ($categoryId)");
+
+    // 1. Authoritative WebSocket action
+    _sendQuizWsAction({
+      'action': 'lock_category',
+      'category_id': categoryId,
+    });
+
+    // 2. HTTP Fallback
+    if (quizGameId.value.isNotEmpty) {
+      gameService.lockQuizCategory(quizGameId.value, categoryId);
+    }
+
+    Get.snackbar(
+      "Category Selected",
+      "Quiz Category: $categoryName",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
+  }
+
+  /// 3. Host starts next 30-second round
+  Future<void> startQuizRound() async {
+    if (quizGameId.value.isEmpty && liveRoomId.value.isEmpty) {
+      await initOrJoinQuizGame();
+    }
+
+    // Automatically lock category if still waiting for category
+    if (selectedQuizCategoryId.value.isNotEmpty && quizGameStatus.value == 'WAITING_FOR_CATEGORY') {
+      await lockQuizCategory(selectedQuizCategoryId.value, selectedQuizCategoryName.value);
+    }
+
+    // Reset round answers & choices locally while waiting for server event
+    selectedAnswerOption.value = '';
+    isAnswerSubmitted.value = false;
+    correctAnswerOption.value = '';
+    isQuizScored.value = false;
+    firstCorrectUserId.value = null;
+
+    print("[DEBUG LIVE QUIZ] Starting round via WebSocket");
+
+    // 1. Authoritative WebSocket action
+    _sendQuizWsAction({'action': 'start_round'});
+
+    // 2. Fallback REST call
+    if (quizGameId.value.isNotEmpty) {
+      try {
+        final res = await gameService.startQuizRound(quizGameId.value);
+        if (res != null) {
+          activeQuizRoundId.value = res['id']?.toString() ?? '';
+          activeQuizRoundNo.value = res['round_no'] ?? (activeQuizRoundNo.value + 1);
+          quizGameStatus.value = 'QUESTION_ACTIVE';
+          isQuizRoundActive.value = true;
+
+          if (res['question'] is Map) {
+            activeQuizQuestion.value = Map<String, dynamic>.from(res['question']);
+            List<dynamic>? answersList;
+            if (res['question']['answers'] is List && (res['question']['answers'] as List).isNotEmpty) {
+              answersList = res['question']['answers'];
+            } else if (res['answers'] is List && (res['answers'] as List).isNotEmpty) {
+              answersList = res['answers'];
+            }
+            if (answersList != null) {
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(answersList);
+            }
+          }
+
+          if (res['deadline_at'] != null) {
+            quizDeadlineAt.value = DateTime.tryParse(res['deadline_at'].toString());
+          }
+
+          _startQuizCountdownTimer(30);
+        }
+      } catch (e) {
+        print("[DEBUG LIVE QUIZ] REST startQuizRound fallback error: $e");
+      }
+    }
+  }
+
+  void _startQuizCountdownTimer(int seconds) {
+    _quizRoundTimer?.cancel();
+    quizTimerSeconds.value = seconds;
+    quizTimerText.value = "00:${seconds.toString().padLeft(2, '0')}";
+
+    _quizRoundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (quizTimerSeconds.value > 1) {
+        quizTimerSeconds.value--;
+        quizTimerText.value = "00:${quizTimerSeconds.value.toString().padLeft(2, '0')}";
+      } else {
+        quizTimerSeconds.value = 0;
+        quizTimerText.value = "00:00";
+        timer.cancel();
+        isQuizRoundActive.value = false;
+
+        // Auto-score round when 30-second server deadline expires
+        scoreQuizRound();
+      }
+    });
+  }
+
+  /// 4. Participant submits an answer (A-D)
+  Future<void> submitQuizAnswer(String optionCode) async {
+    if (isAnswerSubmitted.value || !isQuizRoundActive.value) return;
+
+    selectedAnswerOption.value = optionCode;
+    isAnswerSubmitted.value = true;
+    final userId = userProfile.value?.id ?? 1;
+    final key = 'ans_user${userId}_r${activeQuizRoundNo.value}_req${DateTime.now().millisecondsSinceEpoch}';
+
+    print("[DEBUG LIVE QUIZ] Submitting answer via WS: $optionCode for round: ${activeQuizRoundId.value}");
+
+    // 1. Authoritative WebSocket action
+    _sendQuizWsAction({
+      'action': 'submit_answer',
+      'round_id': activeQuizRoundId.value,
+      'option_code': optionCode,
+      'idempotency_key': key,
+    });
+
+    // 2. Fallback REST
+    if (quizGameId.value.isNotEmpty && activeQuizRoundId.value.isNotEmpty) {
+      try {
+        gameService.submitQuizAnswer(
+          quizGameId.value,
+          activeQuizRoundId.value,
+          optionCode,
+          idempotencyKey: key,
+        );
+      } catch (e) {
+        print("[DEBUG LIVE QUIZ] submitQuizAnswer error: $e");
+      }
+    }
+  }
+
+  /// 5. Score round and distribute rewards
+  Future<void> scoreQuizRound() async {
+    if (isQuizScored.value) return;
+    isQuizScored.value = true;
+    _quizRoundTimer?.cancel();
+    isQuizRoundActive.value = false;
+
+    print("[DEBUG LIVE QUIZ] Scoring round via WS: ${activeQuizRoundId.value}");
+
+    // 1. Authoritative WebSocket action
+    _sendQuizWsAction({
+      'action': 'score_round',
+      'round_id': activeQuizRoundId.value,
+    });
+
+    // 2. Fallback REST
+    if (quizGameId.value.isNotEmpty && activeQuizRoundId.value.isNotEmpty) {
+      try {
+        final res = await gameService.scoreQuizRound(
+          quizGameId.value,
+          activeQuizRoundId.value,
+        );
+        if (res != null) {
+          correctAnswerOption.value = res['correct_option']?.toString() ?? '';
+          firstCorrectUserId.value = res['first_correct_user_id'] is int
+              ? res['first_correct_user_id']
+              : int.tryParse(res['first_correct_user_id']?.toString() ?? '');
+
+          if (res['rewards'] is List) {
+            quizRewards.value = List<Map<String, dynamic>>.from(res['rewards']);
+
+            for (final r in quizRewards) {
+              final uid = r['user_id'];
+              final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+              if (idx != -1) {
+                final currentB = double.tryParse(quizParticipants[idx]['platform_reward_b']?.toString() ?? '0') ?? 0;
+                final added = double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
+                quizParticipants[idx]['platform_reward_b'] = (currentB + added);
+                quizParticipants[idx]['is_correct'] = true;
+              }
+            }
+            quizParticipants.refresh();
+          }
+        }
+      } catch (e) {
+        print("[DEBUG LIVE QUIZ] scoreQuizRound error: $e");
+      }
+    }
+  }
+
+  /// 6. Send fan gifts ($a$) to a quiz guest
+  Future<void> sendQuizGift(
+    int recipientUserId,
+    double amount, {
+    String giftType = 'GALAXY_STAR',
+  }) async {
+    print("[DEBUG LIVE QUIZ] Sending gift via WS to $recipientUserId ($amount)");
+
+    // 1. Authoritative WebSocket action
+    _sendQuizWsAction({
+      'action': 'send_gift',
+      'recipient_user_id': recipientUserId,
+      'amount': amount,
+      'gift_type': giftType,
+    });
+
+    // 2. Fallback REST
+    if (quizGameId.value.isNotEmpty) {
+      try {
+        final res = await gameService.sendQuizGift(
+          quizGameId.value,
+          recipientUserId: recipientUserId,
+          amount: amount,
+          giftType: giftType,
+        );
+        if (res != null) {
+          final idx = quizParticipants.indexWhere((p) => p['user_id'] == recipientUserId);
+          if (idx != -1) {
+            final currentA = double.tryParse(quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+            quizParticipants[idx]['fan_gifts_a'] = currentA + amount;
+            quizParticipants.refresh();
+          }
+          Get.snackbar("Gift Sent!", "Sent $giftType to participant", backgroundColor: Colors.white, colorText: Colors.black);
+        }
+      } catch (e) {
+        print("[DEBUG LIVE QUIZ] sendQuizGift error: $e");
+      }
+    }
+  }
+
+  /// 7. Recover full authoritative state
+  Future<void> recoverQuizState() async {
+    if (quizGameId.value.isEmpty) return;
+    _sendQuizWsAction({'action': 'get_state'});
+    try {
+      final state = await gameService.getQuizState(quizGameId.value);
+      if (state != null) {
+        quizGameStatus.value = state['status']?.toString() ?? 'ACTIVE';
+
+        if (state['active_category'] is Map) {
+          selectedQuizCategoryId.value = state['active_category']['id']?.toString() ?? '';
+          selectedQuizCategoryName.value = state['active_category']['name']?.toString() ?? '';
+        }
+
+        if (state['active_round'] is Map) {
+          final round = state['active_round'];
+          activeQuizRoundId.value = round['round_id']?.toString() ?? '';
+          activeQuizRoundNo.value = round['round_no'] ?? 1;
+
+          if (round['question'] is Map) {
+            activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+            if (round['question']['answers'] is List) {
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['question']['answers']);
+            }
+          }
+
+          if (round['status'] == 'QUESTION_ACTIVE') {
+            isQuizRoundActive.value = true;
+            final deadline = DateTime.tryParse(round['deadline_at']?.toString() ?? '');
+            if (deadline != null) {
+              final rem = deadline.difference(DateTime.now()).inSeconds;
+              if (rem > 0) {
+                _startQuizCountdownTimer(rem);
+              }
+            }
+          }
+        }
+
+        if (state['participants'] is List) {
+          quizParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ] recoverQuizState error: $e");
+    }
+  }
+
+  /// 8. End Quiz Game Session
+  Future<void> endQuizGame() async {
+    _quizRoundTimer?.cancel();
+    isQuizRoundActive.value = false;
+
+    print("[DEBUG LIVE QUIZ] Ending quiz game via WS");
+
+    // 1. Authoritative WebSocket action
+    _sendQuizWsAction({'action': 'end_game'});
+
+    // 2. Fallback REST
+    if (quizGameId.value.isNotEmpty) {
+      try {
+        final res = await gameService.endQuizGame(quizGameId.value);
+        if (res != null) {
+          totalFanGiftsEarned.value = double.tryParse(res['total_fan_gifts']?.toString() ?? '0') ?? 0;
+          totalReleasedRewards.value = double.tryParse(res['total_released_rewards']?.toString() ?? '0') ?? 0;
+          hostShareEarnings.value = double.tryParse(res['host_share_earnings']?.toString() ?? '0') ?? 0;
+
+          _showQuizEndSummaryDialog();
+          return;
+        }
+      } catch (e) {
+        print("[DEBUG LIVE QUIZ] endQuizGame error: $e");
+      }
+    }
+
+    _showQuizEndSummaryDialog();
+  }
+
+  void _showQuizEndSummaryDialog() {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFF1E1E1E),
+        child: Padding(
+          padding: const EdgeInsets.all(22.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Quiz Session Ended 🏆",
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildStatRow(Icons.card_giftcard, "Total Fan Gifts (a)", "${totalFanGiftsEarned.value}"),
+              const SizedBox(height: 10),
+              _buildStatRow(Icons.emoji_events_outlined, "Platform Rewards (b)", "${totalReleasedRewards.value}"),
+              const SizedBox(height: 10),
+              _buildStatRow(Icons.monetization_on_outlined, "Host Earnings", "${hostShareEarnings.value}"),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B1818),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  minimumSize: const Size(double.infinity, 42),
+                ),
+                onPressed: () {
+                  Get.back();
+                  navigateTo("LiveStream");
+                },
+                child: const Text("Return to Live", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  // ==================== LIVE QUIZ WEBSOCKET ====================
+
+  void _connectQuizWebSocket() {
+    final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
+    if (_quizWs != null) {
+      try {
+        _quizWs!.close();
+      } catch (_) {}
+      _quizWs = null;
+    }
+
+    try {
+      final authService = Get.find<AuthService>();
+      final token = authService.accessToken.value;
+
+      final parsed = Uri.parse(ApiConstants.baseUrl);
+      final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
+      final portStr = parsed.hasPort ? ':${parsed.port}' : '';
+
+      // Dual endpoint support:
+      // ws://<host>/ws/live/<live_room_id>/quiz/?token=<JWT> (automatically discovers or initializes quiz session)
+      // ws://<host>/ws/live-quiz/<game_id>/?token=<JWT>
+      final String wsUrl;
+      if (roomId.isNotEmpty) {
+        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/quiz/?token=${token ?? ''}';
+      } else if (quizGameId.value.isNotEmpty) {
+        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
+      } else {
+        return;
+      }
+
+      print("[DEBUG LIVE QUIZ WS] Connecting to Quiz WebSocket: $wsUrl");
+      WebSocket.connect(wsUrl).then((ws) {
+        _quizWs = ws;
+        print("[DEBUG LIVE QUIZ WS] Connected successfully!");
+
+        // Auto join game as HOST
+        _sendQuizWsAction({
+          'action': 'join_game',
+          'seat': 'HOST',
+          'role': 'HOST',
+        });
+
+        ws.listen((event) {
+          try {
+            final data = jsonDecode(event.toString());
+            print("[DEBUG LIVE QUIZ WS Event]: $data");
+            if (data is Map<String, dynamic>) {
+              _handleQuizWsEvent(data);
+            }
+          } catch (e) {
+            print("[DEBUG LIVE QUIZ WS] Parse error: $e");
+          }
+        }, onError: (err) {
+          print("[DEBUG LIVE QUIZ WS] Stream error: $err");
+          _quizWs = null;
+        }, onDone: () {
+          print("[DEBUG LIVE QUIZ WS] Stream closed");
+          _quizWs = null;
+        });
+      }).catchError((err) {
+        print("[DEBUG LIVE QUIZ WS] Connect error: $err");
+        // Fallback: if connecting via live_room_id failed and quizGameId is known, try /ws/live-quiz/<game_id>/
+        if (quizGameId.value.isNotEmpty && !wsUrl.contains('live-quiz')) {
+          final fallbackUrl = '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
+          print("[DEBUG LIVE QUIZ WS] Trying fallback URL: $fallbackUrl");
+          WebSocket.connect(fallbackUrl).then((ws) {
+            _quizWs = ws;
+            _sendQuizWsAction({'action': 'join_game', 'seat': 'HOST', 'role': 'HOST'});
+            ws.listen((event) {
+              try {
+                final data = jsonDecode(event.toString());
+                if (data is Map<String, dynamic>) _handleQuizWsEvent(data);
+              } catch (_) {}
+            }, onError: (_) => _quizWs = null, onDone: () => _quizWs = null);
+          }).catchError((_) {});
+        }
+      });
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ WS] Exception connecting: $e");
+    }
+  }
+
+  void _sendQuizWsAction(Map<String, dynamic> payload) {
+    try {
+      if (_quizWs != null) {
+        _quizWs!.add(jsonEncode(payload));
+        print("[DEBUG LIVE QUIZ WS] Sent action: $payload");
+      }
+    } catch (e) {
+      print("[DEBUG LIVE QUIZ WS] Send error: $e");
+    }
+  }
+
+  void _handleQuizWsEvent(Map<String, dynamic> data) {
+    final event = data['event']?.toString() ?? data['type']?.toString();
+    final Map<String, dynamic> payload = data['payload'] is Map
+        ? Map<String, dynamic>.from(data['payload'])
+        : data;
+
+    print("[DEBUG LIVE QUIZ WS] Handling event: $event");
+
+    switch (event) {
+      case 'connection_ack':
+      case 'CONNECTED':
+        final gId = data['game_id'] ?? payload['game_id'];
+        if (gId != null && gId.toString().isNotEmpty) {
+          quizGameId.value = gId.toString();
+        }
+        final rId = data['live_room_id'] ?? payload['live_room_id'];
+        if (rId != null && rId.toString().isNotEmpty) {
+          liveRoomId.value = rId.toString();
+        }
+        if (data['state'] is Map) {
+          final state = Map<String, dynamic>.from(data['state']);
+          if (state['game_id'] != null) {
+            quizGameId.value = state['game_id'].toString();
+          }
+          if (state['status'] != null) {
+            quizGameStatus.value = state['status'].toString();
+          }
+          if (state['active_category'] is Map) {
+            final cat = state['active_category'];
+            selectedQuizCategoryId.value = cat['id']?.toString() ?? '';
+            selectedQuizCategoryName.value = cat['name']?.toString() ?? '';
+          }
+          if (state['participants'] is List) {
+            quizParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+          }
+          if (state['active_round'] is Map) {
+            final round = state['active_round'];
+            activeQuizRoundId.value = (round['id'] ?? round['round_id'])?.toString() ?? '';
+            activeQuizRoundNo.value = round['round_no'] ?? 1;
+            if (round['question'] is Map) {
+              activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+              if (round['question']['answers'] is List) {
+                activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['question']['answers']);
+              }
+            }
+            if (round['answers'] is List && activeQuizAnswers.isEmpty) {
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['answers']);
+            }
+            isQuizRoundActive.value = true;
+            final duration = round['duration_sec'] ?? 30;
+            _startQuizCountdownTimer(duration is int ? duration : 30);
+          }
+        }
+        // Send join_game as HOST
+        _sendQuizWsAction({
+          'action': 'join_game',
+          'seat': 'HOST',
+          'role': 'HOST',
+        });
+        break;
+
+      case 'PARTICIPANT_JOINED':
+        final uid = payload['user_id'];
+        if (uid != null) {
+          final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+          if (idx != -1) {
+            quizParticipants[idx] = {...quizParticipants[idx], ...payload};
+          } else {
+            quizParticipants.add(payload);
+          }
+          quizParticipants.refresh();
+        }
+        break;
+
+      case 'CATEGORY_LOCKED':
+        final catId = payload['category_id']?.toString() ?? '';
+        final catName = payload['category_name']?.toString() ?? '';
+        if (catId.isNotEmpty) selectedQuizCategoryId.value = catId;
+        if (catName.isNotEmpty) selectedQuizCategoryName.value = catName;
+        quizGameStatus.value = 'CATEGORY_LOCKED';
+        break;
+
+      case 'ROUND_STARTED':
+        activeQuizRoundId.value = (payload['round_id'] ?? data['round_id'])?.toString() ?? '';
+        activeQuizRoundNo.value = payload['round_no'] ?? (activeQuizRoundNo.value + 1);
+        selectedAnswerOption.value = '';
+        isAnswerSubmitted.value = false;
+        correctAnswerOption.value = '';
+        isQuizScored.value = false;
+        firstCorrectUserId.value = null;
+        isQuizRoundActive.value = true;
+
+        for (var p in quizParticipants) {
+          p.remove('selected_option');
+          p.remove('is_correct');
+        }
+        quizParticipants.refresh();
+
+        final duration = payload['duration_sec'] ?? 30;
+        _startQuizCountdownTimer(duration is int ? duration : 30);
+        break;
+
+      case 'QUESTION_ACTIVE':
+        isQuizRoundActive.value = true;
+        if (payload['round_id'] != null) {
+          activeQuizRoundId.value = payload['round_id'].toString();
+        }
+        if (payload['round_no'] != null) {
+          activeQuizRoundNo.value = payload['round_no'] is int
+              ? payload['round_no']
+              : int.tryParse(payload['round_no'].toString()) ?? 1;
+        }
+        if (payload['question'] is Map) {
+          final q = Map<String, dynamic>.from(payload['question']);
+          activeQuizQuestion.value = q;
+          if (q['answers'] is List) {
+            activeQuizAnswers.value = List<Map<String, dynamic>>.from(q['answers']);
+          }
+        }
+        if (payload['answers'] is List && activeQuizAnswers.isEmpty) {
+          activeQuizAnswers.value = List<Map<String, dynamic>>.from(payload['answers']);
+        }
+        if (_quizRoundTimer == null || !_quizRoundTimer!.isActive) {
+          _startQuizCountdownTimer(30);
+        }
+        break;
+
+      case 'ANSWER_SELECTED':
+        final uid = payload['user_id'];
+        final option = payload['option_code']?.toString() ?? '';
+        final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+        if (idx != -1) {
+          quizParticipants[idx]['selected_option'] = option;
+          quizParticipants.refresh();
+        }
+        final myUid = userProfile.value?.id;
+        if (myUid != null && myUid == uid) {
+          selectedAnswerOption.value = option;
+          isAnswerSubmitted.value = true;
+        }
+        break;
+
+      case 'PLAYER_ACTION_REJECTED':
+        final reason = data['reason']?.toString() ?? payload['reason']?.toString() ?? 'Action rejected';
+        Get.snackbar(
+          "Action Rejected",
+          reason,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
+        if (data['error_code'] == 'TIME_EXPIRED' || payload['error_code'] == 'TIME_EXPIRED') {
+          isQuizRoundActive.value = false;
+        }
+        break;
+
+      case 'ANSWER_LOCKED':
+        final uid = payload['user_id'];
+        final isCorrect = payload['result'] == 'CORRECT' || payload['is_correct'] == true;
+        final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+        if (idx != -1) {
+          quizParticipants[idx]['is_correct'] = isCorrect;
+          quizParticipants.refresh();
+        }
+        break;
+
+      case 'REWARD_PENDING':
+        print("[DEBUG LIVE QUIZ WS] Reward pending: $payload");
+        break;
+
+      case 'ROUND_RESULT':
+        isQuizRoundActive.value = false;
+        isQuizScored.value = true;
+        correctAnswerOption.value = payload['correct_option']?.toString() ?? '';
+        firstCorrectUserId.value = payload['first_correct_user_id'] is int
+            ? payload['first_correct_user_id']
+            : int.tryParse(payload['first_correct_user_id']?.toString() ?? '');
+        if (payload['rewards'] is List) {
+          final rewardsList = List<Map<String, dynamic>>.from(payload['rewards']);
+          quizRewards.value = rewardsList;
+
+          for (final r in rewardsList) {
+            final uid = r['user_id'];
+            final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+            if (idx != -1) {
+              final currentB = double.tryParse(quizParticipants[idx]['platform_reward_b']?.toString() ?? '0') ?? 0;
+              final added = double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
+              quizParticipants[idx]['platform_reward_b'] = (currentB + added);
+              quizParticipants[idx]['is_correct'] = true;
+            }
+          }
+          quizParticipants.refresh();
+        }
+        break;
+
+      case 'ROUND_ENDED':
+        isQuizRoundActive.value = false;
+        _quizRoundTimer?.cancel();
+        break;
+
+      case 'GIFT_SENT':
+        final recipientId = payload['recipient_id'];
+        final amount = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0;
+        final senderName = payload['sender_username']?.toString() ?? 'Fan';
+        final giftType = payload['gift_type']?.toString() ?? 'Gift';
+
+        final idx = quizParticipants.indexWhere((p) => p['user_id'] == recipientId);
+        if (idx != -1) {
+          final newTotal = payload['new_fan_gifts_total'];
+          if (newTotal != null) {
+            quizParticipants[idx]['fan_gifts_a'] = double.tryParse(newTotal.toString()) ?? 0;
+          } else {
+            final currentA = double.tryParse(quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+            quizParticipants[idx]['fan_gifts_a'] = currentA + amount;
+          }
+          if (payload['guest_display_total'] != null) {
+            quizParticipants[idx]['guest_display_total'] = payload['guest_display_total'];
+          }
+          quizParticipants.refresh();
+        }
+
+        Get.snackbar(
+          "Gift Received! 🎁",
+          "$senderName sent $giftType ($amount coins)",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.amber,
+          colorText: Colors.black,
+        );
+        break;
+
+      case 'REWARD_RELEASED':
+      case 'REWARD_FORFEITED':
+      case 'HOST_SHARE':
+        print("[DEBUG LIVE QUIZ WS] $event: $payload");
+        break;
+
+      case 'GAME_ENDED':
+        isQuizRoundActive.value = false;
+        _quizRoundTimer?.cancel();
+        totalFanGiftsEarned.value = double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ?? 0;
+        totalReleasedRewards.value = double.tryParse(payload['total_released_rewards']?.toString() ?? '0') ?? 0;
+        hostShareEarnings.value = double.tryParse(payload['host_share_earnings']?.toString() ?? '0') ?? 0;
+        _showQuizEndSummaryDialog();
+        break;
+    }
+  }
+
+  // ==================== LIVE KARAOKE GAME METHODS ====================
+
+  /// Initialize or join Karaoke Game instance for current live room
+  Future<void> initOrJoinKaraokeGame([String? targetLiveId]) async {
+    if (karaokeGameId.value.isNotEmpty && _karaokeWs != null) {
+      return;
+    }
+    final roomId = (targetLiveId != null && targetLiveId.isNotEmpty)
+        ? targetLiveId
+        : (liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc');
+    if (liveRoomId.value.isEmpty) {
+      liveRoomId.value = roomId;
+    }
+    print("[DEBUG LIVE KARAOKE] Initializing Karaoke Game for room: $roomId");
+
+    try {
+      // 1. Fetch available tracks catalog from API
+      await fetchKaraokeCatalog();
+
+      // 2. Connect 100% Real-Time WebSocket Karaoke Engine
+      _connectKaraokeWebSocket();
+
+      // 3. Fallback / supplementary init via REST API
+      final res = await gameService.initOrGetKaraokeGame(roomId);
+      if (res != null) {
+        final id = res['id'] ?? res['game_id'];
+        if (id != null) {
+          karaokeGameId.value = id.toString();
+        }
+        karaokeGameStatus.value = res['status']?.toString() ?? 'WAITING_FOR_SINGER';
+        print("[DEBUG LIVE KARAOKE] Karaoke game created/found. ID: ${karaokeGameId.value}, status: ${karaokeGameStatus.value}");
+
+        if (res['participants'] is List) {
+          karaokeParticipants.value = List<Map<String, dynamic>>.from(res['participants']);
+        }
+
+        if (res['active_performance'] is Map) {
+          final perf = Map<String, dynamic>.from(res['active_performance']);
+          karaokeActivePerformance.value = perf;
+          karaokePerformanceId.value = perf['id']?.toString() ?? '';
+          karaokeCurrentSinger.value = perf['performer_username']?.toString() ?? '';
+          karaokeCurrentSingerId.value = perf['performer_id'] is int ? perf['performer_id'] : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
+          karaokeCurrentTrackTitle.value = perf['track_title']?.toString() ?? '';
+          karaokeCurrentTrackArtist.value = perf['track_artist']?.toString() ?? '';
+          karaokeCurrentTrackType.value = perf['content_type']?.toString() ?? 'INSTRUMENTAL';
+          karaokeIsRewardEligible.value = perf['is_reward_eligible'] == true;
+        }
+      }
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE] initOrJoinKaraokeGame error: $e");
+    }
+  }
+
+  /// Connect to Authoritative Real-Time Live Karaoke WebSocket
+  void _connectKaraokeWebSocket() {
+    if (_karaokeWs != null) {
+      try {
+        _karaokeWs!.close();
+      } catch (_) {}
+      _karaokeWs = null;
+    }
+
+    try {
+      final auth = Get.find<AuthService>();
+      final token = auth.accessToken.value;
+      final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc';
+
+      final parsed = Uri.parse(ApiConstants.baseUrl);
+      final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
+      final portStr = parsed.hasPort ? ':${parsed.port}' : '';
+
+      final String wsUrl;
+      if (roomId.isNotEmpty) {
+        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/karaoke/?token=${token ?? ''}';
+      } else if (karaokeGameId.value.isNotEmpty) {
+        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
+      } else {
+        return;
+      }
+
+      print("[DEBUG LIVE KARAOKE WS] Connecting to Karaoke WebSocket: $wsUrl");
+      WebSocket.connect(wsUrl).then((ws) {
+        _karaokeWs = ws;
+        print("[DEBUG LIVE KARAOKE WS] Connected successfully!");
+
+        // Request authoritative state
+        _sendKaraokeWsAction({'action': 'get_state'});
+
+        ws.listen((event) {
+          try {
+            final data = jsonDecode(event.toString());
+            print("[DEBUG LIVE KARAOKE WS Event]: $data");
+            if (data is Map<String, dynamic>) {
+              _handleKaraokeWsEvent(data);
+            }
+          } catch (e) {
+            print("[DEBUG LIVE KARAOKE WS] Parse error: $e");
+          }
+        }, onError: (err) {
+          print("[DEBUG LIVE KARAOKE WS] Stream error: $err");
+          _karaokeWs = null;
+        }, onDone: () {
+          print("[DEBUG LIVE KARAOKE WS] Stream closed");
+          _karaokeWs = null;
+        });
+      }).catchError((err) {
+        print("[DEBUG LIVE KARAOKE WS] Connect error: $err");
+        if (karaokeGameId.value.isNotEmpty && !wsUrl.contains('live-karaoke')) {
+          final fallbackUrl = '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
+          print("[DEBUG LIVE KARAOKE WS] Trying fallback URL: $fallbackUrl");
+          WebSocket.connect(fallbackUrl).then((ws) {
+            _karaokeWs = ws;
+            _sendKaraokeWsAction({'action': 'get_state'});
+            ws.listen((event) {
+              try {
+                final data = jsonDecode(event.toString());
+                if (data is Map<String, dynamic>) _handleKaraokeWsEvent(data);
+              } catch (_) {}
+            }, onError: (_) => _karaokeWs = null, onDone: () => _karaokeWs = null);
+          }).catchError((_) {});
+        }
+      });
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE WS] Exception connecting: $e");
+    }
+  }
+
+  void _sendKaraokeWsAction(Map<String, dynamic> payload) {
+    try {
+      if (_karaokeWs != null) {
+        _karaokeWs!.add(jsonEncode(payload));
+        print("[DEBUG LIVE KARAOKE WS] Sent action: $payload");
+      }
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE WS] Send error: $e");
+    }
+  }
+
+  void _handleKaraokeWsEvent(Map<String, dynamic> data) {
+    final event = data['event']?.toString() ?? data['type']?.toString();
+    final Map<String, dynamic> payload = data['payload'] is Map
+        ? Map<String, dynamic>.from(data['payload'])
+        : data;
+
+    print("[DEBUG LIVE KARAOKE WS] Processing event: $event");
+
+    switch (event) {
+      case 'connection_ack':
+      case 'CONNECTED':
+        if (data['game_id'] != null) {
+          karaokeGameId.value = data['game_id'].toString();
+        }
+        if (data['state'] is Map) {
+          final state = Map<String, dynamic>.from(data['state']);
+          karaokeGameStatus.value = state['status']?.toString() ?? 'WAITING_FOR_SINGER';
+          if (state['participants'] is List) {
+            karaokeParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+          }
+          if (state['active_performance'] is Map) {
+            final perf = Map<String, dynamic>.from(state['active_performance']);
+            karaokeActivePerformance.value = perf;
+            karaokePerformanceId.value = perf['id']?.toString() ?? '';
+            karaokeCurrentSinger.value = perf['performer_username']?.toString() ?? '';
+            karaokeCurrentSingerId.value = perf['performer_id'] is int ? perf['performer_id'] : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
+            karaokeCurrentTrackTitle.value = perf['track_title']?.toString() ?? '';
+            karaokeCurrentTrackArtist.value = perf['track_artist']?.toString() ?? '';
+            karaokeCurrentTrackType.value = perf['content_type']?.toString() ?? 'INSTRUMENTAL';
+            karaokeIsRewardEligible.value = perf['is_reward_eligible'] == true;
+          }
+        }
+        break;
+
+      case 'SINGER_ASSIGNED':
+        karaokePerformanceId.value = payload['performance_id']?.toString() ?? '';
+        karaokeCurrentSinger.value = payload['performer_username']?.toString() ?? 'Guest';
+        karaokeCurrentSingerId.value = payload['performer_id'] is int ? payload['performer_id'] : (int.tryParse(payload['performer_id']?.toString() ?? '') ?? 0);
+        karaokeCurrentSingerSeat.value = payload['seat']?.toString() ?? '1';
+        karaokeGameStatus.value = 'SINGER_ASSIGNED';
+
+        // Update participant in grid
+        final uid = karaokeCurrentSingerId.value;
+        final idx = karaokeParticipants.indexWhere((p) => p['user_id'] == uid);
+        if (idx != -1) {
+          karaokeParticipants[idx]['role'] = 'SINGER';
+          karaokeParticipants.refresh();
+        }
+
+        Get.snackbar(
+          "Singer Assigned 🎤",
+          "@${karaokeCurrentSinger.value} is up next to sing!",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.pinkAccent,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'TRACK_SELECTED':
+        karaokeCurrentTrackId.value = payload['track_id']?.toString() ?? '';
+        karaokeCurrentTrackTitle.value = payload['title']?.toString() ?? '';
+        karaokeCurrentTrackArtist.value = payload['artist']?.toString() ?? '';
+        karaokeCurrentTrackType.value = payload['type']?.toString() ?? 'INSTRUMENTAL';
+        karaokeDurationMs.value = payload['duration_ms'] ?? 200000;
+        karaokeIsRewardEligible.value = payload['is_reward_eligible'] == true;
+        karaokeGameStatus.value = 'TRACK_SELECTED';
+
+        Get.snackbar(
+          "Track Selected 🎵",
+          "${karaokeCurrentTrackTitle.value} by ${karaokeCurrentTrackArtist.value}",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.deepPurpleAccent,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'PLAYBACK_PREPARED':
+        karaokePlaybackToken.value = payload['playback_token']?.toString() ?? '';
+        karaokeAudioUrl.value = payload['audio_url']?.toString() ?? '';
+        karaokeDurationMs.value = payload['duration_ms'] ?? karaokeDurationMs.value;
+        if (payload['lyrics'] is List) {
+          karaokeLyricsList.value = List<Map<String, dynamic>>.from(payload['lyrics']);
+        }
+        karaokeGameStatus.value = 'PLAYBACK_PREPARED';
+        break;
+
+      case 'PERFORMANCE_STARTED':
+        isKaraokePerformanceActive.value = true;
+        karaokeGameStatus.value = 'PERFORMANCE_ACTIVE';
+        final durMs = payload['duration_ms'] ?? karaokeDurationMs.value;
+        final durSec = (durMs is int && durMs > 0) ? (durMs ~/ 1000) : 180;
+        _startKaraokeCountdownTimer(durSec);
+        break;
+
+      case 'LYRIC_LINE_CHANGED':
+        karaokeCurrentLyricLine.value = payload['line_no'] ?? (karaokeCurrentLyricLine.value + 1);
+        karaokeCurrentLyricText.value = payload['text']?.toString() ?? '';
+        break;
+
+      case 'PERFORMANCE_COMPLETED':
+        isKaraokePerformanceActive.value = false;
+        _karaokeTimer?.cancel();
+        karaokeGameStatus.value = 'COMPLETED';
+        Get.snackbar(
+          "Performance Completed! 🌟",
+          "Bravo! Song performance finished.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'REWARD_PENDING':
+        karaokeHeldReward.value = double.tryParse(payload['amount']?.toString() ?? '3.0') ?? 3.0;
+        final rUid = payload['user_id'];
+        final rIdx = karaokeParticipants.indexWhere((p) => p['user_id'] == rUid);
+        if (rIdx != -1) {
+          final curB = double.tryParse(karaokeParticipants[rIdx]['platform_reward_b']?.toString() ?? '0') ?? 0;
+          karaokeParticipants[rIdx]['platform_reward_b'] = (curB + karaokeHeldReward.value).toStringAsFixed(2);
+          karaokeParticipants.refresh();
+        }
+        Get.snackbar(
+          "Reward on Hold ⏳",
+          "Earned ${karaokeHeldReward.value} coins (Platform Reward b on hold until 1000 fan threshold)",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.amber,
+          colorText: Colors.black,
+        );
+        break;
+
+      case 'REWARD_RELEASED':
+        Get.snackbar(
+          "Reward Released! 💰",
+          "Threshold satisfied! Held rewards released to wallet.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'REWARD_FORFEITED':
+        Get.snackbar(
+          "Reward Forfeited ⚠️",
+          "Fan gifts under 1000 threshold. Platform reward forfeited.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
+        break;
+
+      case 'GIFT_SENT':
+        final recId = payload['receiver_user_id'] ?? payload['recipient_id'];
+        final amt = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0;
+        final gIdx = karaokeParticipants.indexWhere((p) => p['user_id'] == recId);
+        if (gIdx != -1) {
+          final curA = double.tryParse(karaokeParticipants[gIdx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+          karaokeParticipants[gIdx]['fan_gifts_a'] = (curA + amt).toStringAsFixed(2);
+          karaokeParticipants.refresh();
+        }
+        karaokeTotalFanGifts.value += amt;
+        break;
+
+      case 'GAME_ENDED':
+        isKaraokePerformanceActive.value = false;
+        _karaokeTimer?.cancel();
+        karaokeGameStatus.value = 'ENDED';
+        karaokeTotalFanGifts.value = double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ?? karaokeTotalFanGifts.value;
+        karaokeTotalReleasedRewards.value = double.tryParse(payload['total_released_rewards']?.toString() ?? '0') ?? 0;
+        karaokeTotalForfeitedRewards.value = double.tryParse(payload['total_forfeited_rewards']?.toString() ?? '0') ?? 0;
+        karaokeHostShareEarnings.value = double.tryParse(payload['host_share_earnings']?.toString() ?? '0') ?? 0;
+        _showKaraokeEndSummaryDialog();
+        break;
+    }
+  }
+
+  void _startKaraokeCountdownTimer(int totalSec) {
+    _karaokeTimer?.cancel();
+    karaokeTimerSeconds.value = totalSec;
+    karaokeTimerText.value =
+        '${(totalSec ~/ 60).toString().padLeft(2, '0')}:${(totalSec % 60).toString().padLeft(2, '0')}';
+
+    _karaokeTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (karaokeTimerSeconds.value > 1) {
+        karaokeTimerSeconds.value--;
+        final m = karaokeTimerSeconds.value ~/ 60;
+        final s = karaokeTimerSeconds.value % 60;
+        karaokeTimerText.value = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      } else {
+        karaokeTimerSeconds.value = 0;
+        karaokeTimerText.value = '00:00';
+        isKaraokePerformanceActive.value = false;
+        t.cancel();
+      }
+    });
+  }
+
+  /// Browse Admin-Published Music or Instrumental tracks
+  Future<void> fetchKaraokeCatalog({String? type, String? query}) async {
+    isKaraokeCatalogLoading.value = true;
+    final rId = liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc';
+    try {
+      final list = await gameService.getKaraokeCatalog(rId, type: type, q: query);
+      if (list.isNotEmpty) {
+        karaokeCatalog.value = list;
+      } else if (karaokeCatalog.isEmpty) {
+        // Fallback default tracks catalog if server returns empty list
+        karaokeCatalog.value = [
+          {
+            "id": "7649d2cb-6ff5-4ea5-8968-3d1fe5a4b706",
+            "title": "Blinding Lights (Beat Instrumental)",
+            "artist": "The Weeknd",
+            "content_type": "INSTRUMENTAL",
+            "duration_ms": 200000,
+            "status": "PUBLISHED",
+            "audio_url": "https://assets.glotune.com/audio/instrumental/blinding_lights_beat.mp3"
+          },
+          {
+            "id": "8931b4fc-21a4-4df1-8012-4c28fe9021e1",
+            "title": "Shape of You (Acoustic Pop)",
+            "artist": "Ed Sheeran",
+            "content_type": "MUSIC",
+            "duration_ms": 233000,
+            "status": "PUBLISHED",
+            "audio_url": "https://assets.glotune.com/audio/music/shape_of_you.mp3"
+          },
+          {
+            "id": "9042c1ab-43b9-4112-98ab-10ef87a09123",
+            "title": "Someone Like You (Piano Instrumental)",
+            "artist": "Adele",
+            "content_type": "INSTRUMENTAL",
+            "duration_ms": 285000,
+            "status": "PUBLISHED",
+            "audio_url": "https://assets.glotune.com/audio/instrumental/someone_like_you_piano.mp3"
+          },
+        ];
+      }
+    } catch (e) {
+      print("[DEBUG LIVE KARAOKE] fetchKaraokeCatalog error: $e");
+    } finally {
+      isKaraokeCatalogLoading.value = false;
+    }
+  }
+
+  /// Host Assigns Singer Slot
+  Future<void> assignKaraokeSinger(int guestUserId, String seat) async {
+    _sendKaraokeWsAction({
+      "action": "assign_singer",
+      "guest_user_id": guestUserId,
+      "seat": seat,
+    });
+    if (karaokeGameId.value.isNotEmpty) {
+      await gameService.assignKaraokeSinger(
+        karaokeGameId.value,
+        guestUserId: guestUserId,
+        seat: seat,
+      );
+    }
+  }
+
+  /// Assigned Guest Selects Track
+  Future<void> selectKaraokeTrack(String trackId, String contentType) async {
+    _sendKaraokeWsAction({
+      "action": "select_track",
+      "performance_id": karaokePerformanceId.value,
+      "track_id": trackId,
+      "content_type": contentType,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.selectKaraokeTrack(
+        karaokePerformanceId.value,
+        trackId: trackId,
+        contentType: contentType,
+      );
+    }
+  }
+
+  /// Prepare Playback Session
+  Future<void> prepareKaraokePlayback() async {
+    _sendKaraokeWsAction({
+      "action": "prepare_playback",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.prepareKaraokePlayback(karaokePerformanceId.value);
+    }
+  }
+
+  /// Start Performance
+  Future<void> startKaraokePerformance() async {
+    _sendKaraokeWsAction({
+      "action": "start_performance",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.startKaraokePerformance(karaokePerformanceId.value);
+    }
+  }
+
+  /// Lyric Synchronization
+  void advanceKaraokeLyric({
+    required int lineNo,
+    required int startMs,
+    required int endMs,
+    required String text,
+  }) {
+    _sendKaraokeWsAction({
+      "action": "advance_lyric",
+      "performance_id": karaokePerformanceId.value,
+      "line_no": lineNo,
+      "start_ms": startMs,
+      "end_ms": endMs,
+      "text": text,
+    });
+  }
+
+  /// Complete Performance
+  Future<void> completeKaraokePerformance({bool force = false}) async {
+    _sendKaraokeWsAction({
+      "action": "complete_performance",
+      "performance_id": karaokePerformanceId.value,
+      "force": force,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.completeKaraokePerformance(
+        karaokePerformanceId.value,
+        force: force,
+      );
+    }
+  }
+
+  /// Singer Quits Early
+  Future<void> leaveKaraokePerformance({String reason = 'SINGER_QUIT'}) async {
+    _sendKaraokeWsAction({
+      "action": "leave_performance",
+      "performance_id": karaokePerformanceId.value,
+      "reason": reason,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.leaveKaraokePerformance(
+        karaokePerformanceId.value,
+        reason: reason,
+      );
+    }
+  }
+
+  /// Host Removes Singer Early
+  Future<void> removeKaraokeSinger({String reason = 'INTERRUPTED_BY_HOST'}) async {
+    _sendKaraokeWsAction({
+      "action": "remove_singer",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      await gameService.removeKaraokeSinger(
+        karaokePerformanceId.value,
+        reason: reason,
+      );
+    }
+  }
+
+  /// Send Fan Gift (Source a)
+  Future<void> sendKaraokeGift({
+    required int receiverUserId,
+    required double amount,
+    String giftType = 'KARAOKE_MIC',
+  }) async {
+    _sendKaraokeWsAction({
+      "action": "send_gift",
+      "receiver_user_id": receiverUserId,
+      "amount": amount,
+      "gift_type": giftType,
+    });
+    if (karaokeGameId.value.isNotEmpty) {
+      await gameService.sendKaraokeGift(
+        karaokeGameId.value,
+        receiverUserId: receiverUserId,
+        amount: amount,
+        giftType: giftType,
+      );
+    }
+  }
+
+  /// Host Ends Game Session
+  Future<void> endKaraokeGame({String reason = 'HOST_ENDED'}) async {
+    _sendKaraokeWsAction({
+      "action": "end_game",
+      "reason": reason,
+    });
+    if (karaokeGameId.value.isNotEmpty) {
+      await gameService.endKaraokeGame(karaokeGameId.value, reason: reason);
+    }
+  }
+
+  void _showKaraokeEndSummaryDialog() {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        backgroundColor: const Color(0xFF1E293B),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("🏆 Karaoke Session Complete", style: TextStyle(color: Colors.white, fontSize: 18.0, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16.0),
+              Text("Total Fan Gifts: ${karaokeTotalFanGifts.value}", style: const TextStyle(color: Colors.cyanAccent)),
+              Text("Platform Rewards Released: ${karaokeTotalReleasedRewards.value}", style: const TextStyle(color: Colors.greenAccent)),
+              Text("Host Share (10%): ${karaokeHostShareEarnings.value}", style: const TextStyle(color: Colors.amberAccent)),
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: () => Get.back(),
+                child: const Text("Awesome!"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void navigateTo(String step) {
+    currentStep.value = step;
+    if (step == "LiveBoxBattle") {
+      joinSession("box battle");
+    } else if (step == "LiveBattle1v1") {
+      joinSession("1v1");
+    } else if (step == "LiveBattle2v2") {
+      joinSession("2v2");
+    } else if (step == "LiveQuiz") {
+      joinSession("quiz");
+    } else if (step == "LiveKaraoke") {
+      joinSession("karaoke");
+    } else if (step == "LiveStream") {
+      joinSession("live");
+    }
+  }
 
   Future<void> pickMediaFromGallery() async {
     // Reset thumbnail on new media pick

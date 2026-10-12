@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 import '../../controllers/create_controller.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:glotune/app/modules/live_player/views/widgets/floating_reactions.dart';
@@ -16,11 +17,12 @@ class LiveStreamView extends GetView<CreateController> {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.liveRoomId.value.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.joinSession("live");
+      if (controller.liveRoomId.value.isNotEmpty) {
         controller.fetchLiveParticipants();
-      });
-    }
+      }
+    });
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -409,12 +411,9 @@ class LiveStreamView extends GetView<CreateController> {
         children: [
           Obx(() {
             final pic = controller.userProfile.value?.profilePictureUrl;
-            return CircleAvatar(
+            return ImageUtils.safeCircleAvatar(
               radius: 14.r,
-              backgroundImage: (pic != null && pic.isNotEmpty)
-                  ? NetworkImage(pic)
-                  : const AssetImage('assets/images/user_avatar.png')
-                        as ImageProvider,
+              imageUrl: pic,
             );
           }),
           SizedBox(width: 6.w),
@@ -568,10 +567,10 @@ class LiveStreamView extends GetView<CreateController> {
                       shape: BoxShape.circle,
                       border: Border.all(color: wineBackground, width: 1.5),
                     ),
-                    child: CircleAvatar(
+                    child: ImageUtils.safeCircleAvatar(
                       radius: 13.r,
                       backgroundColor: Colors.white24,
-                      backgroundImage: NetworkImage(viewerImages[i]),
+                      imageUrl: viewerImages[i],
                     ),
                   ),
                 ),
@@ -645,15 +644,10 @@ class LiveStreamView extends GetView<CreateController> {
             Container(
               decoration: BoxDecoration(
                 color: Colors.black,
-                image: (pic != null && pic.isNotEmpty)
-                    ? DecorationImage(
-                        image: NetworkImage(pic),
-                        fit: BoxFit.cover,
-                      )
-                    : const DecorationImage(
-                        image: AssetImage('assets/images/user_avatar.png'),
-                        fit: BoxFit.cover,
-                      ),
+                image: DecorationImage(
+                  image: ImageUtils.safeImageProvider(pic),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             Center(
@@ -824,12 +818,18 @@ class LiveStreamView extends GetView<CreateController> {
           final userObj = msg is Map
               ? (msg['user'] is Map ? msg['user'] : msg)
               : {};
+          final isSession = msg is Map &&
+              (msg['is_session_notification'] == true ||
+                  msg['type'] == 'session_status_notification' ||
+                  msg['type'] == 'session_status');
           final username =
               userObj['username'] ??
               userObj['full_name'] ??
               userObj['name'] ??
               "Viewer";
-          final avatar = userObj['profile_picture'] ?? userObj['avatar'];
+          final avatar = (msg is Map ? msg['profile_picture'] : null) ??
+              userObj['profile_picture'] ??
+              userObj['avatar'];
           final isAction =
               msg is Map &&
               (msg['type'] == 'member_action' || msg['is_system'] == true);
@@ -837,11 +837,13 @@ class LiveStreamView extends GetView<CreateController> {
           return Padding(
             padding: EdgeInsets.only(bottom: 6.h),
             child: _buildCommentPill(
-              username: "@$username",
+              username: isSession ? "" : "@$username",
               message: text,
-              type: isAction
-                  ? "join_dark"
-                  : (index % 3 == 0 ? "chat_peach" : "chat_white"),
+              type: isSession
+                  ? "session"
+                  : (isAction
+                      ? "join_dark"
+                      : (index % 3 == 0 ? "chat_peach" : "chat_white")),
               avatarUrl: avatar?.toString(),
             ),
           );
@@ -857,11 +859,19 @@ class LiveStreamView extends GetView<CreateController> {
     required String type,
     String? avatarUrl,
   }) {
-    Color bgColor;
+    Color? bgColor;
     Color userColor;
     Color textColor;
+    Gradient? gradient;
 
     switch (type) {
+      case "session":
+        gradient = const LinearGradient(
+          colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+        );
+        userColor = Colors.white;
+        textColor = Colors.white;
+        break;
       case "rose":
       case "chat_white":
         bgColor = Colors.white.withValues(alpha: 0.95);
@@ -888,6 +898,7 @@ class LiveStreamView extends GetView<CreateController> {
         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
         decoration: BoxDecoration(
           color: bgColor,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
@@ -900,13 +911,10 @@ class LiveStreamView extends GetView<CreateController> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
+            ImageUtils.safeCircleAvatar(
               radius: 9.r,
               backgroundColor: Colors.grey.shade400,
-              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                  ? NetworkImage(avatarUrl)
-                  : const AssetImage('assets/images/user_avatar.png')
-                        as ImageProvider,
+              imageUrl: avatarUrl,
             ),
             SizedBox(width: 6.w),
             RichText(
@@ -1627,12 +1635,9 @@ class LiveStreamView extends GetView<CreateController> {
                             : null);
 
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            (avatar != null && avatar.toString().isNotEmpty)
-                            ? NetworkImage(avatar.toString())
-                            : const AssetImage('assets/images/user_avatar.png')
-                                  as ImageProvider,
+                      leading: ImageUtils.safeCircleAvatar(
+                        radius: 20.r,
+                        imageUrl: avatar?.toString(),
                       ),
                       title: Text(
                         name,
@@ -1745,12 +1750,9 @@ class LiveStreamView extends GetView<CreateController> {
                     final isHost = role.toString().toLowerCase() == "host";
 
                     return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            (avatar != null && avatar.toString().isNotEmpty)
-                            ? NetworkImage(avatar.toString())
-                            : const AssetImage('assets/images/user_avatar.png')
-                                  as ImageProvider,
+                      leading: ImageUtils.safeCircleAvatar(
+                        radius: 20.r,
+                        imageUrl: avatar?.toString(),
                       ),
                       title: Text(
                         name,

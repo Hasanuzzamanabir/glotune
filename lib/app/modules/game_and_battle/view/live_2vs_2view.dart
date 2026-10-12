@@ -18,11 +18,12 @@ class LiveBattle2v2View extends GetView<CreateController> {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.liveRoomId.value.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.joinSession("2v2");
+      if (controller.liveRoomId.value.isNotEmpty) {
         controller.fetchLiveParticipants();
-      });
-    }
+      }
+    });
 
     return PopScope(
       canPop: false,
@@ -1104,7 +1105,13 @@ class LiveBattle2v2View extends GetView<CreateController> {
               userObj['full_name'] ??
               userObj['name'] ??
               "Viewer";
-          final avatar = userObj['profile_picture'] ?? userObj['avatar'];
+          final isSession = msg is Map &&
+              (msg['is_session_notification'] == true ||
+                  msg['type'] == 'session_status_notification' ||
+                  msg['type'] == 'session_status');
+          final avatar = (msg is Map ? msg['profile_picture'] : null) ??
+              userObj['profile_picture'] ??
+              userObj['avatar'];
           final isAction =
               msg is Map &&
               (msg['type'] == 'member_action' || msg['is_system'] == true);
@@ -1112,11 +1119,13 @@ class LiveBattle2v2View extends GetView<CreateController> {
           return Padding(
             padding: EdgeInsets.only(bottom: 6.h),
             child: _buildCommentPill(
-              username: "@$username",
+              username: isSession ? "" : "@$username",
               message: text,
-              type: isAction
-                  ? "dark"
-                  : (index % 3 == 0 ? "peach" : "white"),
+              type: isSession
+                  ? "session"
+                  : (isAction
+                      ? "dark"
+                      : (index % 3 == 0 ? "peach" : "white")),
               avatarUrl: avatar?.toString(),
             ),
           );
@@ -1132,11 +1141,19 @@ class LiveBattle2v2View extends GetView<CreateController> {
     required String type,
     String? avatarUrl,
   }) {
-    Color bgColor;
+    Color? bgColor;
     Color userColor;
     Color textColor;
+    Gradient? gradient;
 
     switch (type) {
+      case "session":
+        gradient = const LinearGradient(
+          colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+        );
+        userColor = Colors.white;
+        textColor = Colors.white;
+        break;
       case "rose":
       case "white":
         bgColor = Colors.white.withValues(alpha: 0.95);
@@ -1162,6 +1179,7 @@ class LiveBattle2v2View extends GetView<CreateController> {
         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
         decoration: BoxDecoration(
           color: bgColor,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(

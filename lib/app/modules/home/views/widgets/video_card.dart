@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 
 class VideoCard extends StatelessWidget {
   final String title;
@@ -35,9 +35,10 @@ class VideoCard extends StatelessWidget {
         // Thumbnail
         Stack(
           children: [
-            Container(
+            SizedBox(
               height: 210.h,
               width: double.infinity,
+
               decoration: BoxDecoration(
                 color: Colors.grey[800],
                 image: DecorationImage(
@@ -82,6 +83,7 @@ class VideoCard extends StatelessWidget {
                     ),
                 ],
               ),
+
             ),
             Positioned(
               bottom: 12.h,
@@ -112,18 +114,10 @@ class VideoCard extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: onAvatarTap,
-                child: CircleAvatar(
+                child: ImageUtils.safeCircleAvatar(
                   radius: 18.r,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: creatorAvatarUrl.isNotEmpty
-                      ? (creatorAvatarUrl.startsWith('http')
-                            ? CachedNetworkImageProvider(creatorAvatarUrl)
-                                  as ImageProvider
-                            : AssetImage(creatorAvatarUrl) as ImageProvider)
-                      : null,
-                  child: creatorAvatarUrl.isEmpty
-                      ? Icon(Icons.person, color: Colors.white, size: 24.sp)
-                      : null,
+                  imageUrl: creatorAvatarUrl,
+                  backgroundColor: Colors.grey[800],
                 ),
               ),
               SizedBox(width: 12.w),

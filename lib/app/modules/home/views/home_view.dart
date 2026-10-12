@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 import 'package:glotune/app/data/models/shop_item.dart';
 import 'package:glotune/app/routes/app_pages.dart';
 import 'package:glotune/app/modules/subscriptions/views/subscriptions_view.dart';
@@ -127,12 +128,9 @@ class HomeView extends GetView<HomeController> {
               GestureDetector(
                 onTap: () => Get.to(() => const ProfileView()),
                 child: Obx(
-                  () => CircleAvatar(
+                  () => ImageUtils.safeCircleAvatar(
                     radius: 16.r,
-                    backgroundImage: controller.userAvatarUrl.value.isNotEmpty
-                        ? NetworkImage(controller.userAvatarUrl.value)
-                        : const AssetImage('assets/images/user_avatar.png')
-                              as ImageProvider,
+                    imageUrl: controller.userAvatarUrl.value,
                   ),
                 ),
               ),

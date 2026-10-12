@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
+import 'package:glotune/app/core/utils/image_utils.dart';
 import 'package:glotune/app/modules/create/controllers/create_controller.dart';
 
 class LiveBoxBattleView extends GetView<CreateController> {
@@ -10,6 +11,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.joinSession("box battle");
+    });
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -58,12 +62,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
               children: [
                 Obx(() {
                   final pic = controller.userProfile.value?.profilePictureUrl;
-                  return CircleAvatar(
+                  return ImageUtils.safeCircleAvatar(
                     radius: 14.r,
-                    backgroundImage: (pic != null && pic.isNotEmpty)
-                        ? NetworkImage(pic)
-                        : const AssetImage('assets/images/user_avatar.png')
-                              as ImageProvider,
+                    imageUrl: pic,
                   );
                 }),
                 SizedBox(width: 6.w),
@@ -130,19 +131,27 @@ class LiveBoxBattleView extends GetView<CreateController> {
             ),
           ),
           const Spacer(),
-          Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 16.sp),
-          SizedBox(width: 4.w),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-            decoration: BoxDecoration(
-              color: Colors.black45,
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Obx(
-              () => Text(
-                "${controller.liveMemberCount.value}",
-                style: TextStyle(color: Colors.white, fontSize: 10.sp),
-              ),
+          GestureDetector(
+            onTap: () => _showParticipantsBottomSheet(context),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 16.sp),
+                SizedBox(width: 4.w),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Obx(
+                    () => Text(
+                      "${controller.liveMemberCount.value}",
+                      style: TextStyle(color: Colors.white, fontSize: 10.sp),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(width: 6.w),
@@ -466,9 +475,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
               )
             else
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/images/user_avatar.png'),
+                    image: ImageUtils.safeImageProvider(slot['profile_picture']?.toString()),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -725,12 +734,63 @@ class LiveBoxBattleView extends GetView<CreateController> {
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final msg = messages[index];
+          final isSessionNotif = msg is Map &&
+              (msg['is_session_notification'] == true ||
+                  msg['type'] == 'session_status_notification' ||
+                  msg['type'] == 'session_status');
           final text =
               (msg is Map
                   ? (msg['message'] ?? msg['content'] ?? msg['text'])
                   : msg.toString()) ??
               "";
           final sender = (msg is Map ? (msg['username'] ?? "User") : "User");
+          final pic = (msg is Map ? msg['profile_picture'] : null)?.toString();
+
+          if (isSessionNotif) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: 6.h),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF7C3AED).withValues(alpha: 0.85),
+                        const Color(0xFFDB2777).withValues(alpha: 0.85),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ImageUtils.safeCircleAvatar(
+                        radius: 9.r,
+                        imageUrl: pic,
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
 
           return Padding(
             padding: EdgeInsets.only(bottom: 6.h),
@@ -745,11 +805,9 @@ class LiveBoxBattleView extends GetView<CreateController> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircleAvatar(
+                    ImageUtils.safeCircleAvatar(
                       radius: 9.r,
-                      backgroundImage: const AssetImage(
-                        'assets/images/user_avatar.png',
-                      ),
+                      imageUrl: pic,
                     ),
                     SizedBox(width: 6.w),
                     RichText(
@@ -1256,6 +1314,138 @@ class LiveBoxBattleView extends GetView<CreateController> {
                             color: Colors.white,
                             fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  // MARK: - Participants Bottom Sheet
+  void _showParticipantsBottomSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        height: 0.5.sh,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Text(
+                  "Participants & Viewers",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Obx(
+                  () => Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: Colors.pinkAccent.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Text(
+                      "${controller.liveMemberCount.value}",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Expanded(
+              child: Obx(() {
+                if (controller.liveMembers.isEmpty) {
+                  return Center(
+                    child: Text(
+                      "No participants yet",
+                      style: TextStyle(color: Colors.white60, fontSize: 13.sp),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  itemCount: controller.liveMembers.length,
+                  itemBuilder: (context, index) {
+                    final member = controller.liveMembers[index];
+                    final user = member is Map && member['user'] is Map
+                        ? member['user']
+                        : (member is Map ? member : {});
+                    final name =
+                        user['username'] ??
+                        user['full_name'] ??
+                        user['name'] ??
+                        "Viewer";
+                    final avatar = user['profile_picture'] ?? user['avatar'];
+                    final gameType = member is Map ? member['game_type'] : null;
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: ImageUtils.safeCircleAvatar(
+                        radius: 18.r,
+                        imageUrl: avatar?.toString(),
+                      ),
+                      title: Text(
+                        name,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: gameType != null
+                          ? Text(
+                              "in $gameType",
+                              style: TextStyle(
+                                color: Colors.pinkAccent,
+                                fontSize: 11.sp,
+                              ),
+                            )
+                          : null,
+                      trailing: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 3.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          "Active",
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontSize: 10.sp,
                           ),
                         ),
                       ),
