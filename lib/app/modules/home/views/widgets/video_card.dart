@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
 import 'package:glotune/app/core/utils/image_utils.dart';
 
@@ -35,7 +36,7 @@ class VideoCard extends StatelessWidget {
         // Thumbnail
         Stack(
           children: [
-            SizedBox(
+            Container(
               height: 210.h,
               width: double.infinity,
 
@@ -44,8 +45,9 @@ class VideoCard extends StatelessWidget {
                 image: DecorationImage(
                   image: thumbnailUrl.isNotEmpty
                       ? (thumbnailUrl.startsWith('http')
-                          ? CachedNetworkImageProvider(thumbnailUrl) as ImageProvider
-                          : AssetImage(thumbnailUrl))
+                            ? CachedNetworkImageProvider(thumbnailUrl)
+                                  as ImageProvider
+                            : AssetImage(thumbnailUrl))
                       : const AssetImage('assets/images/video_thumb_1.png'),
                   fit: BoxFit.cover,
                 ),
@@ -83,7 +85,6 @@ class VideoCard extends StatelessWidget {
                     ),
                 ],
               ),
-
             ),
             Positioned(
               bottom: 12.h,
