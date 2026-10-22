@@ -10,11 +10,15 @@ import 'package:glotune/app/core/network/api_client.dart';
 import 'package:glotune/app/core/values/api_constants.dart';
 import 'package:glotune/app/core/services/auth_service.dart';
 import 'package:glotune/app/core/services/notification_websocket_service.dart';
+import 'package:glotune/app/data/models/user_profile.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart' as vp;
 
 class LivePlayerController extends GetxController {
   late final String roomId;
   late RtcEngine engine;
+
+  final userProfile = Rxn<UserProfile>();
 
   final isLoading = true.obs;
   final isEngineInitialized = false.obs;
@@ -22,7 +26,9 @@ class LivePlayerController extends GetxController {
   // State for rendering remote users
   final remoteUids = <int>[].obs;
 
-  // Co-host broadcaster state
+  // Host and Co-host broadcaster state
+  final isHost = false.obs;
+  final hostId = 0.obs;
   final isCohost = false.obs;
   final localUid = 0.obs;
   final isMicMuted = false.obs;
@@ -34,6 +40,7 @@ class LivePlayerController extends GetxController {
   final title = "".obs;
   final hostProfilePic = "".obs;
   final errorMessage = "".obs;
+  String _roomAgoraToken = '';
 
   final liveMessages = [].obs;
   final liveMembers = <dynamic>[].obs;
@@ -44,6 +51,7 @@ class LivePlayerController extends GetxController {
 
   // Box Battle state
   final boxSlots = <Map<String, dynamic>>[].obs;
+  final myBoxSlotNumber = 0.obs;
   final boxBattleTimerSeconds = 90.obs;
   final battleScoreHost = 100.obs;
   final battleScoreGuest = 100.obs;
@@ -74,10 +82,10 @@ class LivePlayerController extends GetxController {
   Timer? _quizTimer;
 
   // Karaoke state
-  final karaokeTitle = "Blinding Lights (Beat Instrumental)".obs;
-  final karaokeArtist = "The Weeknd".obs;
+  final karaokeTitle = "".obs;
+  final karaokeArtist = "".obs;
   final karaokeContentType = "INSTRUMENTAL".obs;
-  final karaokeLyrics = "Sing along with the live host... 🎵".obs;
+  final karaokeLyrics = "".obs;
   final karaokeCurrentSinger = "".obs;
   final karaokeCurrentSingerId = 0.obs;
   final karaokePerformanceId = "".obs;
@@ -87,10 +95,29 @@ class LivePlayerController extends GetxController {
   final karaokeTimerText = "00:00".obs;
   final karaokeTimerSeconds = 0.obs;
   final isRewardEligible = false.obs;
+  final karaokeNextLyric = ''.obs;
+  final karaokeLyricsList = <Map<String, dynamic>>[].obs;
   final karaokeParticipants = <Map<String, dynamic>>[].obs;
   final karaokeCatalog = <Map<String, dynamic>>[].obs;
+  final selectedKaraokeCategory = 'INSTRUMENTAL'.obs; // Default to INSTRUMENTAL
+  final isKaraokeCatalogLoading = false.obs;
+
+  bool get isSingerAssignedToMe {
+    try {
+      final auth = Get.find<AuthService>();
+      final myUid = auth.currentUserId.value;
+      return myUid != null && myUid > 0 && myUid == karaokeCurrentSingerId.value;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  final karaokeAudioUrl = ''.obs;
+  vp.VideoPlayerController? _karaokeAudioPlayer;
+  String? _currentPlayingAudioUrl;
   WebSocket? _karaokeWs;
   Timer? _karaokeTimer;
+  Timer? _karaokeLyricSyncTimer;
 
   void initBoxBattleSlots() {
     if (boxSlots.isNotEmpty) return;
@@ -98,6 +125,7 @@ class LivePlayerController extends GetxController {
       boxSlots.add({
         'slot_number': i,
         'status': 'VACANT',
+        'uid': null,
         'user_id': null,
         'guest_id': null,
         'username': null,
@@ -108,6 +136,205 @@ class LivePlayerController extends GetxController {
         'camera_on': true,
       });
     }
+  }
+
+  void assignGuestToVacantSlot(int uid, {String? username, String? profilePic}) {
+    initBoxBattleSlots();
+    final existingIndex = boxSlots.indexWhere((s) {
+      final sUid = s['uid'] ?? s['user_id'] ?? s['guest_id'];
+      return sUid != null && sUid.toString() == uid.toString();
+    });
+    if (existingIndex != -1) return;
+
+    final vacantIndex = boxSlots.indexWhere((s) => s['status'] == 'VACANT');
+    if (vacantIndex != -1) {
+      final slotNum = boxSlots[vacantIndex]['slot_number'];
+      final updated = Map<String, dynamic>.from(boxSlots[vacantIndex]);
+      updated['status'] = 'OCCUPIED';
+      updated['uid'] = uid;
+      updated['user_id'] = uid;
+      updated['guest_id'] = uid;
+      updated['username'] = username ?? 'Guest $slotNum';
+      if (profilePic != null) updated['profile_picture'] = profilePic;
+      updated['gift_total'] = 100;
+      updated['bonus_total'] = 10;
+      updated['mic_on'] = true;
+      updated['camera_on'] = true;
+      boxSlots[vacantIndex] = updated;
+    }
+  }
+
+  void _freeSlotByUid(int uid) {
+    final index = boxSlots.indexWhere((s) {
+      final sUid = s['uid'] ?? s['user_id'] ?? s['guest_id'];
+      return sUid != null && sUid.toString() == uid.toString();
+    });
+    if (index != -1) {
+      final slotNum = boxSlots[index]['slot_number'];
+      boxSlots[index] = {
+        'slot_number': slotNum,
+        'status': 'VACANT',
+        'uid': null,
+        'user_id': null,
+        'guest_id': null,
+        'username': null,
+        'profile_picture': null,
+        'gift_total': 0,
+        'bonus_total': 0,
+        'mic_on': true,
+        'camera_on': true,
+      };
+      if (myBoxSlotNumber.value == slotNum) {
+        myBoxSlotNumber.value = 0;
+      }
+    }
+  }
+
+  Future<void> joinBoxSlot(int slotNumber) async {
+    final authService = Get.find<AuthService>();
+    final token = authService.accessToken.value;
+    final myId = authService.currentUserId.value;
+
+    if (token == null) {
+      Get.snackbar(
+        'Login Required',
+        'Please log in to join the box.',
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    try {
+      // 1. Upgrade Agora to Broadcaster if currently an audience member
+      if (!isCohost.value && !isHost.value) {
+        await engine.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+        await engine.enableVideo();
+        await engine.enableAudio();
+        await engine.startPreview();
+        await engine.updateChannelMediaOptions(
+          const ChannelMediaOptions(
+            clientRoleType: ClientRoleType.clientRoleBroadcaster,
+            publishCameraTrack: true,
+            publishMicrophoneTrack: true,
+          ),
+        );
+        isCohost.value = true;
+      }
+
+      // 2. Mark slot as occupied by me
+      initBoxBattleSlots();
+      final slotIdx = boxSlots.indexWhere((s) => s['slot_number'] == slotNumber);
+      if (slotIdx != -1) {
+        final updated = Map<String, dynamic>.from(boxSlots[slotIdx]);
+        updated['status'] = 'OCCUPIED';
+        updated['uid'] = localUid.value != 0 ? localUid.value : (myId ?? 0);
+        updated['user_id'] = myId;
+        updated['guest_id'] = myId;
+        updated['username'] = 'You (Box $slotNumber)';
+        updated['mic_on'] = !isMicMuted.value;
+        updated['camera_on'] = !isCamOff.value;
+        boxSlots[slotIdx] = updated;
+      }
+      myBoxSlotNumber.value = slotNumber;
+
+      // 3. Broadcast to all users via WebSocket
+      if (_chatWs != null) {
+        _chatWs!.add(
+          jsonEncode({
+            "type": "box_slot_update",
+            "action": "box_slot_update",
+            "slot_number": slotNumber,
+            "status": "OCCUPIED",
+            "uid": localUid.value != 0 ? localUid.value : myId,
+            "user_id": myId,
+            "username": "Guest $slotNumber",
+            "room_id": roomId,
+          }),
+        );
+      }
+
+      Get.snackbar(
+        "Joined Box $slotNumber",
+        "You are now live in Box $slotNumber!",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } catch (e) {
+      print("Error joining box slot: $e");
+      Get.snackbar("Error", "Could not join box slot: $e");
+    }
+  }
+
+  Future<void> leaveBoxSlot(int slotNumber) async {
+    try {
+      initBoxBattleSlots();
+      final slotIdx = boxSlots.indexWhere((s) => s['slot_number'] == slotNumber);
+      if (slotIdx != -1) {
+        boxSlots[slotIdx] = {
+          'slot_number': slotNumber,
+          'status': 'VACANT',
+          'uid': null,
+          'user_id': null,
+          'guest_id': null,
+          'username': null,
+          'profile_picture': null,
+          'gift_total': 0,
+          'bonus_total': 0,
+          'mic_on': true,
+          'camera_on': true,
+        };
+      }
+      myBoxSlotNumber.value = 0;
+
+      // Downgrade client role to audience if not host
+      if (!isHost.value) {
+        await engine.setClientRole(role: ClientRoleType.clientRoleAudience);
+        await engine.updateChannelMediaOptions(
+          const ChannelMediaOptions(
+            clientRoleType: ClientRoleType.clientRoleAudience,
+            publishCameraTrack: false,
+            publishMicrophoneTrack: false,
+          ),
+        );
+        isCohost.value = false;
+      }
+
+      if (_chatWs != null) {
+        _chatWs!.add(
+          jsonEncode({
+            "type": "box_slot_update",
+            "action": "box_slot_update",
+            "slot_number": slotNumber,
+            "status": "VACANT",
+            "room_id": roomId,
+          }),
+        );
+      }
+
+      Get.snackbar(
+        "Left Box",
+        "You vacated Box $slotNumber.",
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      print("Error leaving box slot: $e");
+    }
+  }
+
+  void sendGiftToBox(int slotNumber) {
+    initBoxBattleSlots();
+    final slotIdx = boxSlots.indexWhere((s) => s['slot_number'] == slotNumber);
+    if (slotIdx != -1) {
+      final updated = Map<String, dynamic>.from(boxSlots[slotIdx]);
+      updated['gift_total'] = (updated['gift_total'] ?? 0) + 100;
+      boxSlots[slotIdx] = updated;
+      battleScoreGuest.value += 100;
+      showTemporaryNotice("Sent gift to Box $slotNumber! +100 Score");
+    }
+    sendReaction('🎁');
   }
 
   void updateLiveType(dynamic rawType) {
@@ -140,6 +367,7 @@ class LivePlayerController extends GetxController {
       } else if (newType == 'karaoke') {
         _connectKaraokeWebSocket();
       } else {
+        _stopKaraokeAudio();
         if (_quizWs != null) {
           try {
             _quizWs!.close();
@@ -630,6 +858,13 @@ class LivePlayerController extends GetxController {
         break;
 
       case 'PLAYBACK_PREPARED':
+        karaokeAudioUrl.value = payload['audio_url']?.toString() ?? '';
+        final extractedPrep = _extractLyricSegments(payload);
+        if (extractedPrep.isNotEmpty) {
+          karaokeLyricsList.value = extractedPrep;
+          karaokeLyrics.value = "🎵 Ready to sing";
+          karaokeNextLyric.value = extractedPrep.first['text']?.toString() ?? '';
+        }
         karaokeGameStatus.value = 'PLAYBACK_PREPARED';
         break;
 
@@ -639,15 +874,29 @@ class LivePlayerController extends GetxController {
         final durMs = payload['duration_ms'] ?? 180000;
         final durSec = (durMs is int && durMs > 0) ? (durMs ~/ 1000) : 180;
         _startKaraokeCountdownTimer(durSec);
+        final playUrl = payload['audio_url']?.toString() ?? karaokeAudioUrl.value;
+        if (playUrl.isNotEmpty) karaokeAudioUrl.value = playUrl;
+        final extractedStart = _extractLyricSegments(payload);
+        if (extractedStart.isNotEmpty) {
+          karaokeLyricsList.value = extractedStart;
+        }
+        _playKaraokeAudio(karaokeAudioUrl.value);
         break;
 
       case 'LYRIC_LINE_CHANGED':
         karaokeLyrics.value = payload['text']?.toString() ?? '';
+        if (payload['line_no'] != null && karaokeLyricsList.isNotEmpty) {
+          final lineNo = int.tryParse(payload['line_no'].toString()) ?? 1;
+          if (lineNo >= 0 && lineNo < karaokeLyricsList.length) {
+            karaokeNextLyric.value = karaokeLyricsList[lineNo]['text']?.toString() ?? '';
+          }
+        }
         break;
 
       case 'PERFORMANCE_COMPLETED':
         isKaraokePerformanceActive.value = false;
         _karaokeTimer?.cancel();
+        _stopKaraokeAudio();
         karaokeGameStatus.value = 'COMPLETED';
         showTemporaryNotice("🌟 Performance Completed!");
         break;
@@ -678,6 +927,7 @@ class LivePlayerController extends GetxController {
       case 'GAME_ENDED':
         isKaraokePerformanceActive.value = false;
         _karaokeTimer?.cancel();
+        _stopKaraokeAudio();
         karaokeGameStatus.value = 'ENDED';
         showTemporaryNotice("🏆 Karaoke Session Ended");
         break;
@@ -705,23 +955,109 @@ class LivePlayerController extends GetxController {
     });
   }
 
-  Future<void> fetchKaraokeCatalog() async {
-    try {
-      final gameService = Get.find<LiveGameService>();
-      final list = await gameService.getKaraokeCatalog(roomId);
-      if (list.isNotEmpty) {
-        karaokeCatalog.value = list;
-      }
-    } catch (_) {}
+  void setKaraokeCategory(String category) {
+    selectedKaraokeCategory.value = category;
+    fetchKaraokeCatalog(type: category);
   }
 
-  void selectKaraokeTrack(String trackId, String contentType) {
+  Future<void> fetchKaraokeCatalog({String? type, String? query}) async {
+    isKaraokeCatalogLoading.value = true;
+    final catType = type ?? selectedKaraokeCategory.value;
+    final rId = roomId.isNotEmpty ? roomId : 'a81f7ca6-16f9-42fe-9be0-03c47700d7df';
+    try {
+      final gameService = Get.find<LiveGameService>();
+      var list = await gameService.getKaraokeCatalog(rId, type: catType, q: query);
+      if (list.isEmpty && rId != 'a81f7ca6-16f9-42fe-9be0-03c47700d7df') {
+        list = await gameService.getKaraokeCatalog('a81f7ca6-16f9-42fe-9be0-03c47700d7df', type: catType, q: query);
+      }
+      if (list.isEmpty && (query == null || query.isEmpty)) {
+        list = await gameService.getKaraokeCatalog(rId);
+        if (list.isEmpty && rId != 'a81f7ca6-16f9-42fe-9be0-03c47700d7df') {
+          list = await gameService.getKaraokeCatalog('a81f7ca6-16f9-42fe-9be0-03c47700d7df');
+        }
+      }
+
+      karaokeCatalog.value = list;
+    } catch (_) {
+      karaokeCatalog.value = [];
+    } finally {
+      isKaraokeCatalogLoading.value = false;
+    }
+  }
+
+  Future<void> selectKaraokeTrack(String trackId, String contentType) async {
+    Map<String, dynamic>? selected;
+    for (final t in karaokeCatalog) {
+      if (t['id']?.toString() == trackId) {
+        selected = t;
+        break;
+      }
+    }
+    if (selected != null) {
+      karaokeTitle.value = selected['title']?.toString() ?? '';
+      karaokeArtist.value = selected['artist']?.toString() ?? '';
+      karaokeContentType.value = contentType;
+      if (selected['audio_url'] != null) {
+        karaokeAudioUrl.value = selected['audio_url'].toString();
+      }
+      final extracted = _extractLyricSegments(selected);
+      if (extracted.isNotEmpty) {
+        karaokeLyricsList.value = extracted;
+        karaokeLyrics.value = "🎵 Ready: ${selected['title']}";
+        karaokeNextLyric.value = extracted.first['text']?.toString() ?? '';
+      }
+    }
+
     _sendKaraokeWsAction({
       "action": "select_track",
       "performance_id": karaokePerformanceId.value,
       "track_id": trackId,
       "content_type": contentType,
     });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      try {
+        final gameService = Get.find<LiveGameService>();
+        await gameService.selectKaraokeTrack(
+          karaokePerformanceId.value,
+          trackId: trackId,
+          contentType: contentType,
+        );
+      } catch (_) {}
+    }
+  }
+
+  Future<void> prepareKaraokePlayback() async {
+    _sendKaraokeWsAction({
+      "action": "prepare_playback",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      try {
+        final gameService = Get.find<LiveGameService>();
+        await gameService.prepareKaraokePlayback(karaokePerformanceId.value);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> startKaraokePerformance() async {
+    isKaraokePerformanceActive.value = true;
+    karaokeGameStatus.value = 'PERFORMANCE_ACTIVE';
+    final durSec = 200;
+    _startKaraokeCountdownTimer(durSec);
+    if (karaokeAudioUrl.value.isNotEmpty) {
+      _playKaraokeAudio(karaokeAudioUrl.value);
+    }
+
+    _sendKaraokeWsAction({
+      "action": "start_performance",
+      "performance_id": karaokePerformanceId.value,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      try {
+        final gameService = Get.find<LiveGameService>();
+        await gameService.startKaraokePerformance(karaokePerformanceId.value);
+      } catch (_) {}
+    }
   }
 
   void sendKaraokeGift({
@@ -735,6 +1071,252 @@ class LivePlayerController extends GetxController {
       "amount": amount,
       "gift_type": giftType,
     });
+  }
+
+  Future<void> leaveKaraokePerformance({String reason = 'SINGER_QUIT'}) async {
+    _stopKaraokeAudio();
+    _sendKaraokeWsAction({
+      "action": "leave_performance",
+      "performance_id": karaokePerformanceId.value,
+      "reason": reason,
+    });
+    if (karaokePerformanceId.value.isNotEmpty) {
+      try {
+        final gameService = Get.find<LiveGameService>();
+        await gameService.leaveKaraokePerformance(
+          karaokePerformanceId.value,
+          reason: reason,
+        );
+      } catch (_) {}
+    }
+  }
+
+  List<Map<String, dynamic>> _extractLyricSegments(Map<String, dynamic> track) {
+    if (track['lyric_segments'] is List && (track['lyric_segments'] as List).isNotEmpty) {
+      return List<Map<String, dynamic>>.from(track['lyric_segments']);
+    }
+    final lrc = track['lrc']?.toString();
+    if (lrc != null && lrc.trim().isNotEmpty) {
+      final parsed = _parseLrc(lrc);
+      if (parsed.isNotEmpty) return parsed;
+    }
+    final lyricsStr = track['lyrics']?.toString();
+    if (lyricsStr != null && lyricsStr.trim().isNotEmpty) {
+      final lines = lyricsStr.split('\n').where((l) => l.trim().isNotEmpty).toList();
+      final durMs = (track['duration_ms'] is num) ? (track['duration_ms'] as num).toInt() : 200000;
+      final stepMs = lines.isNotEmpty ? (durMs ~/ lines.length) : 5000;
+      return List.generate(lines.length, (i) => {
+        'line_no': i + 1,
+        'start_ms': i * stepMs,
+        'end_ms': (i + 1) * stepMs,
+        'text': lines[i].trim(),
+      });
+    }
+    return [];
+  }
+
+  List<Map<String, dynamic>> _parseLrc(String lrcText) {
+    final List<Map<String, dynamic>> segments = [];
+    final lines = lrcText.split('\n');
+    final regExp = RegExp(r'\[(\d{2}):(\d{2})\.?(\d{2,3})?\](.*)');
+    int lineNo = 1;
+    for (int i = 0; i < lines.length; i++) {
+      final match = regExp.firstMatch(lines[i]);
+      if (match != null) {
+        final min = int.tryParse(match.group(1) ?? '0') ?? 0;
+        final sec = int.tryParse(match.group(2) ?? '0') ?? 0;
+        final msStr = match.group(3) ?? '0';
+        final ms = int.tryParse(msStr.padRight(3, '0').substring(0, 3)) ?? 0;
+        final startMs = (min * 60 + sec) * 1000 + ms;
+        final text = (match.group(4) ?? '').trim();
+        if (text.isNotEmpty) {
+          segments.add({
+            'line_no': lineNo++,
+            'start_ms': startMs,
+            'end_ms': startMs + 4000,
+            'text': text,
+          });
+        }
+      }
+    }
+    for (int i = 0; i < segments.length - 1; i++) {
+      segments[i]['end_ms'] = segments[i + 1]['start_ms'];
+    }
+    return segments;
+  }
+
+  String _resolveKaraokeAudioUrl(String? rawUrl) {
+    if (rawUrl != null &&
+        rawUrl.trim().isNotEmpty &&
+        !rawUrl.contains('assets.glotune.com')) {
+      return rawUrl.trim();
+    }
+    final title = karaokeTitle.value;
+    for (final t in karaokeCatalog) {
+      if (t['title']?.toString() == title || t['audio_url'] != null) {
+        final catUrl = t['audio_url']?.toString();
+        if (catUrl != null && catUrl.isNotEmpty && !catUrl.contains('assets.glotune.com')) {
+          return catUrl;
+        }
+      }
+    }
+    return rawUrl?.trim() ?? "";
+  }
+
+  Future<void> _playKaraokeAudio(String? url) async {
+    final targetUrl = _resolveKaraokeAudioUrl(url);
+    if (targetUrl.isEmpty) return;
+
+    // GUARD: If already playing or loading this track, don't restart or stop!
+    if (_currentPlayingAudioUrl == targetUrl && _karaokeAudioPlayer != null) {
+      print("[LiveKaraoke Audio Viewer] Audio is already playing/initializing: $targetUrl, skipping duplicate start");
+      return;
+    }
+
+    try {
+      await _stopKaraokeAudio();
+      _currentPlayingAudioUrl = targetUrl;
+      print("[LiveKaraoke Audio Viewer] Initializing and playing: $targetUrl");
+
+      final auth = Get.find<AuthService>();
+      final token = auth.accessToken.value;
+      final headers = <String, String>{
+        'ngrok-skip-browser-warning': 'true',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      };
+
+      final player = vp.VideoPlayerController.networkUrl(
+        Uri.parse(targetUrl),
+        httpHeaders: headers,
+      );
+      _karaokeAudioPlayer = player;
+      await player.initialize();
+      await player.setVolume(1.0);
+      await player.setLooping(false);
+      await player.play();
+      print("[LiveKaraoke Audio Viewer] Audio playback started!");
+
+      player.addListener(() {
+        if (player.value.hasError) {
+          print("[LiveKaraoke Audio Viewer] Player error: ${player.value.errorDescription}");
+        }
+        if (player.value.isInitialized &&
+            player.value.duration > const Duration(seconds: 30) &&
+            player.value.position >= player.value.duration) {
+          print("[LiveKaraoke Audio Viewer] Song ended naturally");
+          _stopKaraokeAudio();
+        }
+      });
+
+      // Ensure lyrics list is populated
+      if (karaokeLyricsList.isEmpty) {
+        for (final t in karaokeCatalog) {
+          final segs = _extractLyricSegments(t);
+          if (segs.isNotEmpty) {
+            karaokeLyricsList.value = segs;
+            break;
+          }
+        }
+      }
+
+      _karaokeLyricSyncTimer?.cancel();
+      _karaokeLyricSyncTimer = Timer.periodic(const Duration(milliseconds: 150), (_) {
+        if (_karaokeAudioPlayer == null || !_karaokeAudioPlayer!.value.isInitialized) return;
+        final posMs = _karaokeAudioPlayer!.value.position.inMilliseconds;
+        _updateLyricsAtPosition(posMs);
+      });
+    } catch (e) {
+      print("[LiveKaraoke Audio Viewer] Error playing karaoke audio: $e");
+    }
+  }
+
+  void _updateLyricsAtPosition(int posMs) {
+    if (karaokeLyricsList.isEmpty) {
+      for (final t in karaokeCatalog) {
+        final segs = _extractLyricSegments(t);
+        if (segs.isNotEmpty) {
+          karaokeLyricsList.value = segs;
+          break;
+        }
+      }
+      if (karaokeLyricsList.isEmpty) return;
+    }
+
+    int activeIdx = -1;
+    for (int i = 0; i < karaokeLyricsList.length; i++) {
+      final seg = karaokeLyricsList[i];
+      final start = (seg['start_ms'] is num)
+          ? (seg['start_ms'] as num).toInt()
+          : (int.tryParse(seg['start_ms']?.toString() ?? '') ?? 0);
+      final end = (seg['end_ms'] is num)
+          ? (seg['end_ms'] as num).toInt()
+          : (int.tryParse(seg['end_ms']?.toString() ?? '') ?? 9999999);
+      if (posMs >= start && posMs < end) {
+        activeIdx = i;
+        break;
+      }
+    }
+
+    if (activeIdx == -1) {
+      final firstSeg = karaokeLyricsList.first;
+      final firstStart = (firstSeg['start_ms'] is num)
+          ? (firstSeg['start_ms'] as num).toInt()
+          : (int.tryParse(firstSeg['start_ms']?.toString() ?? '') ?? 0);
+      if (posMs < firstStart) {
+        karaokeLyrics.value = "🎵 [Music Intro]";
+        karaokeNextLyric.value = firstSeg['text']?.toString() ?? '';
+        return;
+      }
+      final lastSeg = karaokeLyricsList.last;
+      final lastEnd = (lastSeg['end_ms'] is num)
+          ? (lastSeg['end_ms'] as num).toInt()
+          : (int.tryParse(lastSeg['end_ms']?.toString() ?? '') ?? 0);
+      if (posMs >= lastEnd) {
+        karaokeLyrics.value = "🎵 [Outro]";
+        karaokeNextLyric.value = "";
+        return;
+      }
+      for (int i = 0; i < karaokeLyricsList.length - 1; i++) {
+        final curEnd = (karaokeLyricsList[i]['end_ms'] is num)
+            ? (karaokeLyricsList[i]['end_ms'] as num).toInt()
+            : 0;
+        final nextStart = (karaokeLyricsList[i + 1]['start_ms'] is num)
+            ? (karaokeLyricsList[i + 1]['start_ms'] as num).toInt()
+            : 0;
+        if (posMs >= curEnd && posMs < nextStart) {
+          karaokeLyrics.value = "🎵 [Instrumental Break]";
+          karaokeNextLyric.value = karaokeLyricsList[i + 1]['text']?.toString() ?? '';
+          return;
+        }
+      }
+    } else {
+      final currentSeg = karaokeLyricsList[activeIdx];
+      final currentLine = currentSeg['text']?.toString() ?? '';
+      final nextLine = (activeIdx + 1 < karaokeLyricsList.length)
+          ? (karaokeLyricsList[activeIdx + 1]['text']?.toString() ?? '')
+          : '';
+
+      karaokeLyrics.value = currentLine;
+      karaokeNextLyric.value = nextLine;
+    }
+  }
+
+  Future<void> _stopKaraokeAudio() async {
+    _karaokeLyricSyncTimer?.cancel();
+    _karaokeLyricSyncTimer = null;
+    _currentPlayingAudioUrl = null;
+    try {
+      if (_karaokeAudioPlayer != null) {
+        print("[LiveKaraoke Audio Viewer] Stopping audio player");
+        await _karaokeAudioPlayer!.pause();
+        await _karaokeAudioPlayer!.dispose();
+        _karaokeAudioPlayer = null;
+      }
+    } catch (e) {
+      print("[LiveKaraoke Audio Viewer] Error stopping audio player: $e");
+      _karaokeAudioPlayer = null;
+    }
   }
 
   String? _currentJoinedSession;
@@ -827,11 +1409,32 @@ class LivePlayerController extends GetxController {
   void onInit() {
     super.onInit();
     roomId = Get.arguments as String;
+    fetchUserProfile();
     _initAgora();
   }
 
+  Future<void> fetchUserProfile() async {
+    try {
+      final authService = Get.find<AuthService>();
+      final token = authService.accessToken.value;
+      if (token == null) return;
+
+      final response = await apiClient.get(
+        Uri.parse('${ApiConstants.baseUrl}auth/profile/me/'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        userProfile.value = UserProfile.fromJson(data);
+      }
+    } catch (e) {
+      print("Error fetching user profile in LivePlayerController: $e");
+    }
+  }
+
   Future<void> _initAgora() async {
-    // Request permissions (though viewers don't strictly need mic/camera, it's good practice for live streaming apps)
+    // Request permissions
     await [Permission.microphone, Permission.camera].request();
 
     try {
@@ -841,47 +1444,55 @@ class LivePlayerController extends GetxController {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
 
-      // Call join room endpoint on backend so viewer count and membership are updated
-      try {
-        await apiClient.post(
-          Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/join/'),
-          headers: {
-            if (token != null) 'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        );
-      } catch (e) {
-        print("Warning: Failed to call backend join room: $e");
+      // Call join room endpoint on backend only for viewers (host gets 403 Host cannot join as viewer)
+      if (!isHost.value) {
+        try {
+          await apiClient.post(
+            Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/join/'),
+            headers: {
+              if (token != null) 'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          );
+        } catch (e) {
+          print("Warning: Failed to call backend join room: $e");
+        }
       }
 
       // 2. Fetch Agora Token and App ID
-      final tokenResponse = await apiClient.get(
-        Uri.parse('${ApiConstants.baseUrl}live/token/$roomId/'),
-        headers: {if (token != null) 'Authorization': 'Bearer $token'},
-      );
-
       String agoraToken = '';
       String agoraAppId = '';
       int agoraUid = 0;
 
-      if (tokenResponse.statusCode == 200) {
-        final tokenData = jsonDecode(tokenResponse.body);
-        agoraToken = tokenData['agora_token'] ?? tokenData['token'] ?? '';
-        agoraAppId =
-            tokenData['agora_app_id'] ??
-            tokenData['app_id'] ??
-            tokenData['appId'] ??
-            '';
-        agoraUid =
-            (tokenData['agora_uid'] is int
-                ? tokenData['agora_uid'] as int
-                : int.tryParse(tokenData['agora_uid']?.toString() ?? '')) ??
-            (tokenData['uid'] is int
-                ? tokenData['uid'] as int
-                : int.tryParse(tokenData['uid']?.toString() ?? '')) ??
-            0;
-      } else {
-        throw Exception("Failed to fetch token");
+      try {
+        final tokenResponse = await apiClient.get(
+          Uri.parse('${ApiConstants.baseUrl}live/token/$roomId/'),
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        );
+
+        if (tokenResponse.statusCode == 200) {
+          final tokenData = jsonDecode(tokenResponse.body);
+          agoraToken = tokenData['agora_token'] ?? tokenData['token'] ?? '';
+          agoraAppId =
+              tokenData['agora_app_id'] ??
+              tokenData['app_id'] ??
+              tokenData['appId'] ??
+              '';
+          agoraUid =
+              (tokenData['agora_uid'] is int
+                  ? tokenData['agora_uid'] as int
+                  : int.tryParse(tokenData['agora_uid']?.toString() ?? '')) ??
+              (tokenData['uid'] is int
+                  ? tokenData['uid'] as int
+                  : int.tryParse(tokenData['uid']?.toString() ?? '')) ??
+              0;
+        }
+      } catch (e) {
+        print("Warning: Failed to fetch Agora token: $e");
+      }
+
+      if (agoraToken.isEmpty && _roomAgoraToken.isNotEmpty) {
+        agoraToken = _roomAgoraToken;
       }
 
       if (agoraAppId.isEmpty) {
@@ -901,12 +1512,17 @@ class LivePlayerController extends GetxController {
         ),
       );
 
-      // We are joining as an audience member
-      await engine.setClientRole(role: ClientRoleType.clientRoleAudience);
+      final clientRole = isHost.value
+          ? ClientRoleType.clientRoleBroadcaster
+          : ClientRoleType.clientRoleAudience;
 
-      // Enable video and audio
+      await engine.setClientRole(role: clientRole);
       await engine.enableVideo();
       await engine.enableAudio();
+
+      if (isHost.value) {
+        await engine.startPreview();
+      }
 
       // Register event handlers
       engine.registerEventHandler(
@@ -919,6 +1535,9 @@ class LivePlayerController extends GetxController {
             if (!remoteUids.contains(remoteUid)) {
               remoteUids.add(remoteUid);
             }
+            if (currentLiveType.value == 'box battle') {
+              assignGuestToVacantSlot(remoteUid);
+            }
           },
           onUserOffline:
               (
@@ -928,6 +1547,9 @@ class LivePlayerController extends GetxController {
               ) {
                 print("Remote user left: $remoteUid");
                 remoteUids.remove(remoteUid);
+                if (currentLiveType.value == 'box battle') {
+                  _freeSlotByUid(remoteUid);
+                }
               },
           onError: (ErrorCodeType err, String msg) {
             print("Agora Error: $err, $msg");
@@ -935,15 +1557,17 @@ class LivePlayerController extends GetxController {
         ),
       );
 
-      // 4. Join channel with auto subscription enabled
+      // 4. Join channel
       await engine.joinChannel(
         token: agoraToken.isNotEmpty ? agoraToken : '',
         channelId: roomId,
-        uid: agoraUid, // Use UID returned from backend token or 0
-        options: const ChannelMediaOptions(
-          clientRoleType: ClientRoleType.clientRoleAudience,
+        uid: agoraUid,
+        options: ChannelMediaOptions(
+          clientRoleType: clientRole,
           autoSubscribeAudio: true,
           autoSubscribeVideo: true,
+          publishCameraTrack: isHost.value,
+          publishMicrophoneTrack: isHost.value,
         ),
       );
 
@@ -981,29 +1605,54 @@ class LivePlayerController extends GetxController {
       headers['Authorization'] = 'Bearer $token';
     }
 
-    final response = await apiClient.get(
-      Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/'),
-      headers: headers,
-    );
+    try {
+      final response = await apiClient.get(
+        Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/'),
+        headers: headers,
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      title.value = data['title'] ?? "Live Stream";
-      memberCount.value = data['viewer_count'] ?? data['member_count'] ?? 0;
-      if (data['host'] is Map<String, dynamic>) {
-        hostProfilePic.value = data['host']['profile_picture'] ?? '';
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        title.value = data['title'] ?? "Live Stream";
+        memberCount.value = data['viewer_count'] ?? data['member_count'] ?? 0;
+        final hostObj = data['host'];
+        if (hostObj is Map<String, dynamic>) {
+          hostProfilePic.value = hostObj['profile_picture'] ?? '';
+          hostId.value = (hostObj['id'] is int
+                  ? hostObj['id'] as int
+                  : int.tryParse(hostObj['id']?.toString() ?? '')) ??
+              0;
+        } else if (data['host_id'] != null) {
+          hostId.value = int.tryParse(data['host_id'].toString()) ?? 0;
+        }
+
+        final myId = authService.currentUserId.value;
+        if (data['is_host'] == true ||
+            (myId != null && hostId.value != 0 && myId == hostId.value)) {
+          isHost.value = true;
+          print("[LivePlayer] Current user is identified as HOST of this room");
+        }
+
+        if (data['agora_token'] != null &&
+            data['agora_token'].toString().isNotEmpty) {
+          _roomAgoraToken = data['agora_token'].toString();
+        }
+
+        final rawType =
+            data['game_type'] ??
+            data['battle_type'] ??
+            data['type'] ??
+            data['current_game_type'];
+        if (rawType != null) {
+          updateLiveType(rawType);
+        }
+      } else {
+        print("Failed to fetch room details: ${response.statusCode}");
+        title.value = "Live Stream";
       }
-      final rawType =
-          data['game_type'] ??
-          data['battle_type'] ??
-          data['type'] ??
-          data['current_game_type'];
-      if (rawType != null) {
-        updateLiveType(rawType);
-      }
-    } else {
-      print("Failed to fetch room details: ${response.statusCode}");
-      throw Exception("Failed to load room");
+    } catch (e) {
+      print("Warning: Exception in _fetchRoomDetails: $e");
+      title.value = "Live Stream";
     }
   }
 
@@ -1384,6 +2033,69 @@ class LivePlayerController extends GetxController {
       print("[LivePlayer] Stream request approved! Auto-accepting cohost...");
       acceptCohostInvitation();
     }
+    // 8. Box Battle slot updates
+    else if (type == 'box_slot_update' ||
+        action == 'box_slot_update' ||
+        type == 'box_slot_join' ||
+        type == 'box_slot_leave') {
+      final slotNumber = data['slot_number'];
+      final status = data['status']?.toString() ??
+          (type == 'box_slot_leave' ? 'VACANT' : 'OCCUPIED');
+      if (slotNumber != null) {
+        final slotNum = int.tryParse(slotNumber.toString());
+        if (slotNum != null && slotNum >= 1 && slotNum <= 8) {
+          initBoxBattleSlots();
+          final idx = boxSlots.indexWhere((s) => s['slot_number'] == slotNum);
+          if (idx != -1) {
+            if (status == 'VACANT') {
+              boxSlots[idx] = {
+                'slot_number': slotNum,
+                'status': 'VACANT',
+                'uid': null,
+                'user_id': null,
+                'guest_id': null,
+                'username': null,
+                'profile_picture': null,
+                'gift_total': 0,
+                'bonus_total': 0,
+                'mic_on': true,
+                'camera_on': true,
+              };
+              if (myBoxSlotNumber.value == slotNum) {
+                myBoxSlotNumber.value = 0;
+              }
+            } else {
+              final s = Map<String, dynamic>.from(boxSlots[idx]);
+              s['status'] = 'OCCUPIED';
+              s['uid'] = data['uid'] ?? data['user_id'];
+              s['user_id'] = data['user_id'];
+              s['guest_id'] = data['user_id'];
+              s['username'] = data['username'] ?? 'Guest $slotNum';
+              if (data['profile_picture'] != null) {
+                s['profile_picture'] = data['profile_picture'];
+              }
+              boxSlots[idx] = s;
+            }
+          }
+        }
+      }
+    } else if (type == 'guest_gift_update' || action == 'guest_gift_update') {
+      final slotNumber = data['slot_number'];
+      final giftTotal = data['gift_total'];
+      final bonusTotal = data['bonus_total'];
+      if (slotNumber != null) {
+        final slotNum = int.tryParse(slotNumber.toString());
+        if (slotNum != null) {
+          final idx = boxSlots.indexWhere((s) => s['slot_number'] == slotNum);
+          if (idx != -1) {
+            final s = Map<String, dynamic>.from(boxSlots[idx]);
+            if (giftTotal != null) s['gift_total'] = giftTotal;
+            if (bonusTotal != null) s['bonus_total'] = bonusTotal;
+            boxSlots[idx] = s;
+          }
+        }
+      }
+    }
   }
 
   void _handleSessionStatusEvent(Map<String, dynamic> data) {
@@ -1713,6 +2425,11 @@ class LivePlayerController extends GetxController {
 
   @override
   void onClose() {
+    _stopKaraokeAudio();
+    _karaokeTimer?.cancel();
+    try {
+      _karaokeWs?.close();
+    } catch (_) {}
     _wsReconnectTimer?.cancel();
     _typingTimer?.cancel();
     _temporaryNoticeTimer?.cancel();
@@ -1926,7 +2643,7 @@ class LivePlayerController extends GetxController {
     );
   }
 
-  Future<void> sendGift(String giftType, {int quantity = 1}) async {
+  Future<void> sendGift(String giftType, {int quantity = 1, int coins = 0}) async {
     final authService = Get.find<AuthService>();
     final token = authService.accessToken.value;
 
@@ -1951,6 +2668,13 @@ class LivePlayerController extends GetxController {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Deduct coins locally if available
+        if (userProfile.value != null && coins > 0) {
+          final current = userProfile.value!.yourCoins;
+          final updated = current - (coins * quantity);
+          userProfile.value = userProfile.value!.copyWith(yourCoins: updated > 0 ? updated : 0);
+        }
+
         // Broadcast gift action over WebSocket to all participants
         try {
           if (_chatWs != null) {
@@ -1966,10 +2690,13 @@ class LivePlayerController extends GetxController {
           print("[LivePlayer WS] Error broadcasting gift: $wsErr");
         }
 
+        // Local reaction stream
+        _reactionStreamController.add(giftType);
+
         Get.back(); // close bottom sheet
         Get.snackbar(
-          'Success',
-          'Gift sent successfully!',
+          'Gift Sent! 🎁',
+          'Sent $quantity $giftType successfully!',
           colorText: Colors.white,
           backgroundColor: Colors.green,
         );

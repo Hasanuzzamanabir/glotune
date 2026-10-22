@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:glotune/app/core/utils/image_utils.dart';
 import 'package:glotune/app/modules/live_player/controllers/live_player_controller.dart';
 import 'package:glotune/app/modules/live_player/views/widgets/floating_reactions.dart';
+import 'package:glotune/app/widgets/gift_gallery_sheet.dart';
 
 class LivePlayerView extends GetView<LivePlayerController> {
   const LivePlayerView({super.key});
@@ -47,7 +48,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
               } else if (liveType == 'quiz') {
                 return _buildQuizStreamLayout(hasRemote: hasRemote, isCohost: isCo);
               } else if (liveType == 'karaoke') {
-                return _buildKaraokeStreamLayout(hasRemote: hasRemote, isCohost: isCo);
+                return _buildKaraokeStreamLayout(context, hasRemote: hasRemote, isCohost: isCo);
               }
 
               return _buildStandardLiveStreamLayout(
@@ -89,6 +90,39 @@ class LivePlayerView extends GetView<LivePlayerController> {
     required bool hasRemote,
     required bool isCohost,
   }) {
+    if (controller.isHost.value) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          AgoraVideoView(
+            controller: VideoViewController(
+              rtcEngine: controller.engine,
+              canvas: const VideoCanvas(uid: 0),
+            ),
+          ),
+          Positioned(
+            top: 50.h,
+            left: 12.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                "You (Host) • Live",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     if (!hasRemote) {
       if (isCohost) {
         return Stack(
@@ -122,10 +156,22 @@ class LivePlayerView extends GetView<LivePlayerController> {
           ],
         );
       }
-      return const Text(
-        'Waiting for host to broadcast...',
-        style: TextStyle(color: Colors.white),
-        textAlign: TextAlign.center,
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ImageUtils.safeCircleAvatar(
+              imageUrl: controller.hostProfilePic.value,
+              radius: 40,
+            ),
+            SizedBox(height: 12.h),
+            const Text(
+              'Waiting for host to broadcast...',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       );
     }
 
@@ -292,7 +338,14 @@ class LivePlayerView extends GetView<LivePlayerController> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            if (hasRemote && hostUid != null)
+                            if (controller.isHost.value)
+                              AgoraVideoView(
+                                controller: VideoViewController(
+                                  rtcEngine: controller.engine,
+                                  canvas: const VideoCanvas(uid: 0),
+                                ),
+                              )
+                            else if (hasRemote && hostUid != null)
                               AgoraVideoView(
                                 controller: VideoViewController.remote(
                                   rtcEngine: controller.engine,
@@ -301,10 +354,10 @@ class LivePlayerView extends GetView<LivePlayerController> {
                                 ),
                               )
                             else
-                              const Center(
-                                child: CircleAvatar(
+                              Center(
+                                child: ImageUtils.safeCircleAvatar(
+                                  imageUrl: controller.hostProfilePic.value,
                                   radius: 36,
-                                  backgroundImage: AssetImage('assets/images/user_avatar.png'),
                                 ),
                               ),
                             Positioned(
@@ -317,7 +370,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
                                   borderRadius: BorderRadius.circular(4.r),
                                 ),
                                 child: Text(
-                                  "HOST",
+                                  controller.isHost.value ? "YOU (HOST)" : "HOST",
                                   style: TextStyle(
                                     color: Colors.amberAccent,
                                     fontSize: 9.sp,
@@ -367,7 +420,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
 
     if (isVacant) {
       return GestureDetector(
-        onTap: controller.requestToStream,
+        onTap: () => _showVacantSlotActionSheet(slotNumber),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.4),
@@ -377,11 +430,26 @@ class LivePlayerView extends GetView<LivePlayerController> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, color: Colors.white70, size: 16.sp),
-                SizedBox(height: 2.h),
+                Container(
+                  padding: EdgeInsets.all(4.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.add, color: Colors.white70, size: 14.sp),
+                ),
+                SizedBox(height: 3.h),
                 Text(
                   "Box $slotNumber",
-                  style: TextStyle(color: Colors.white54, fontSize: 8.sp),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 8.5.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Tap to join",
+                  style: TextStyle(color: Colors.white38, fontSize: 7.sp),
                 ),
               ],
             ),
@@ -390,50 +458,440 @@ class LivePlayerView extends GetView<LivePlayerController> {
       );
     }
 
-    final guestName = (slot['username'] != null && slot['username'].toString().isNotEmpty)
-        ? slot['username'].toString()
-        : "Guest $slotNumber";
-    final pic = slot['profile_picture']?.toString();
+    final rawUid = slot['uid'] ?? slot['user_id'] ?? slot['guest_id'];
+    final guestUid = rawUid is int
+        ? rawUid
+        : int.tryParse(rawUid?.toString() ?? '');
+    final isMe = (controller.myBoxSlotNumber.value == slotNumber) ||
+        (controller.localUid.value != 0 &&
+            guestUid != null &&
+            guestUid == controller.localUid.value);
+    final hasRemoteVideo =
+        guestUid != null && controller.remoteUids.contains(guestUid);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border.all(color: Colors.white12, width: 0.5),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ImageUtils.safeNetworkImage(
-            imageUrl: pic,
-            fit: BoxFit.cover,
-            errorWidget: const Image(
-              image: AssetImage('assets/images/user_avatar.png'),
-              fit: BoxFit.cover,
-            ),
+    final guestName = isMe
+        ? "YOU (Box $slotNumber)"
+        : ((slot['username'] != null &&
+                slot['username'].toString().isNotEmpty)
+            ? slot['username'].toString()
+            : "Guest $slotNumber");
+    final pic = slot['profile_picture']?.toString();
+    final giftTotal = slot['gift_total'] ?? 0;
+    final isMicOn = slot['mic_on'] ?? true;
+
+    return GestureDetector(
+      onTap: () {
+        if (isMe) {
+          _showMySlotControlsSheet(slotNumber);
+        } else {
+          _showGuestActionsSheet(slotNumber, guestName);
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          border: Border.all(
+            color: isMe ? Colors.amberAccent : Colors.white24,
+            width: isMe ? 1.5 : 0.5,
           ),
-          Positioned(
-            bottom: 2.h,
-            left: 2.w,
-            right: 2.w,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(4.r),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Video or Avatar
+            if (isMe)
+              AgoraVideoView(
+                controller: VideoViewController(
+                  rtcEngine: controller.engine,
+                  canvas: const VideoCanvas(uid: 0),
+                ),
+              )
+            else if (hasRemoteVideo)
+              AgoraVideoView(
+                controller: VideoViewController.remote(
+                  rtcEngine: controller.engine,
+                  canvas: VideoCanvas(uid: guestUid),
+                  connection:
+                      RtcConnection(channelId: controller.roomId),
+                ),
+              )
+            else
+              ImageUtils.safeNetworkImage(
+                imageUrl: pic,
+                fit: BoxFit.cover,
+                errorWidget: const Image(
+                  image: AssetImage('assets/images/user_avatar.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: Text(
-                guestName,
+
+            // Top-left: Box badge
+            Positioned(
+              top: 2.h,
+              left: 2.w,
+              child: Container(
+                padding:
+                    EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? Colors.amberAccent
+                      : Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(3.r),
+                ),
+                child: Text(
+                  isMe ? "YOU" : "Box $slotNumber",
+                  style: TextStyle(
+                    color: isMe ? Colors.black : Colors.white70,
+                    fontSize: 7.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            // Top-right: Mic Indicator
+            Positioned(
+              top: 2.h,
+              right: 2.w,
+              child: Container(
+                padding: EdgeInsets.all(2.w),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isMicOn ? Icons.mic : Icons.mic_off,
+                  color: isMicOn ? Colors.greenAccent : Colors.redAccent,
+                  size: 9.sp,
+                ),
+              ),
+            ),
+
+            // Bottom: Guest info & score
+            Positioned(
+              bottom: 2.h,
+              left: 2.w,
+              right: 2.w,
+              child: Container(
+                padding:
+                    EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(3.r),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        guestName,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 7.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (giftTotal > 0)
+                      Text(
+                        "🎁$giftTotal",
+                        style: TextStyle(
+                          color: Colors.amberAccent,
+                          fontSize: 6.5.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showVacantSlotActionSheet(int slotNumber) {
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2230),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          border: Border.all(color: Colors.white12, width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              "Join Box Slot $slotNumber",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              "Go live with video and microphone in Box $slotNumber or send a co-host request to the streamer.",
+              style: TextStyle(
+                color: Colors.white60,
+                fontSize: 11.sp,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 18.h),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE94057),
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              icon: const Icon(Icons.videocam, color: Colors.white),
+              label: Text(
+                "Go Live in Box $slotNumber",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 7.5.sp,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.bold,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              ),
+              onPressed: () {
+                Get.back();
+                controller.joinBoxSlot(slotNumber);
+              },
+            ),
+            SizedBox(height: 10.h),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white30),
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              icon: const Icon(Icons.person_add, color: Colors.white70),
+              label: Text(
+                "Request Host to Stream",
+                style: TextStyle(color: Colors.white70, fontSize: 13.sp),
+              ),
+              onPressed: () {
+                Get.back();
+                controller.requestToStream();
+              },
+            ),
+            SizedBox(height: 10.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMySlotControlsSheet(int slotNumber) {
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2230),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          border: Border.all(color: Colors.white12, width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
               ),
             ),
-          ),
-        ],
+            SizedBox(height: 12.h),
+            Text(
+              "Your Box $slotNumber Controls",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Expanded(
+                  child: Obx(() => ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: controller.isMicMuted.value
+                              ? Colors.redAccent
+                              : Colors.white12,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        icon: Icon(
+                          controller.isMicMuted.value
+                              ? Icons.mic_off
+                              : Icons.mic,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          controller.isMicMuted.value
+                              ? "Unmute"
+                              : "Mute Mic",
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 12.sp),
+                        ),
+                        onPressed: controller.toggleMic,
+                      )),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Obx(() => ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: controller.isCamOff.value
+                              ? Colors.redAccent
+                              : Colors.white12,
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        icon: Icon(
+                          controller.isCamOff.value
+                              ? Icons.videocam_off
+                              : Icons.videocam,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          controller.isCamOff.value
+                              ? "Video Off"
+                              : "Video On",
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 12.sp),
+                        ),
+                        onPressed: controller.toggleCamera,
+                      )),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade800,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              icon: const Icon(Icons.exit_to_app, color: Colors.white),
+              label: Text(
+                "Leave Box Slot",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Get.back();
+                controller.leaveBoxSlot(slotNumber);
+              },
+            ),
+            SizedBox(height: 10.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGuestActionsSheet(int slotNumber, String guestName) {
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2230),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          border: Border.all(color: Colors.white12, width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              guestName,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              "Guest Broadcaster in Box $slotNumber",
+              style: TextStyle(color: Colors.white60, fontSize: 11.sp),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 18.h),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade700,
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              icon: const Icon(Icons.card_giftcard, color: Colors.white),
+              label: Text(
+                "Send Gift (+100 Score)",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Get.back();
+                controller.sendGiftToBox(slotNumber);
+              },
+            ),
+            SizedBox(height: 10.h),
+          ],
+        ),
       ),
     );
   }
@@ -531,7 +989,14 @@ class LivePlayerView extends GetView<LivePlayerController> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            if (hasRemote && hostUid != null)
+                            if (controller.isHost.value)
+                              AgoraVideoView(
+                                controller: VideoViewController(
+                                  rtcEngine: controller.engine,
+                                  canvas: const VideoCanvas(uid: 0),
+                                ),
+                              )
+                            else if (hasRemote && hostUid != null)
                               AgoraVideoView(
                                 controller: VideoViewController.remote(
                                   rtcEngine: controller.engine,
@@ -540,10 +1005,10 @@ class LivePlayerView extends GetView<LivePlayerController> {
                                 ),
                               )
                             else
-                              const Center(
-                                child: CircleAvatar(
+                              Center(
+                                child: ImageUtils.safeCircleAvatar(
+                                  imageUrl: controller.hostProfilePic.value,
                                   radius: 36,
-                                  backgroundImage: AssetImage('assets/images/user_avatar.png'),
                                 ),
                               ),
                             Positioned(
@@ -661,7 +1126,14 @@ class LivePlayerView extends GetView<LivePlayerController> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          if (uid != null)
+                          if (i == 0 && controller.isHost.value)
+                            AgoraVideoView(
+                              controller: VideoViewController(
+                                rtcEngine: controller.engine,
+                                canvas: const VideoCanvas(uid: 0),
+                              ),
+                            )
+                          else if (uid != null)
                             AgoraVideoView(
                               controller: VideoViewController.remote(
                                 rtcEngine: controller.engine,
@@ -861,7 +1333,14 @@ class LivePlayerView extends GetView<LivePlayerController> {
               fit: StackFit.expand,
               children: [
                 // Remote Host Video via Agora RTC
-                if (hasRemote && hostUid != null)
+                if (controller.isHost.value)
+                  AgoraVideoView(
+                    controller: VideoViewController(
+                      rtcEngine: controller.engine,
+                      canvas: const VideoCanvas(uid: 0),
+                    ),
+                  )
+                else if (hasRemote && hostUid != null)
                   AgoraVideoView(
                     controller: VideoViewController.remote(
                       rtcEngine: controller.engine,
@@ -871,12 +1350,17 @@ class LivePlayerView extends GetView<LivePlayerController> {
                   )
                 else
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Colors.black87,
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/user_avatar.png'),
-                        fit: BoxFit.cover,
-                      ),
+                      image: controller.hostProfilePic.value.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(controller.hostProfilePic.value),
+                              fit: BoxFit.cover,
+                            )
+                          : const DecorationImage(
+                              image: AssetImage('assets/images/user_avatar.png'),
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
 
@@ -1425,11 +1909,11 @@ class LivePlayerView extends GetView<LivePlayerController> {
   }
 
   // MARK: - Karaoke Stream Layout (Viewer View)
-  Widget _buildKaraokeStreamLayout({
+  Widget _buildKaraokeStreamLayout(
+    BuildContext context, {
     required bool hasRemote,
     required bool isCohost,
   }) {
-    final hostUid = hasRemote ? controller.remoteUids.first : null;
     return Container(
       color: const Color(0xFF6B1414),
       child: SafeArea(
@@ -1447,24 +1931,43 @@ class LivePlayerView extends GetView<LivePlayerController> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        if (hasRemote && hostUid != null)
-                          AgoraVideoView(
-                            controller: VideoViewController.remote(
-                              rtcEngine: controller.engine,
-                              canvas: VideoCanvas(uid: hostUid),
-                              connection: RtcConnection(channelId: controller.roomId),
-                            ),
-                          )
-                        else
-                          Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black87,
-                              image: DecorationImage(
-                                image: AssetImage('assets/images/user_avatar.png'),
-                                fit: BoxFit.cover,
+                        // Real Host Video via Agora RTC
+                        Obx(() {
+                          final hasRemote = controller.remoteUids.isNotEmpty;
+                          final hostUid = hasRemote ? controller.remoteUids.first : null;
+
+                          if (controller.isHost.value) {
+                            return AgoraVideoView(
+                              controller: VideoViewController(
+                                rtcEngine: controller.engine,
+                                canvas: const VideoCanvas(uid: 0),
                               ),
-                            ),
-                          ),
+                            );
+                          } else if (hasRemote && hostUid != null) {
+                            return AgoraVideoView(
+                              controller: VideoViewController.remote(
+                                rtcEngine: controller.engine,
+                                canvas: VideoCanvas(uid: hostUid),
+                                connection: RtcConnection(channelId: controller.roomId),
+                              ),
+                            );
+                          } else {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black87,
+                                image: controller.hostProfilePic.value.isNotEmpty
+                                    ? DecorationImage(
+                                        image: NetworkImage(controller.hostProfilePic.value),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : const DecorationImage(
+                                        image: AssetImage('assets/images/user_avatar.png'),
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                            );
+                          }
+                        }),
 
                         // Gradient Overlay
                         Positioned.fill(
@@ -1542,7 +2045,9 @@ class LivePlayerView extends GetView<LivePlayerController> {
                           child: Obx(() {
                             final title = controller.karaokeTitle.value;
                             final artist = controller.karaokeArtist.value;
+                            final singer = controller.karaokeCurrentSinger.value;
                             final lyrics = controller.karaokeLyrics.value;
+                            final nextLyric = controller.karaokeNextLyric.value;
                             final isInstrumental = controller.karaokeContentType.value == 'INSTRUMENTAL';
                             final isEligible = controller.isRewardEligible.value;
 
@@ -1553,89 +2058,151 @@ class LivePlayerView extends GetView<LivePlayerController> {
                                 // Floating Synced Lyrics
                                 if (lyrics.isNotEmpty)
                                   Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                                     margin: EdgeInsets.only(bottom: 4.h),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.75),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.black.withValues(alpha: 0.85),
+                                          const Color(0xFF2E1065).withValues(alpha: 0.9),
+                                        ],
+                                      ),
                                       borderRadius: BorderRadius.circular(8.r),
-                                      border: Border.all(color: Colors.pinkAccent, width: 1),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.music_note, color: Colors.pinkAccent, size: 12),
-                                        SizedBox(width: 4.w),
-                                        Expanded(
-                                          child: Text(
-                                            lyrics,
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10.sp,
-                                              fontWeight: FontWeight.bold,
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                      border: Border.all(color: Colors.pinkAccent, width: 1.2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.pinkAccent.withValues(alpha: 0.3),
+                                          blurRadius: 6,
                                         ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.music_note, color: Colors.pinkAccent, size: 14),
+                                            SizedBox(width: 4.w),
+                                            Expanded(
+                                              child: Text(
+                                                lyrics,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 11.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (nextLyric.isNotEmpty) ...[
+                                          SizedBox(height: 2.h),
+                                          Padding(
+                                            padding: EdgeInsets.only(left: 18.w),
+                                            child: Text(
+                                              "Next: $nextLyric",
+                                              style: TextStyle(
+                                                color: Colors.amberAccent.withValues(alpha: 0.9),
+                                                fontSize: 8.5.sp,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),
 
                                 // Track Information Card
-                                Container(
-                                  padding: EdgeInsets.all(8.w),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF1E293B).withValues(alpha: 0.9),
-                                    borderRadius: BorderRadius.circular(8.r),
-                                    border: Border.all(color: Colors.white24, width: 0.8),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-                                            decoration: BoxDecoration(
-                                              color: isInstrumental ? Colors.amber : Colors.purpleAccent,
-                                              borderRadius: BorderRadius.circular(4.r),
-                                            ),
-                                            child: Text(
-                                              isInstrumental ? "INSTRUMENTAL" : "MUSIC",
-                                              style: TextStyle(color: Colors.black, fontSize: 7.sp, fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          if (isEligible) ...[
-                                            SizedBox(width: 4.w),
+                                GestureDetector(
+                                  onTap: () => _showKaraokePlaylistCategorySheet(context),
+                                  child: Container(
+                                    padding: EdgeInsets.all(8.w),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+                                      borderRadius: BorderRadius.circular(8.r),
+                                      border: Border.all(color: Colors.white24, width: 0.8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
                                             Container(
                                               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
                                               decoration: BoxDecoration(
-                                                color: Colors.green,
+                                                color: isInstrumental ? Colors.amber : Colors.purpleAccent,
                                                 borderRadius: BorderRadius.circular(4.r),
                                               ),
                                               child: Text(
-                                                "REWARD ELIGIBLE (b)",
-                                                style: TextStyle(color: Colors.white, fontSize: 7.sp, fontWeight: FontWeight.bold),
+                                                isInstrumental ? "INSTRUMENTAL (b)" : "MUSIC",
+                                                style: TextStyle(color: Colors.black, fontSize: 7.sp, fontWeight: FontWeight.bold),
                                               ),
                                             ),
+                                            if (isEligible) ...[
+                                              SizedBox(width: 4.w),
+                                              Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  borderRadius: BorderRadius.circular(4.r),
+                                                ),
+                                                child: Text(
+                                                  "REWARD ELIGIBLE (b)",
+                                                  style: TextStyle(color: Colors.white, fontSize: 7.sp, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ],
+                                            const Spacer(),
+                                            Icon(Icons.queue_music, color: Colors.white70, size: 12.sp),
                                           ],
-                                        ],
-                                      ),
-                                      SizedBox(height: 3.h),
-                                      Text(
-                                        title.isNotEmpty ? title : "Awaiting Track Selection",
-                                        style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (artist.isNotEmpty)
+                                        ),
+                                        SizedBox(height: 3.h),
                                         Text(
-                                          "Artist: $artist",
-                                          style: TextStyle(color: Colors.white70, fontSize: 8.5.sp),
+                                          title.isNotEmpty ? title : "Awaiting Track Selection",
+                                          style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                    ],
+                                        SizedBox(height: 3.h),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.person, color: Colors.cyanAccent, size: 10.sp),
+                                            SizedBox(width: 4.w),
+                                            Expanded(
+                                              child: Text(
+                                                "Artist: ${artist.isNotEmpty ? artist : '—'}",
+                                                style: TextStyle(color: Colors.cyanAccent, fontSize: 8.5.sp, fontWeight: FontWeight.w600),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (singer.isNotEmpty) ...[
+                                          SizedBox(height: 2.h),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.mic, color: Colors.pinkAccent, size: 10.sp),
+                                              SizedBox(width: 4.w),
+                                              Expanded(
+                                                child: Text(
+                                                  "Singer: @$singer",
+                                                  style: TextStyle(color: Colors.pinkAccent, fontSize: 8.5.sp, fontWeight: FontWeight.bold),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1652,16 +2219,23 @@ class LivePlayerView extends GetView<LivePlayerController> {
                   Expanded(
                     flex: 5,
                     child: Obx(() {
-                      final participants = controller.karaokeParticipants.toList();
-                      final remoteUids = controller.remoteUids.toList();
+                      // Filter out the HOST from participants (Host is shown in Left Arena)
+                      final guestParticipants = controller.karaokeParticipants
+                          .where((p) => p['role'] != 'HOST' && p['seat'] != '0' && p['role'] != 'host')
+                          .toList();
+
+                      // Remote guest UIDs (exclude hostUid)
+                      final guestRemoteUids = controller.remoteUids.length > 1
+                          ? controller.remoteUids.sublist(1)
+                          : <int>[];
 
                       return GridView.count(
                         crossAxisCount: 2,
                         childAspectRatio: 0.95,
                         physics: const NeverScrollableScrollPhysics(),
                         children: List.generate(8, (index) {
-                          if (index < participants.length) {
-                            final p = participants[index];
+                          if (index < guestParticipants.length) {
+                            final p = guestParticipants[index];
                             final name = p['username']?.toString() ?? "Guest ${index + 1}";
                             final fanA = p['fan_gifts_a'] ?? "0.00";
                             final platB = p['platform_reward_b'] ?? "0.00";
@@ -1679,8 +2253,8 @@ class LivePlayerView extends GetView<LivePlayerController> {
                             );
                           }
 
-                          if (index < remoteUids.length) {
-                            final remoteUid = remoteUids[index];
+                          if (index < guestRemoteUids.length) {
+                            final remoteUid = guestRemoteUids[index];
                             final isSinger = controller.karaokeCurrentSingerId.value == remoteUid;
                             return _buildViewerKaraokeSlot(
                               name: "Guest $remoteUid",
@@ -1698,11 +2272,565 @@ class LivePlayerView extends GetView<LivePlayerController> {
                 ],
               ),
             ),
+
+            // Floating Karaoke Lyrics Banner (Viewer & Guest)
+            _buildFloatingKaraokeLyricsBanner(context),
+
+            // Assigned Singer Callout Banner (PDF Page 4 & 7: SINGER_ASSIGNED)
+            Obx(() {
+              if (controller.isSingerAssignedToMe) {
+                final hasSelectedSong = controller.karaokeTitle.value.isNotEmpty;
+                final title = controller.karaokeTitle.value;
+                final artist = controller.karaokeArtist.value;
+                final isPerformanceActive = controller.isKaraokePerformanceActive.value;
+
+                return Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE50914), Color(0xFF8B0000)],
+                    ),
+                    borderRadius: BorderRadius.circular(12.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.mic, color: Colors.white, size: 22),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "🎤 You are Assigned to Sing!",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.sp,
+                              ),
+                            ),
+                            Text(
+                              hasSelectedSong
+                                  ? "🎵 $title${artist.isNotEmpty ? ' • $artist' : ''}"
+                                  : "Tap to browse playlist & pick your track",
+                              style: TextStyle(
+                                color: hasSelectedSong ? Colors.cyanAccent : Colors.white70,
+                                fontSize: 9.sp,
+                                fontWeight: hasSelectedSong ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (hasSelectedSong && !isPerformanceActive) ...[
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                          ),
+                          onPressed: () => controller.startKaraokePerformance(),
+                          child: Text(
+                            "🎤 Sing Now",
+                            style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.queue_music, color: Colors.white70),
+                          onPressed: () => _showKaraokePlaylistCategorySheet(context),
+                        ),
+                      ] else ...[
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                          ),
+                          onPressed: () => _showKaraokePlaylistCategorySheet(context),
+                          child: Text(
+                            hasSelectedSong ? "Change" : "Choose Song",
+                            style: TextStyle(fontSize: 10.sp, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+
             SizedBox(height: 180.h),
           ],
         ),
       ),
     );
+  }
+
+  // MARK: - Viewer Karaoke Playlist Category Sheet (PDF Page 1 & 3: PLAYLIST CATEGORY)
+  void _showKaraokePlaylistCategorySheet(BuildContext context) {
+    controller.fetchKaraokeCatalog();
+
+    Get.bottomSheet(
+      Container(
+        height: 0.75.sh,
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            SizedBox(height: 10.h),
+
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SizedBox(width: 32.w),
+                Text(
+                  "PLAYLIST CATEGORY",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white70),
+                  onPressed: () => Get.back(),
+                ),
+              ],
+            ),
+            SizedBox(height: 6.h),
+
+            // Two Selectable Category Pills: [Music] [Instrumentals] (PDF Page 1)
+            Obx(() {
+              final activeCat = controller.selectedKaraokeCategory.value;
+              final isMusic = activeCat == 'MUSIC';
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () => controller.setKaraokeCategory('MUSIC'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: isMusic ? const Color(0xFFE50914) : Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: isMusic ? Colors.white.withValues(alpha: 0.6) : Colors.white24,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.mic, color: Colors.white, size: 14.sp),
+                          SizedBox(width: 6.w),
+                          Text(
+                            "Music",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 14.w),
+                  GestureDetector(
+                    onTap: () => controller.setKaraokeCategory('INSTRUMENTAL'),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: !isMusic ? const Color(0xFFE50914) : Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: !isMusic ? Colors.white.withValues(alpha: 0.6) : Colors.white24,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.piano, color: Colors.white, size: 14.sp),
+                          SizedBox(width: 6.w),
+                          Text(
+                            "Instrumentals",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
+
+            SizedBox(height: 10.h),
+
+            // Category Rule Description Hint (PDF Page 4 & 5)
+            Obx(() {
+              final isMusic = controller.selectedKaraokeCategory.value == 'MUSIC';
+              return Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: isMusic
+                      ? Colors.purple.withValues(alpha: 0.15)
+                      : Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(
+                    color: isMusic ? Colors.purpleAccent.withValues(alpha: 0.4) : Colors.amber.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isMusic ? Icons.info_outline : Icons.monetization_on_outlined,
+                      size: 14.sp,
+                      color: isMusic ? Colors.purpleAccent : Colors.amber,
+                    ),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
+                        isMusic
+                            ? "Music Mode: Full audio with line-by-line synced lyrics. (No platform b reward)"
+                            : "Instrumental Mode: Beat audio only. Completion yields 2/3 platform coin reward (b).",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.5.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            SizedBox(height: 10.h),
+
+            // Search Input
+            TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Search title or artist...",
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                filled: true,
+                fillColor: Colors.black26,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              ),
+              onSubmitted: (q) => controller.fetchKaraokeCatalog(query: q),
+            ),
+            SizedBox(height: 10.h),
+
+            // Track Catalog List
+            Expanded(
+              child: Obx(() {
+                if (controller.isKaraokeCatalogLoading.value) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.pinkAccent));
+                }
+                final catalog = controller.karaokeCatalog;
+                if (catalog.isEmpty) {
+                  return const Center(child: Text("No tracks found", style: TextStyle(color: Colors.white70)));
+                }
+
+                final isAssigned = controller.isSingerAssignedToMe;
+
+                return ListView.separated(
+                  itemCount: catalog.length,
+                  separatorBuilder: (_, _) => Divider(color: Colors.white12, height: 1.h),
+                  itemBuilder: (context, idx) {
+                    final track = catalog[idx];
+                    final tId = track['id']?.toString() ?? '';
+                    final title = track['title']?.toString() ?? 'Track';
+                    final artist = track['artist']?.toString() ?? 'Artist';
+                    final type = track['content_type']?.toString() ?? 'INSTRUMENTAL';
+                    final isInstrumental = type == 'INSTRUMENTAL';
+                    final durMs = track['duration_ms'] ?? 180000;
+                    final durSec = durMs is int ? durMs ~/ 1000 : 180;
+                    final durStr = '${durSec ~/ 60}:${(durSec % 60).toString().padLeft(2, '0')}';
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.symmetric(vertical: 4.h),
+                      leading: CircleAvatar(
+                        backgroundColor: isInstrumental
+                            ? Colors.amber.withValues(alpha: 0.2)
+                            : Colors.purple.withValues(alpha: 0.2),
+                        child: Icon(
+                          isInstrumental ? Icons.piano : Icons.mic,
+                          color: isInstrumental ? Colors.amber : Colors.purpleAccent,
+                        ),
+                      ),
+                      title: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 2.h),
+                          Row(
+                            children: [
+                              Icon(Icons.person, color: Colors.cyanAccent, size: 12.sp),
+                              SizedBox(width: 4.w),
+                              Flexible(
+                                child: Text(
+                                  artist.isNotEmpty ? artist : 'Unknown Artist',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.cyanAccent,
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                "• $durStr",
+                                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 3.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: isInstrumental ? Colors.amber : Colors.purpleAccent,
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              isInstrumental ? "INSTRUMENTAL (b)" : "MUSIC",
+                              style: TextStyle(color: Colors.black, fontSize: 7.sp, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isAssigned ? Colors.pinkAccent : Colors.white24,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        ),
+                        onPressed: () async {
+                          Get.back();
+                          await controller.selectKaraokeTrack(tId, type);
+                          await controller.prepareKaraokePlayback();
+                          controller.showTemporaryNotice("Selected track: $title by $artist");
+                        },
+                        child: Text(
+                          isAssigned ? "Sing This" : "Select",
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  // MARK: - Floating Karaoke Lyrics Banner (Viewer & Guest)
+  Widget _buildFloatingKaraokeLyricsBanner(BuildContext context) {
+    return Obx(() {
+      final lyric = controller.karaokeLyrics.value;
+      final nextLyric = controller.karaokeNextLyric.value;
+      final isActive = controller.isKaraokePerformanceActive.value;
+      final title = controller.karaokeTitle.value;
+      final artist = controller.karaokeArtist.value;
+      final singer = controller.karaokeCurrentSinger.value;
+
+      String displayLyric = lyric;
+      if (displayLyric.isEmpty) {
+        if (title.isNotEmpty) {
+          displayLyric = "🎵 Ready: $title ${artist.isNotEmpty ? '($artist)' : ''}";
+        } else if (singer.isNotEmpty) {
+          displayLyric = "🎤 @$singer is up next! Awaiting song selection...";
+        } else {
+          displayLyric = "🎤 Karaoke Arena • Synced Floating Lyrics";
+        }
+      }
+
+      String headerTrackInfo = "GloTune Karaoke";
+      if (title.isNotEmpty) {
+        headerTrackInfo = "$title ${artist.isNotEmpty ? '• $artist' : ''}";
+        if (singer.isNotEmpty) {
+          headerTrackInfo = "@$singer: $headerTrackInfo";
+        }
+      } else if (singer.isNotEmpty) {
+        headerTrackInfo = "Singer: @$singer";
+      }
+
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isActive
+                ? [
+                    const Color(0xFF3B0764).withValues(alpha: 0.95),
+                    const Color(0xFF1E1035).withValues(alpha: 0.95),
+                    const Color(0xFF4C0519).withValues(alpha: 0.95),
+                  ]
+                : [
+                    Colors.black.withValues(alpha: 0.8),
+                    const Color(0xFF1E1B4B).withValues(alpha: 0.85),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: isActive ? Colors.pinkAccent : Colors.white24,
+            width: isActive ? 1.5 : 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isActive ? Colors.pinkAccent : Colors.purpleAccent).withValues(alpha: 0.35),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: isActive ? Colors.pinkAccent : Colors.indigoAccent,
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isActive ? Icons.graphic_eq : Icons.music_note,
+                        color: Colors.white,
+                        size: 11.sp,
+                      ),
+                      SizedBox(width: 3.w),
+                      Text(
+                        isActive ? "LIVE LYRICS" : "KARAOKE",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    headerTrackInfo,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isActive)
+                  Obx(() => Text(
+                    controller.karaokeTimerText.value,
+                    style: TextStyle(
+                      color: Colors.amberAccent,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )),
+              ],
+            ),
+            SizedBox(height: 6.h),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: Text(
+                displayLyric,
+                key: ValueKey<String>(displayLyric),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      color: Colors.pinkAccent.withValues(alpha: 0.8),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (nextLyric.isNotEmpty) ...[
+              SizedBox(height: 4.h),
+              Text(
+                "Up Next: $nextLyric",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.amberAccent.withValues(alpha: 0.9),
+                  fontSize: 10.sp,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+      );
+    });
   }
 
   // MARK: - Viewer Karaoke Participant Slot
@@ -1712,6 +2840,9 @@ class LivePlayerView extends GetView<LivePlayerController> {
     required int userId,
     bool isSinger = false,
   }) {
+    final hostUid = controller.remoteUids.isNotEmpty ? controller.remoteUids.first : null;
+    final isGuestBroadcaster = userId != hostUid && controller.remoteUids.contains(userId) && userId > 0;
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF23252E),
@@ -1723,7 +2854,7 @@ class LivePlayerView extends GetView<LivePlayerController> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (controller.remoteUids.contains(userId))
+          if (isGuestBroadcaster)
             AgoraVideoView(
               controller: VideoViewController.remote(
                 rtcEngine: controller.engine,
@@ -2574,124 +3705,16 @@ class LivePlayerView extends GetView<LivePlayerController> {
 }
 
   void _showGiftBottomSheet() {
-    Get.bottomSheet(
-      Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-            ),
-            SizedBox(height: 20.h),
-            Text(
-              "Send a Gift",
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.h),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildGiftOption(
-                    "Heart",
-                    "heart",
-                    5,
-                    Icons.favorite,
-                    Colors.red,
-                  ),
-                  SizedBox(width: 16.w),
-                  _buildGiftOption(
-                    "Rose",
-                    "rose",
-                    10,
-                    Icons.local_florist,
-                    Colors.pink,
-                  ),
-                  SizedBox(width: 16.w),
-                  _buildGiftOption(
-                    "Galaxy",
-                    "galaxy",
-                    25,
-                    Icons.brightness_3,
-                    Colors.deepPurple,
-                  ),
-                  SizedBox(width: 16.w),
-                  _buildGiftOption(
-                    "Diamond",
-                    "diamond",
-                    50,
-                    Icons.diamond,
-                    Colors.blue,
-                  ),
-                  SizedBox(width: 16.w),
-                  _buildGiftOption(
-                    "Crown",
-                    "crown",
-                    100,
-                    Icons.workspace_premium,
-                    Colors.amber,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 10.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGiftOption(
-    String label,
-    String giftType,
-    int cost,
-    IconData icon,
-    Color color,
-  ) {
-    return GestureDetector(
-      onTap: () => controller.sendGift(giftType),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 32.sp),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            label,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.monetization_on, color: Colors.orange, size: 12.sp),
-              SizedBox(width: 2.w),
-              Text(
-                "$cost",
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-              ),
-            ],
-          ),
-        ],
-      ),
+    controller.fetchUserProfile();
+    GiftGallerySheet.show(
+      context: Get.context!,
+      userCoins: controller.userProfile.value?.yourCoins ?? 0,
+      recipientName: controller.invitingHostName.value.isNotEmpty && controller.invitingHostName.value != 'Host'
+          ? controller.invitingHostName.value
+          : "Host",
+      onSend: (gift, quantity) async {
+        await controller.sendGift(gift.name, quantity: quantity, coins: gift.coins);
+      },
     );
   }
 }

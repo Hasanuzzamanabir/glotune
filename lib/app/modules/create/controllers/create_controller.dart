@@ -15,6 +15,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:glotune/app/data/models/category_model.dart';
 import 'package:glotune/app/data/models/user_profile.dart';
 import 'package:glotune/app/core/services/live_game_service.dart';
+import 'package:video_player/video_player.dart' as vp;
 
 class CreateController extends GetxController {
   final selectedTab = "Videos".obs;
@@ -75,6 +76,7 @@ class CreateController extends GetxController {
       temporaryNotice.value = "";
     });
   }
+
   final isLoadingMembers = false.obs;
   final liveDurationSeconds = 0.obs;
   Timer? _messagePollTimer;
@@ -90,6 +92,7 @@ class CreateController extends GetxController {
   void toggleGameModes() {
     isGameModesVisible.value = !isGameModesVisible.value;
   }
+
   final streamPrivacy = "Public".obs;
   final latencyMode = "Normal".obs;
   final autoRotate = true.obs;
@@ -160,7 +163,8 @@ class CreateController extends GetxController {
     {
       "id": "148d91e3-557a-4c76-a427-feebd079fb2c",
       "name": "Entertainment and Pop Culture",
-      "description": "Music, cinema, television, celebrities, and global pop culture trivia.",
+      "description":
+          "Music, cinema, television, celebrities, and global pop culture trivia.",
       "sort_order": 1,
       "status": "ACTIVE",
       "question_count": 5,
@@ -168,7 +172,8 @@ class CreateController extends GetxController {
     {
       "id": "8899e3a2-c59d-4eed-878f-871ad09bd980",
       "name": "Corporate and Business",
-      "description": "Global markets, corporate giants, finance, entrepreneurship, and economics.",
+      "description":
+          "Global markets, corporate giants, finance, entrepreneurship, and economics.",
       "sort_order": 2,
       "status": "ACTIVE",
       "question_count": 5,
@@ -176,7 +181,8 @@ class CreateController extends GetxController {
     {
       "id": "a624ddd4-1933-45ac-9a1e-868f4797128b",
       "name": "Sport and Athletics",
-      "description": "Football, basketball, tennis, the Olympics, and legendary sports records.",
+      "description":
+          "Football, basketball, tennis, the Olympics, and legendary sports records.",
       "sort_order": 3,
       "status": "ACTIVE",
       "question_count": 5,
@@ -184,7 +190,8 @@ class CreateController extends GetxController {
     {
       "id": "edde6ae3-bf54-40d0-8320-5ee9329a4170",
       "name": "Media and Journalism",
-      "description": "Broadcasting, news organizations, investigative reporting, ethics, and press history.",
+      "description":
+          "Broadcasting, news organizations, investigative reporting, ethics, and press history.",
       "sort_order": 4,
       "status": "ACTIVE",
       "question_count": 5,
@@ -192,7 +199,8 @@ class CreateController extends GetxController {
     {
       "id": "32337c06-51f3-4864-8169-2f476c9942c9",
       "name": "Politics and Governance",
-      "description": "World governments, international relations, constitutions, and political history.",
+      "description":
+          "World governments, international relations, constitutions, and political history.",
       "sort_order": 5,
       "status": "ACTIVE",
       "question_count": 5,
@@ -200,7 +208,8 @@ class CreateController extends GetxController {
     {
       "id": "35aebcda-d98c-4347-978b-c789e44df0b5",
       "name": "Science and Technology",
-      "description": "Physics, chemistry, astronomy, computer science, and modern technological innovations.",
+      "description":
+          "Physics, chemistry, astronomy, computer science, and modern technological innovations.",
       "sort_order": 6,
       "status": "ACTIVE",
       "question_count": 5,
@@ -246,7 +255,8 @@ class CreateController extends GetxController {
   final karaokeCurrentTrackId = ''.obs;
   final karaokeCurrentTrackTitle = ''.obs;
   final karaokeCurrentTrackArtist = ''.obs;
-  final karaokeCurrentTrackType = 'INSTRUMENTAL'.obs; // 'MUSIC' or 'INSTRUMENTAL'
+  final karaokeCurrentTrackType =
+      'INSTRUMENTAL'.obs; // 'MUSIC' or 'INSTRUMENTAL'
   final karaokeAudioUrl = ''.obs;
   final karaokePlaybackToken = ''.obs;
   final karaokeDurationMs = 0.obs;
@@ -256,9 +266,11 @@ class CreateController extends GetxController {
   final isKaraokePerformanceActive = false.obs;
   final karaokeCurrentLyricLine = 0.obs;
   final karaokeCurrentLyricText = ''.obs;
+  final karaokeNextLyricText = ''.obs;
   final karaokeLyricsList = <Map<String, dynamic>>[].obs;
   final karaokeParticipants = <Map<String, dynamic>>[].obs;
   final karaokeCatalog = <Map<String, dynamic>>[].obs;
+  final selectedKaraokeCategory = 'INSTRUMENTAL'.obs; // Default to INSTRUMENTAL
   final isKaraokeCatalogLoading = false.obs;
   final karaokeHeldReward = 0.0.obs;
   final karaokeTotalFanGifts = 0.0.obs;
@@ -268,6 +280,7 @@ class CreateController extends GetxController {
 
   Timer? _karaokeTimer;
   WebSocket? _karaokeWs;
+  vp.VideoPlayerController? _karaokeAudioPlayer;
 
   void toggleGameMenu() {
     showGameOptions.value = !showGameOptions.value;
@@ -433,7 +446,8 @@ class CreateController extends GetxController {
   }
 
   Future<void> initCamera() async {
-    if (isCameraInitialized.value || currentStep.value.startsWith("Live")) return;
+    if (isCameraInitialized.value || currentStep.value.startsWith("Live"))
+      return;
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -609,6 +623,11 @@ class CreateController extends GetxController {
 
   @override
   void onClose() {
+    _stopKaraokeAudio();
+    _karaokeTimer?.cancel();
+    try {
+      _karaokeWs?.close();
+    } catch (_) {}
     liveTitleController.dispose();
     _recordingTimer?.cancel();
     _messagePollTimer?.cancel();
@@ -969,7 +988,8 @@ class CreateController extends GetxController {
                 ? data['host'] as int
                 : int.tryParse(data['host']?.toString() ?? '')) ??
             0;
-        liveMemberCount.value = int.tryParse(
+        liveMemberCount.value =
+            int.tryParse(
               data['viewer_count']?.toString() ??
                   data['member_count']?.toString() ??
                   '0',
@@ -1152,7 +1172,9 @@ class CreateController extends GetxController {
             );
           },
           onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-            print("[DEBUG LIVE] AGORA EVENT: Remote co-host joined: $remoteUid");
+            print(
+              "[DEBUG LIVE] AGORA EVENT: Remote co-host joined: $remoteUid",
+            );
             if (!remoteUids.contains(remoteUid)) {
               remoteUids.add(remoteUid);
             }
@@ -1379,14 +1401,13 @@ class CreateController extends GetxController {
 
     try {
       if (_liveWs != null) {
-        final payload = jsonEncode({
-          "action": "message",
-          "message": text,
-        });
+        final payload = jsonEncode({"action": "message", "message": text});
         _liveWs!.add(payload);
         print("[DEBUG LIVE WS] Message sent: $payload");
       } else {
-        print("[DEBUG LIVE WS] WebSocket not connected; attempting reconnect...");
+        print(
+          "[DEBUG LIVE WS] WebSocket not connected; attempting reconnect...",
+        );
         _connectLiveWebSocket();
       }
     } catch (e) {
@@ -1397,10 +1418,7 @@ class CreateController extends GetxController {
   void sendSocketTyping(bool isTyping) {
     try {
       if (_liveWs != null) {
-        _liveWs!.add(jsonEncode({
-          "action": "typing",
-          "is_typing": isTyping,
-        }));
+        _liveWs!.add(jsonEncode({"action": "typing", "is_typing": isTyping}));
       }
     } catch (e) {
       print("[DEBUG LIVE WS] Error sending typing status: $e");
@@ -1767,10 +1785,7 @@ class CreateController extends GetxController {
     _currentJoinedSession = normalized;
     _lastJoinSessionTime = now;
 
-    final payload = jsonEncode({
-      "action": "join",
-      "type": normalized,
-    });
+    final payload = jsonEncode({"action": "join", "type": normalized});
 
     final changeTypePayload = jsonEncode({
       "action": "change_live_type",
@@ -1784,12 +1799,16 @@ class CreateController extends GetxController {
       try {
         _liveWs!.add(payload);
         _liveWs!.add(changeTypePayload);
-        print("[DEBUG LIVE WS] Sent join session: $payload & change type: $changeTypePayload");
+        print(
+          "[DEBUG LIVE WS] Sent join session: $payload & change type: $changeTypePayload",
+        );
       } catch (e) {
         print("[DEBUG LIVE WS] Error sending join session: $e");
       }
     } else {
-      print("[DEBUG LIVE WS] Socket not yet connected, queuing join session: $normalized");
+      print(
+        "[DEBUG LIVE WS] Socket not yet connected, queuing join session: $normalized",
+      );
       _pendingSessionJoin = normalized;
       if (liveRoomId.value.isNotEmpty) {
         _connectLiveWebSocket();
@@ -1813,8 +1832,10 @@ class CreateController extends GetxController {
       final parsed = Uri.parse(ApiConstants.baseUrl);
       final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
       final portStr = parsed.hasPort ? ':${parsed.port}' : '';
-      final primaryWsUrl = '$wsScheme://${parsed.host}$portStr/api/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
-      final fallbackWsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
+      final primaryWsUrl =
+          '$wsScheme://${parsed.host}$portStr/api/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
+      final fallbackWsUrl =
+          '$wsScheme://${parsed.host}$portStr/ws/live/${liveRoomId.value}/?token=${token ?? ''}';
 
       void listenWs(WebSocket ws) {
         _isConnectingLiveWs = false;
@@ -1824,18 +1845,19 @@ class CreateController extends GetxController {
           } catch (_) {}
         }
         _liveWs = ws;
-        print("[DEBUG LIVE WS] Host connected successfully to: ${ws.toString()}");
+        print(
+          "[DEBUG LIVE WS] Host connected successfully to: ${ws.toString()}",
+        );
 
         // Send queued or default session join ONLY ONCE
-        final joinType = _pendingSessionJoin ?? (isBoxBattleActive.value ? "box battle" : "live");
+        final joinType =
+            _pendingSessionJoin ??
+            (isBoxBattleActive.value ? "box battle" : "live");
         _pendingSessionJoin = null;
         _currentJoinedSession = joinType;
         _lastJoinSessionTime = DateTime.now();
 
-        final joinPayload = jsonEncode({
-          "action": "join",
-          "type": joinType,
-        });
+        final joinPayload = jsonEncode({"action": "join", "type": joinType});
         final changeTypePayload = jsonEncode({
           "action": "change_live_type",
           "type": "change_live_type",
@@ -1852,39 +1874,49 @@ class CreateController extends GetxController {
           print("[DEBUG LIVE WS] Error sending join on connect: $e");
         }
 
-        ws.listen((event) {
-          try {
-            final data = jsonDecode(event.toString());
-            print("[DEBUG LIVE WS Event]: $data");
-            if (data is Map<String, dynamic>) {
-              _handleHostWebSocketEvent(data);
+        ws.listen(
+          (event) {
+            try {
+              final data = jsonDecode(event.toString());
+              print("[DEBUG LIVE WS Event]: $data");
+              if (data is Map<String, dynamic>) {
+                _handleHostWebSocketEvent(data);
+              }
+            } catch (e) {
+              print("[DEBUG LIVE WS] Error parsing event: $e");
             }
-          } catch (e) {
-            print("[DEBUG LIVE WS] Error parsing event: $e");
-          }
-        }, onError: (err) {
-          print("[DEBUG LIVE WS] Stream error: $err");
-          _liveWs = null;
-          _isConnectingLiveWs = false;
-        }, onDone: () {
-          print("[DEBUG LIVE WS] Stream closed");
-          _liveWs = null;
-          _isConnectingLiveWs = false;
-        });
+          },
+          onError: (err) {
+            print("[DEBUG LIVE WS] Stream error: $err");
+            _liveWs = null;
+            _isConnectingLiveWs = false;
+          },
+          onDone: () {
+            print("[DEBUG LIVE WS] Stream closed");
+            _liveWs = null;
+            _isConnectingLiveWs = false;
+          },
+        );
       }
 
       print("[DEBUG LIVE WS] Host connecting to primary: $primaryWsUrl");
-      WebSocket.connect(primaryWsUrl).then((ws) {
-        listenWs(ws);
-      }).catchError((err) {
-        print("[DEBUG LIVE WS] Primary connect error ($err), attempting fallback to: $fallbackWsUrl");
-        WebSocket.connect(fallbackWsUrl).then((ws) {
-          listenWs(ws);
-        }).catchError((fallbackErr) {
-          _isConnectingLiveWs = false;
-          print("[DEBUG LIVE WS] Fallback connect error: $fallbackErr");
-        });
-      });
+      WebSocket.connect(primaryWsUrl)
+          .then((ws) {
+            listenWs(ws);
+          })
+          .catchError((err) {
+            print(
+              "[DEBUG LIVE WS] Primary connect error ($err), attempting fallback to: $fallbackWsUrl",
+            );
+            WebSocket.connect(fallbackWsUrl)
+                .then((ws) {
+                  listenWs(ws);
+                })
+                .catchError((fallbackErr) {
+                  _isConnectingLiveWs = false;
+                  print("[DEBUG LIVE WS] Fallback connect error: $fallbackErr");
+                });
+          });
     } catch (e) {
       _isConnectingLiveWs = false;
       print("[DEBUG LIVE WS] Connect exception: $e");
@@ -1897,7 +1929,8 @@ class CreateController extends GetxController {
 
     // 1. New chat message
     if (type == 'message' || action == 'message') {
-      final text = (data['message'] ?? data['text'] ?? data['content'])?.toString();
+      final text = (data['message'] ?? data['text'] ?? data['content'])
+          ?.toString();
       if (text != null && text.trim().isNotEmpty) {
         final msgId = data['message_id'] ?? data['id'];
         final username = data['username'] ?? data['user']?['username'];
@@ -1918,10 +1951,13 @@ class CreateController extends GetxController {
         final existingIndex = liveMessages.indexWhere((m) {
           if (m is Map) {
             final mId = m['message_id'] ?? m['id'];
-            if (msgId != null && mId != null && msgId.toString() == mId.toString()) {
+            if (msgId != null &&
+                mId != null &&
+                msgId.toString() == mId.toString()) {
               return true;
             }
-            final mText = (m['message'] ?? m['text'] ?? m['content'])?.toString();
+            final mText = (m['message'] ?? m['text'] ?? m['content'])
+                ?.toString();
             final mUser = m['username'] ?? m['user']?['username'];
             if (mText == text) {
               if (mUser == null || username == null || mUser == username) {
@@ -1935,10 +1971,7 @@ class CreateController extends GetxController {
         if (existingIndex != -1) {
           final existing = liveMessages[existingIndex];
           if (existing is Map) {
-            liveMessages[existingIndex] = {
-              ...existing,
-              ...normalized,
-            };
+            liveMessages[existingIndex] = {...existing, ...normalized};
           }
         } else {
           liveMessages.insert(0, normalized);
@@ -1946,7 +1979,6 @@ class CreateController extends GetxController {
         }
       }
     }
-
     // 2. Incoming like, heart or reaction from viewer
     else if (type == 'like' ||
         action == 'like' ||
@@ -1956,13 +1988,18 @@ class CreateController extends GetxController {
         action == 'love' ||
         type == 'reaction' ||
         action == 'reaction') {
-      final reactionName = (type == 'heart' || action == 'heart' || type == 'love' || action == 'love')
+      final reactionName =
+          (type == 'heart' ||
+              action == 'heart' ||
+              type == 'love' ||
+              action == 'love')
           ? 'heart'
-          : (data['reaction_type']?.toString() ?? data['reaction']?.toString() ?? 'like');
+          : (data['reaction_type']?.toString() ??
+                data['reaction']?.toString() ??
+                'like');
       print("[DEBUG LIVE WS] Incoming reaction event: $reactionName");
       _reactionStreamController.add(reactionName);
     }
-
     // 3. Incoming gift
     else if (type == 'gift') {
       final giftType = data['gift_type']?.toString() ?? 'gift';
@@ -1975,11 +2012,11 @@ class CreateController extends GetxController {
         'is_system': true,
       });
     }
-
     // 4. Viewer typing
     else if (type == 'typing') {
       final isTyping = data['is_typing'] == true || data['is_typing'] == 'true';
-      final username = data['username'] ?? data['user']?['username'] ?? 'Someone';
+      final username =
+          data['username'] ?? data['user']?['username'] ?? 'Someone';
       if (isTyping) {
         typingNotice.value = "$username is typing...";
         _typingTimer?.cancel();
@@ -1990,10 +2027,10 @@ class CreateController extends GetxController {
         typingNotice.value = "";
       }
     }
-
     // 5. Member count / action updates
     else if (type == 'member_action') {
-      final countVal = data['viewer_count'] ?? data['member_count'] ?? data['count'];
+      final countVal =
+          data['viewer_count'] ?? data['member_count'] ?? data['count'];
       if (countVal != null) {
         final parsed = int.tryParse(countVal.toString());
         if (parsed != null) {
@@ -2003,33 +2040,42 @@ class CreateController extends GetxController {
       }
 
       final username = data['username'] ?? data['user']?['username'] ?? '';
-      String noticeMsg = (data['message'] ?? data['text'] ?? '')?.toString().trim() ?? '';
+      String noticeMsg =
+          (data['message'] ?? data['text'] ?? '')?.toString().trim() ?? '';
       if (noticeMsg.isEmpty && action != null) {
         if (action == 'user_left') {
-          noticeMsg = username.isNotEmpty ? '@$username left the LIVE' : 'A viewer left the LIVE';
+          noticeMsg = username.isNotEmpty
+              ? '@$username left the LIVE'
+              : 'A viewer left the LIVE';
         } else if (action == 'user_joined') {
-          noticeMsg = username.isNotEmpty ? '@$username joined the LIVE' : 'A new viewer joined the LIVE';
+          noticeMsg = username.isNotEmpty
+              ? '@$username joined the LIVE'
+              : 'A new viewer joined the LIVE';
         }
       }
 
       // Update real liveMembers list from socket
       if (action == 'user_joined') {
         final userId = data['user_id'] ?? data['id'] ?? data['user']?['id'];
-        final pic = data['profile_picture'] ?? data['avatar'] ?? data['user']?['profile_picture'] ?? data['user']?['avatar'];
+        final pic =
+            data['profile_picture'] ??
+            data['avatar'] ??
+            data['user']?['profile_picture'] ??
+            data['user']?['avatar'];
         final memberObj = {
           'id': userId,
           'user_id': userId,
           'username': username,
           'profile_picture': pic,
-          'user': {
-            'id': userId,
-            'username': username,
-            'profile_picture': pic,
-          }
+          'user': {'id': userId, 'username': username, 'profile_picture': pic},
         };
         final existsIndex = liveMembers.indexWhere((m) {
-          final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
-          return mId != null && userId != null && mId.toString() == userId.toString();
+          final mId = (m is Map
+              ? (m['user']?['id'] ?? m['id'] ?? m['user_id'])
+              : null);
+          return mId != null &&
+              userId != null &&
+              mId.toString() == userId.toString();
         });
         if (existsIndex != -1) {
           liveMembers[existsIndex] = memberObj;
@@ -2040,7 +2086,9 @@ class CreateController extends GetxController {
         final userId = data['user_id'] ?? data['id'] ?? data['user']?['id'];
         if (userId != null) {
           liveMembers.removeWhere((m) {
-            final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
+            final mId = (m is Map
+                ? (m['user']?['id'] ?? m['id'] ?? m['user_id'])
+                : null);
             return mId != null && mId.toString() == userId.toString();
           });
         }
@@ -2062,10 +2110,10 @@ class CreateController extends GetxController {
         });
       }
     }
-
     // 6. Join or stream requests from viewers
     else if (type == 'stream_request' && data['action'] == 'requested') {
-      final requesterName = data['requester_username'] ?? data['username'] ?? 'User';
+      final requesterName =
+          data['requester_username'] ?? data['username'] ?? 'User';
       final requesterId = data['requester_id'] ?? data['user_id'];
       Get.snackbar(
         'Stream Request',
@@ -2090,7 +2138,6 @@ class CreateController extends GetxController {
         ),
       );
     }
-
     // 7. Box Battle events (PDF Section 14)
     else if (type == 'guest_gift_update' || action == 'guest_gift_update') {
       final slotNumber = data['slot_number'];
@@ -2106,12 +2153,51 @@ class CreateController extends GetxController {
           boxSlots[idx] = s;
         }
       }
+    } else if (type == 'box_slot_update' ||
+        action == 'box_slot_update' ||
+        type == 'box_slot_join' ||
+        type == 'box_slot_leave') {
+      final slotNumber = data['slot_number'];
+      final status =
+          data['status']?.toString() ??
+          (type == 'box_slot_leave' ? 'VACANT' : 'OCCUPIED');
+      if (slotNumber != null) {
+        final slotNum = int.tryParse(slotNumber.toString());
+        if (slotNum != null) {
+          final idx = boxSlots.indexWhere((s) => s['slot_number'] == slotNum);
+          if (idx != -1) {
+            if (status == 'VACANT') {
+              boxSlots[idx] = {
+                'slot_number': slotNum,
+                'status': 'VACANT',
+                'uid': null,
+                'guest_id': null,
+                'username': '',
+                'gift_total': 0,
+                'bonus_total': 0,
+                'mic_on': true,
+                'camera_on': true,
+              };
+            } else {
+              final s = Map<String, dynamic>.from(boxSlots[idx]);
+              s['status'] = 'OCCUPIED';
+              s['uid'] = data['uid'] ?? data['user_id'];
+              s['guest_id'] = data['user_id'];
+              s['username'] = data['username'] ?? 'Guest $slotNum';
+              if (data['profile_picture'] != null) {
+                s['profile_picture'] = data['profile_picture'];
+              }
+              boxSlots[idx] = s;
+            }
+          }
+        }
+      }
     } else if (type == 'battle_ended' || action == 'battle_ended') {
       endBoxBattle();
     }
-
     // 8. Session status & join notifications
-    else if (type == 'session_status' || type == 'session_status_notification') {
+    else if (type == 'session_status' ||
+        type == 'session_status_notification') {
       _handleSessionStatusEvent(data);
     }
   }
@@ -2128,13 +2214,17 @@ class CreateController extends GetxController {
     final displayMsg = (rawMsg != null && rawMsg.trim().isNotEmpty)
         ? (rawMsg.startsWith('@') ? rawMsg : '@$username $rawMsg')
         : '@$username joined $gameType';
-    final time = data['timestamp']?.toString() ?? DateTime.now().toIso8601String();
+    final time =
+        data['timestamp']?.toString() ?? DateTime.now().toIso8601String();
 
     // Resolve full image URL if relative path
     String? resolvedPic = profilePic;
-    if (resolvedPic != null && resolvedPic.isNotEmpty && !resolvedPic.startsWith('http')) {
+    if (resolvedPic != null &&
+        resolvedPic.isNotEmpty &&
+        !resolvedPic.startsWith('http')) {
       final origin = Uri.parse(ApiConstants.baseUrl).origin;
-      resolvedPic = '$origin${resolvedPic.startsWith('/') ? '' : '/'}$resolvedPic';
+      resolvedPic =
+          '$origin${resolvedPic.startsWith('/') ? '' : '/'}$resolvedPic';
     }
 
     // 1. Insert into liveMessages for chat feed
@@ -2169,11 +2259,15 @@ class CreateController extends GetxController {
         'id': userId,
         'username': username,
         'profile_picture': resolvedPic,
-      }
+      },
     };
     final memberIdx = liveMembers.indexWhere((m) {
-      final mId = (m is Map ? (m['user']?['id'] ?? m['id'] ?? m['user_id']) : null);
-      return mId != null && userId != null && mId.toString() == userId.toString();
+      final mId = (m is Map
+          ? (m['user']?['id'] ?? m['id'] ?? m['user_id'])
+          : null);
+      return mId != null &&
+          userId != null &&
+          mId.toString() == userId.toString();
     });
     if (memberIdx != -1) {
       liveMembers[memberIdx] = memberObj;
@@ -2187,7 +2281,9 @@ class CreateController extends GetxController {
     if (normalizedGameType.contains('box')) {
       final existingSlotIdx = boxSlots.indexWhere((s) {
         final sUid = s['user_id'] ?? s['guest_id'] ?? s['uid'];
-        return sUid != null && userId != null && sUid.toString() == userId.toString();
+        return sUid != null &&
+            userId != null &&
+            sUid.toString() == userId.toString();
       });
       if (existingSlotIdx == -1) {
         final vacantIdx = boxSlots.indexWhere((s) => s['status'] == 'VACANT');
@@ -2196,7 +2292,9 @@ class CreateController extends GetxController {
           updated['status'] = 'OCCUPIED';
           updated['user_id'] = userId;
           updated['guest_id'] = userId;
-          updated['uid'] = userId is int ? userId : int.tryParse(userId.toString());
+          updated['uid'] = userId is int
+              ? userId
+              : int.tryParse(userId.toString());
           updated['username'] = username;
           updated['profile_picture'] = resolvedPic;
           updated['gift_total'] = 0;
@@ -2212,7 +2310,9 @@ class CreateController extends GetxController {
     if (normalizedGameType.contains('quiz')) {
       final existsInQuiz = quizParticipants.any((p) {
         final pId = p['user_id'] ?? p['id'];
-        return pId != null && userId != null && pId.toString() == userId.toString();
+        return pId != null &&
+            userId != null &&
+            pId.toString() == userId.toString();
       });
       if (!existsInQuiz && userId != null) {
         quizParticipants.add({
@@ -2259,7 +2359,9 @@ class CreateController extends GetxController {
           "room_id": liveRoomId.value,
         });
         _liveWs!.add(inviteWsPayload);
-        print("[DEBUG LIVE WS] Sent cohost_invite via WebSocket: $inviteWsPayload");
+        print(
+          "[DEBUG LIVE WS] Sent cohost_invite via WebSocket: $inviteWsPayload",
+        );
       }
     } catch (wsErr) {
       print("[DEBUG LIVE WS] Error sending invite via WS: $wsErr");
@@ -2289,7 +2391,9 @@ class CreateController extends GetxController {
               "user_id": parsedUserId,
             }),
           );
-          print("[DEBUG LIVE] inviteGuest at $ep response: ${res.statusCode} - ${res.body}");
+          print(
+            "[DEBUG LIVE] inviteGuest at $ep response: ${res.statusCode} - ${res.body}",
+          );
           if (res.statusCode == 200 || res.statusCode == 201) {
             break;
           }
@@ -2413,13 +2517,15 @@ class CreateController extends GetxController {
 
     try {
       if (_liveWs != null) {
-        _liveWs!.add(jsonEncode({
-          "type": "battle_started",
-          "action": "battle_started",
-          "battle_type": "box_battle",
-          "max_guests": 8,
-          "room_id": liveRoomId.value,
-        }));
+        _liveWs!.add(
+          jsonEncode({
+            "type": "battle_started",
+            "action": "battle_started",
+            "battle_type": "box_battle",
+            "max_guests": 8,
+            "room_id": liveRoomId.value,
+          }),
+        );
       }
     } catch (_) {}
 
@@ -2428,8 +2534,13 @@ class CreateController extends GetxController {
       final token = authService.accessToken.value;
       if (token != null && liveRoomId.value.isNotEmpty) {
         apiClient.post(
-          Uri.parse('${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/box-battles/'),
-          headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+          Uri.parse(
+            '${ApiConstants.baseUrl}live/rooms/${liveRoomId.value}/box-battles/',
+          ),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
           body: jsonEncode({"battle_type": "box_battle", "max_guests": 8}),
         );
       }
@@ -2446,11 +2557,13 @@ class CreateController extends GetxController {
 
     try {
       if (_liveWs != null) {
-        _liveWs!.add(jsonEncode({
-          "type": "battle_ended",
-          "action": "battle_ended",
-          "room_id": liveRoomId.value,
-        }));
+        _liveWs!.add(
+          jsonEncode({
+            "type": "battle_ended",
+            "action": "battle_ended",
+            "room_id": liveRoomId.value,
+          }),
+        );
       }
     } catch (_) {}
 
@@ -2486,13 +2599,15 @@ class CreateController extends GetxController {
 
       try {
         if (_liveWs != null) {
-          _liveWs!.add(jsonEncode({
-            "type": "guest_removed",
-            "action": "guest_removed",
-            "slot_number": slotNumber,
-            "guest_id": uid,
-            "room_id": liveRoomId.value,
-          }));
+          _liveWs!.add(
+            jsonEncode({
+              "type": "guest_removed",
+              "action": "guest_removed",
+              "slot_number": slotNumber,
+              "guest_id": uid,
+              "room_id": liveRoomId.value,
+            }),
+          );
         }
       } catch (_) {}
 
@@ -2583,7 +2698,9 @@ class CreateController extends GetxController {
     }
     final roomId = (targetLiveId != null && targetLiveId.isNotEmpty)
         ? targetLiveId
-        : (liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d');
+        : (liveRoomId.value.isNotEmpty
+              ? liveRoomId.value
+              : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d');
     if (liveRoomId.value.isEmpty) {
       liveRoomId.value = roomId;
     }
@@ -2604,33 +2721,47 @@ class CreateController extends GetxController {
         if (id != null) {
           quizGameId.value = id.toString();
         }
-        quizGameStatus.value = gameRes['status']?.toString() ?? 'WAITING_FOR_CATEGORY';
-        print("[DEBUG LIVE QUIZ] Quiz game created/found. ID: ${quizGameId.value}, status: ${quizGameStatus.value}");
+        quizGameStatus.value =
+            gameRes['status']?.toString() ?? 'WAITING_FOR_CATEGORY';
+        print(
+          "[DEBUG LIVE QUIZ] Quiz game created/found. ID: ${quizGameId.value}, status: ${quizGameStatus.value}",
+        );
 
         if (gameRes['active_category'] is Map) {
-          selectedQuizCategoryId.value = gameRes['active_category']['id']?.toString() ?? '';
-          selectedQuizCategoryName.value = gameRes['active_category']['name']?.toString() ?? '';
+          selectedQuizCategoryId.value =
+              gameRes['active_category']['id']?.toString() ?? '';
+          selectedQuizCategoryName.value =
+              gameRes['active_category']['name']?.toString() ?? '';
         }
 
         if (gameRes['participants'] is List) {
-          quizParticipants.value = List<Map<String, dynamic>>.from(gameRes['participants']);
+          quizParticipants.value = List<Map<String, dynamic>>.from(
+            gameRes['participants'],
+          );
         }
 
         if (gameRes['active_round'] is Map) {
           final round = gameRes['active_round'];
-          activeQuizRoundId.value = (round['id'] ?? round['round_id'])?.toString() ?? '';
+          activeQuizRoundId.value =
+              (round['id'] ?? round['round_id'])?.toString() ?? '';
           activeQuizRoundNo.value = round['round_no'] ?? 1;
 
           if (round['question'] is Map) {
-            activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+            activeQuizQuestion.value = Map<String, dynamic>.from(
+              round['question'],
+            );
             List<dynamic>? answersList;
-            if (round['question']['answers'] is List && (round['question']['answers'] as List).isNotEmpty) {
+            if (round['question']['answers'] is List &&
+                (round['question']['answers'] as List).isNotEmpty) {
               answersList = round['question']['answers'];
-            } else if (round['answers'] is List && (round['answers'] as List).isNotEmpty) {
+            } else if (round['answers'] is List &&
+                (round['answers'] as List).isNotEmpty) {
               answersList = round['answers'];
             }
             if (answersList != null) {
-              activeQuizAnswers.value = List<Map<String, dynamic>>.from(answersList);
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+                answersList,
+              );
             }
           }
         }
@@ -2638,8 +2769,10 @@ class CreateController extends GetxController {
 
       // If category not selected yet, pick first category returned from API
       if (selectedQuizCategoryId.value.isEmpty && quizCategories.isNotEmpty) {
-        selectedQuizCategoryId.value = quizCategories.first['id']?.toString() ?? '';
-        selectedQuizCategoryName.value = quizCategories.first['name']?.toString() ?? '';
+        selectedQuizCategoryId.value =
+            quizCategories.first['id']?.toString() ?? '';
+        selectedQuizCategoryName.value =
+            quizCategories.first['name']?.toString() ?? '';
       }
     } catch (e) {
       print("[DEBUG LIVE QUIZ] initOrJoinQuizGame error: $e");
@@ -2648,11 +2781,15 @@ class CreateController extends GetxController {
 
   /// 1. Fetch active quiz categories from backend
   Future<void> fetchQuizCategories() async {
-    final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
+    final roomId = liveRoomId.value.isNotEmpty
+        ? liveRoomId.value
+        : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
     try {
       isLoadingQuizCategories.value = true;
       final cats = await gameService.getQuizCategories(roomId);
-      print("[DEBUG LIVE QUIZ] Fetched ${cats.length} quiz categories from API");
+      print(
+        "[DEBUG LIVE QUIZ] Fetched ${cats.length} quiz categories from API",
+      );
       if (cats.isNotEmpty) {
         quizCategories.value = cats;
         if (selectedQuizCategoryId.value.isEmpty) {
@@ -2676,10 +2813,7 @@ class CreateController extends GetxController {
     print("[DEBUG LIVE QUIZ] Locking category: $categoryName ($categoryId)");
 
     // 1. Authoritative WebSocket action
-    _sendQuizWsAction({
-      'action': 'lock_category',
-      'category_id': categoryId,
-    });
+    _sendQuizWsAction({'action': 'lock_category', 'category_id': categoryId});
 
     // 2. HTTP Fallback
     if (quizGameId.value.isNotEmpty) {
@@ -2702,8 +2836,12 @@ class CreateController extends GetxController {
     }
 
     // Automatically lock category if still waiting for category
-    if (selectedQuizCategoryId.value.isNotEmpty && quizGameStatus.value == 'WAITING_FOR_CATEGORY') {
-      await lockQuizCategory(selectedQuizCategoryId.value, selectedQuizCategoryName.value);
+    if (selectedQuizCategoryId.value.isNotEmpty &&
+        quizGameStatus.value == 'WAITING_FOR_CATEGORY') {
+      await lockQuizCategory(
+        selectedQuizCategoryId.value,
+        selectedQuizCategoryName.value,
+      );
     }
 
     // Reset round answers & choices locally while waiting for server event
@@ -2724,25 +2862,34 @@ class CreateController extends GetxController {
         final res = await gameService.startQuizRound(quizGameId.value);
         if (res != null) {
           activeQuizRoundId.value = res['id']?.toString() ?? '';
-          activeQuizRoundNo.value = res['round_no'] ?? (activeQuizRoundNo.value + 1);
+          activeQuizRoundNo.value =
+              res['round_no'] ?? (activeQuizRoundNo.value + 1);
           quizGameStatus.value = 'QUESTION_ACTIVE';
           isQuizRoundActive.value = true;
 
           if (res['question'] is Map) {
-            activeQuizQuestion.value = Map<String, dynamic>.from(res['question']);
+            activeQuizQuestion.value = Map<String, dynamic>.from(
+              res['question'],
+            );
             List<dynamic>? answersList;
-            if (res['question']['answers'] is List && (res['question']['answers'] as List).isNotEmpty) {
+            if (res['question']['answers'] is List &&
+                (res['question']['answers'] as List).isNotEmpty) {
               answersList = res['question']['answers'];
-            } else if (res['answers'] is List && (res['answers'] as List).isNotEmpty) {
+            } else if (res['answers'] is List &&
+                (res['answers'] as List).isNotEmpty) {
               answersList = res['answers'];
             }
             if (answersList != null) {
-              activeQuizAnswers.value = List<Map<String, dynamic>>.from(answersList);
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+                answersList,
+              );
             }
           }
 
           if (res['deadline_at'] != null) {
-            quizDeadlineAt.value = DateTime.tryParse(res['deadline_at'].toString());
+            quizDeadlineAt.value = DateTime.tryParse(
+              res['deadline_at'].toString(),
+            );
           }
 
           _startQuizCountdownTimer(30);
@@ -2761,7 +2908,8 @@ class CreateController extends GetxController {
     _quizRoundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (quizTimerSeconds.value > 1) {
         quizTimerSeconds.value--;
-        quizTimerText.value = "00:${quizTimerSeconds.value.toString().padLeft(2, '0')}";
+        quizTimerText.value =
+            "00:${quizTimerSeconds.value.toString().padLeft(2, '0')}";
       } else {
         quizTimerSeconds.value = 0;
         quizTimerText.value = "00:00";
@@ -2781,9 +2929,12 @@ class CreateController extends GetxController {
     selectedAnswerOption.value = optionCode;
     isAnswerSubmitted.value = true;
     final userId = userProfile.value?.id ?? 1;
-    final key = 'ans_user${userId}_r${activeQuizRoundNo.value}_req${DateTime.now().millisecondsSinceEpoch}';
+    final key =
+        'ans_user${userId}_r${activeQuizRoundNo.value}_req${DateTime.now().millisecondsSinceEpoch}';
 
-    print("[DEBUG LIVE QUIZ] Submitting answer via WS: $optionCode for round: ${activeQuizRoundId.value}");
+    print(
+      "[DEBUG LIVE QUIZ] Submitting answer via WS: $optionCode for round: ${activeQuizRoundId.value}",
+    );
 
     // 1. Authoritative WebSocket action
     _sendQuizWsAction({
@@ -2841,10 +2992,18 @@ class CreateController extends GetxController {
 
             for (final r in quizRewards) {
               final uid = r['user_id'];
-              final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
+              final idx = quizParticipants.indexWhere(
+                (p) => p['user_id'] == uid,
+              );
               if (idx != -1) {
-                final currentB = double.tryParse(quizParticipants[idx]['platform_reward_b']?.toString() ?? '0') ?? 0;
-                final added = double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
+                final currentB =
+                    double.tryParse(
+                      quizParticipants[idx]['platform_reward_b']?.toString() ??
+                          '0',
+                    ) ??
+                    0;
+                final added =
+                    double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
                 quizParticipants[idx]['platform_reward_b'] = (currentB + added);
                 quizParticipants[idx]['is_correct'] = true;
               }
@@ -2864,7 +3023,9 @@ class CreateController extends GetxController {
     double amount, {
     String giftType = 'GALAXY_STAR',
   }) async {
-    print("[DEBUG LIVE QUIZ] Sending gift via WS to $recipientUserId ($amount)");
+    print(
+      "[DEBUG LIVE QUIZ] Sending gift via WS to $recipientUserId ($amount)",
+    );
 
     // 1. Authoritative WebSocket action
     _sendQuizWsAction({
@@ -2884,13 +3045,24 @@ class CreateController extends GetxController {
           giftType: giftType,
         );
         if (res != null) {
-          final idx = quizParticipants.indexWhere((p) => p['user_id'] == recipientUserId);
+          final idx = quizParticipants.indexWhere(
+            (p) => p['user_id'] == recipientUserId,
+          );
           if (idx != -1) {
-            final currentA = double.tryParse(quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+            final currentA =
+                double.tryParse(
+                  quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0',
+                ) ??
+                0;
             quizParticipants[idx]['fan_gifts_a'] = currentA + amount;
             quizParticipants.refresh();
           }
-          Get.snackbar("Gift Sent!", "Sent $giftType to participant", backgroundColor: Colors.white, colorText: Colors.black);
+          Get.snackbar(
+            "Gift Sent!",
+            "Sent $giftType to participant",
+            backgroundColor: Colors.white,
+            colorText: Colors.black,
+          );
         }
       } catch (e) {
         print("[DEBUG LIVE QUIZ] sendQuizGift error: $e");
@@ -2908,8 +3080,10 @@ class CreateController extends GetxController {
         quizGameStatus.value = state['status']?.toString() ?? 'ACTIVE';
 
         if (state['active_category'] is Map) {
-          selectedQuizCategoryId.value = state['active_category']['id']?.toString() ?? '';
-          selectedQuizCategoryName.value = state['active_category']['name']?.toString() ?? '';
+          selectedQuizCategoryId.value =
+              state['active_category']['id']?.toString() ?? '';
+          selectedQuizCategoryName.value =
+              state['active_category']['name']?.toString() ?? '';
         }
 
         if (state['active_round'] is Map) {
@@ -2918,15 +3092,21 @@ class CreateController extends GetxController {
           activeQuizRoundNo.value = round['round_no'] ?? 1;
 
           if (round['question'] is Map) {
-            activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+            activeQuizQuestion.value = Map<String, dynamic>.from(
+              round['question'],
+            );
             if (round['question']['answers'] is List) {
-              activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['question']['answers']);
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+                round['question']['answers'],
+              );
             }
           }
 
           if (round['status'] == 'QUESTION_ACTIVE') {
             isQuizRoundActive.value = true;
-            final deadline = DateTime.tryParse(round['deadline_at']?.toString() ?? '');
+            final deadline = DateTime.tryParse(
+              round['deadline_at']?.toString() ?? '',
+            );
             if (deadline != null) {
               final rem = deadline.difference(DateTime.now()).inSeconds;
               if (rem > 0) {
@@ -2937,7 +3117,9 @@ class CreateController extends GetxController {
         }
 
         if (state['participants'] is List) {
-          quizParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+          quizParticipants.value = List<Map<String, dynamic>>.from(
+            state['participants'],
+          );
         }
       }
     } catch (e) {
@@ -2960,9 +3142,16 @@ class CreateController extends GetxController {
       try {
         final res = await gameService.endQuizGame(quizGameId.value);
         if (res != null) {
-          totalFanGiftsEarned.value = double.tryParse(res['total_fan_gifts']?.toString() ?? '0') ?? 0;
-          totalReleasedRewards.value = double.tryParse(res['total_released_rewards']?.toString() ?? '0') ?? 0;
-          hostShareEarnings.value = double.tryParse(res['host_share_earnings']?.toString() ?? '0') ?? 0;
+          totalFanGiftsEarned.value =
+              double.tryParse(res['total_fan_gifts']?.toString() ?? '0') ?? 0;
+          totalReleasedRewards.value =
+              double.tryParse(
+                res['total_released_rewards']?.toString() ?? '0',
+              ) ??
+              0;
+          hostShareEarnings.value =
+              double.tryParse(res['host_share_earnings']?.toString() ?? '0') ??
+              0;
 
           _showQuizEndSummaryDialog();
           return;
@@ -2987,26 +3176,50 @@ class CreateController extends GetxController {
             children: [
               Text(
                 "Quiz Session Ended 🏆",
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
-              _buildStatRow(Icons.card_giftcard, "Total Fan Gifts (a)", "${totalFanGiftsEarned.value}"),
+              _buildStatRow(
+                Icons.card_giftcard,
+                "Total Fan Gifts (a)",
+                "${totalFanGiftsEarned.value}",
+              ),
               const SizedBox(height: 10),
-              _buildStatRow(Icons.emoji_events_outlined, "Platform Rewards (b)", "${totalReleasedRewards.value}"),
+              _buildStatRow(
+                Icons.emoji_events_outlined,
+                "Platform Rewards (b)",
+                "${totalReleasedRewards.value}",
+              ),
               const SizedBox(height: 10),
-              _buildStatRow(Icons.monetization_on_outlined, "Host Earnings", "${hostShareEarnings.value}"),
+              _buildStatRow(
+                Icons.monetization_on_outlined,
+                "Host Earnings",
+                "${hostShareEarnings.value}",
+              ),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B1818),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   minimumSize: const Size(double.infinity, 42),
                 ),
                 onPressed: () {
                   Get.back();
                   navigateTo("LiveStream");
                 },
-                child: const Text("Return to Live", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Return to Live",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -3019,7 +3232,9 @@ class CreateController extends GetxController {
   // ==================== LIVE QUIZ WEBSOCKET ====================
 
   void _connectQuizWebSocket() {
-    final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
+    final roomId = liveRoomId.value.isNotEmpty
+        ? liveRoomId.value
+        : 'cf50c1d8-0a2e-4dd8-8cc9-a5916a0bb62d';
     if (_quizWs != null) {
       try {
         _quizWs!.close();
@@ -3040,60 +3255,80 @@ class CreateController extends GetxController {
       // ws://<host>/ws/live-quiz/<game_id>/?token=<JWT>
       final String wsUrl;
       if (roomId.isNotEmpty) {
-        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/quiz/?token=${token ?? ''}';
+        wsUrl =
+            '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/quiz/?token=${token ?? ''}';
       } else if (quizGameId.value.isNotEmpty) {
-        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
+        wsUrl =
+            '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
       } else {
         return;
       }
 
       print("[DEBUG LIVE QUIZ WS] Connecting to Quiz WebSocket: $wsUrl");
-      WebSocket.connect(wsUrl).then((ws) {
-        _quizWs = ws;
-        print("[DEBUG LIVE QUIZ WS] Connected successfully!");
-
-        // Auto join game as HOST
-        _sendQuizWsAction({
-          'action': 'join_game',
-          'seat': 'HOST',
-          'role': 'HOST',
-        });
-
-        ws.listen((event) {
-          try {
-            final data = jsonDecode(event.toString());
-            print("[DEBUG LIVE QUIZ WS Event]: $data");
-            if (data is Map<String, dynamic>) {
-              _handleQuizWsEvent(data);
-            }
-          } catch (e) {
-            print("[DEBUG LIVE QUIZ WS] Parse error: $e");
-          }
-        }, onError: (err) {
-          print("[DEBUG LIVE QUIZ WS] Stream error: $err");
-          _quizWs = null;
-        }, onDone: () {
-          print("[DEBUG LIVE QUIZ WS] Stream closed");
-          _quizWs = null;
-        });
-      }).catchError((err) {
-        print("[DEBUG LIVE QUIZ WS] Connect error: $err");
-        // Fallback: if connecting via live_room_id failed and quizGameId is known, try /ws/live-quiz/<game_id>/
-        if (quizGameId.value.isNotEmpty && !wsUrl.contains('live-quiz')) {
-          final fallbackUrl = '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
-          print("[DEBUG LIVE QUIZ WS] Trying fallback URL: $fallbackUrl");
-          WebSocket.connect(fallbackUrl).then((ws) {
+      WebSocket.connect(wsUrl)
+          .then((ws) {
             _quizWs = ws;
-            _sendQuizWsAction({'action': 'join_game', 'seat': 'HOST', 'role': 'HOST'});
-            ws.listen((event) {
-              try {
-                final data = jsonDecode(event.toString());
-                if (data is Map<String, dynamic>) _handleQuizWsEvent(data);
-              } catch (_) {}
-            }, onError: (_) => _quizWs = null, onDone: () => _quizWs = null);
-          }).catchError((_) {});
-        }
-      });
+            print("[DEBUG LIVE QUIZ WS] Connected successfully!");
+
+            // Auto join game as HOST
+            _sendQuizWsAction({
+              'action': 'join_game',
+              'seat': 'HOST',
+              'role': 'HOST',
+            });
+
+            ws.listen(
+              (event) {
+                try {
+                  final data = jsonDecode(event.toString());
+                  print("[DEBUG LIVE QUIZ WS Event]: $data");
+                  if (data is Map<String, dynamic>) {
+                    _handleQuizWsEvent(data);
+                  }
+                } catch (e) {
+                  print("[DEBUG LIVE QUIZ WS] Parse error: $e");
+                }
+              },
+              onError: (err) {
+                print("[DEBUG LIVE QUIZ WS] Stream error: $err");
+                _quizWs = null;
+              },
+              onDone: () {
+                print("[DEBUG LIVE QUIZ WS] Stream closed");
+                _quizWs = null;
+              },
+            );
+          })
+          .catchError((err) {
+            print("[DEBUG LIVE QUIZ WS] Connect error: $err");
+            // Fallback: if connecting via live_room_id failed and quizGameId is known, try /ws/live-quiz/<game_id>/
+            if (quizGameId.value.isNotEmpty && !wsUrl.contains('live-quiz')) {
+              final fallbackUrl =
+                  '$wsScheme://${parsed.host}$portStr/ws/live-quiz/${quizGameId.value}/?token=${token ?? ''}';
+              print("[DEBUG LIVE QUIZ WS] Trying fallback URL: $fallbackUrl");
+              WebSocket.connect(fallbackUrl)
+                  .then((ws) {
+                    _quizWs = ws;
+                    _sendQuizWsAction({
+                      'action': 'join_game',
+                      'seat': 'HOST',
+                      'role': 'HOST',
+                    });
+                    ws.listen(
+                      (event) {
+                        try {
+                          final data = jsonDecode(event.toString());
+                          if (data is Map<String, dynamic>)
+                            _handleQuizWsEvent(data);
+                        } catch (_) {}
+                      },
+                      onError: (_) => _quizWs = null,
+                      onDone: () => _quizWs = null,
+                    );
+                  })
+                  .catchError((_) {});
+            }
+          });
     } catch (e) {
       print("[DEBUG LIVE QUIZ WS] Exception connecting: $e");
     }
@@ -3143,20 +3378,29 @@ class CreateController extends GetxController {
             selectedQuizCategoryName.value = cat['name']?.toString() ?? '';
           }
           if (state['participants'] is List) {
-            quizParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+            quizParticipants.value = List<Map<String, dynamic>>.from(
+              state['participants'],
+            );
           }
           if (state['active_round'] is Map) {
             final round = state['active_round'];
-            activeQuizRoundId.value = (round['id'] ?? round['round_id'])?.toString() ?? '';
+            activeQuizRoundId.value =
+                (round['id'] ?? round['round_id'])?.toString() ?? '';
             activeQuizRoundNo.value = round['round_no'] ?? 1;
             if (round['question'] is Map) {
-              activeQuizQuestion.value = Map<String, dynamic>.from(round['question']);
+              activeQuizQuestion.value = Map<String, dynamic>.from(
+                round['question'],
+              );
               if (round['question']['answers'] is List) {
-                activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['question']['answers']);
+                activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+                  round['question']['answers'],
+                );
               }
             }
             if (round['answers'] is List && activeQuizAnswers.isEmpty) {
-              activeQuizAnswers.value = List<Map<String, dynamic>>.from(round['answers']);
+              activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+                round['answers'],
+              );
             }
             isQuizRoundActive.value = true;
             final duration = round['duration_sec'] ?? 30;
@@ -3193,8 +3437,10 @@ class CreateController extends GetxController {
         break;
 
       case 'ROUND_STARTED':
-        activeQuizRoundId.value = (payload['round_id'] ?? data['round_id'])?.toString() ?? '';
-        activeQuizRoundNo.value = payload['round_no'] ?? (activeQuizRoundNo.value + 1);
+        activeQuizRoundId.value =
+            (payload['round_id'] ?? data['round_id'])?.toString() ?? '';
+        activeQuizRoundNo.value =
+            payload['round_no'] ?? (activeQuizRoundNo.value + 1);
         selectedAnswerOption.value = '';
         isAnswerSubmitted.value = false;
         correctAnswerOption.value = '';
@@ -3226,11 +3472,15 @@ class CreateController extends GetxController {
           final q = Map<String, dynamic>.from(payload['question']);
           activeQuizQuestion.value = q;
           if (q['answers'] is List) {
-            activeQuizAnswers.value = List<Map<String, dynamic>>.from(q['answers']);
+            activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+              q['answers'],
+            );
           }
         }
         if (payload['answers'] is List && activeQuizAnswers.isEmpty) {
-          activeQuizAnswers.value = List<Map<String, dynamic>>.from(payload['answers']);
+          activeQuizAnswers.value = List<Map<String, dynamic>>.from(
+            payload['answers'],
+          );
         }
         if (_quizRoundTimer == null || !_quizRoundTimer!.isActive) {
           _startQuizCountdownTimer(30);
@@ -3253,7 +3503,10 @@ class CreateController extends GetxController {
         break;
 
       case 'PLAYER_ACTION_REJECTED':
-        final reason = data['reason']?.toString() ?? payload['reason']?.toString() ?? 'Action rejected';
+        final reason =
+            data['reason']?.toString() ??
+            payload['reason']?.toString() ??
+            'Action rejected';
         Get.snackbar(
           "Action Rejected",
           reason,
@@ -3261,14 +3514,16 @@ class CreateController extends GetxController {
           backgroundColor: Colors.redAccent,
           colorText: Colors.white,
         );
-        if (data['error_code'] == 'TIME_EXPIRED' || payload['error_code'] == 'TIME_EXPIRED') {
+        if (data['error_code'] == 'TIME_EXPIRED' ||
+            payload['error_code'] == 'TIME_EXPIRED') {
           isQuizRoundActive.value = false;
         }
         break;
 
       case 'ANSWER_LOCKED':
         final uid = payload['user_id'];
-        final isCorrect = payload['result'] == 'CORRECT' || payload['is_correct'] == true;
+        final isCorrect =
+            payload['result'] == 'CORRECT' || payload['is_correct'] == true;
         final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
         if (idx != -1) {
           quizParticipants[idx]['is_correct'] = isCorrect;
@@ -3288,15 +3543,23 @@ class CreateController extends GetxController {
             ? payload['first_correct_user_id']
             : int.tryParse(payload['first_correct_user_id']?.toString() ?? '');
         if (payload['rewards'] is List) {
-          final rewardsList = List<Map<String, dynamic>>.from(payload['rewards']);
+          final rewardsList = List<Map<String, dynamic>>.from(
+            payload['rewards'],
+          );
           quizRewards.value = rewardsList;
 
           for (final r in rewardsList) {
             final uid = r['user_id'];
             final idx = quizParticipants.indexWhere((p) => p['user_id'] == uid);
             if (idx != -1) {
-              final currentB = double.tryParse(quizParticipants[idx]['platform_reward_b']?.toString() ?? '0') ?? 0;
-              final added = double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
+              final currentB =
+                  double.tryParse(
+                    quizParticipants[idx]['platform_reward_b']?.toString() ??
+                        '0',
+                  ) ??
+                  0;
+              final added =
+                  double.tryParse(r['amount']?.toString() ?? '0') ?? 0;
               quizParticipants[idx]['platform_reward_b'] = (currentB + added);
               quizParticipants[idx]['is_correct'] = true;
             }
@@ -3312,21 +3575,30 @@ class CreateController extends GetxController {
 
       case 'GIFT_SENT':
         final recipientId = payload['recipient_id'];
-        final amount = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0;
+        final amount =
+            double.tryParse(payload['amount']?.toString() ?? '0') ?? 0;
         final senderName = payload['sender_username']?.toString() ?? 'Fan';
         final giftType = payload['gift_type']?.toString() ?? 'Gift';
 
-        final idx = quizParticipants.indexWhere((p) => p['user_id'] == recipientId);
+        final idx = quizParticipants.indexWhere(
+          (p) => p['user_id'] == recipientId,
+        );
         if (idx != -1) {
           final newTotal = payload['new_fan_gifts_total'];
           if (newTotal != null) {
-            quizParticipants[idx]['fan_gifts_a'] = double.tryParse(newTotal.toString()) ?? 0;
+            quizParticipants[idx]['fan_gifts_a'] =
+                double.tryParse(newTotal.toString()) ?? 0;
           } else {
-            final currentA = double.tryParse(quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
+            final currentA =
+                double.tryParse(
+                  quizParticipants[idx]['fan_gifts_a']?.toString() ?? '0',
+                ) ??
+                0;
             quizParticipants[idx]['fan_gifts_a'] = currentA + amount;
           }
           if (payload['guest_display_total'] != null) {
-            quizParticipants[idx]['guest_display_total'] = payload['guest_display_total'];
+            quizParticipants[idx]['guest_display_total'] =
+                payload['guest_display_total'];
           }
           quizParticipants.refresh();
         }
@@ -3349,9 +3621,18 @@ class CreateController extends GetxController {
       case 'GAME_ENDED':
         isQuizRoundActive.value = false;
         _quizRoundTimer?.cancel();
-        totalFanGiftsEarned.value = double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ?? 0;
-        totalReleasedRewards.value = double.tryParse(payload['total_released_rewards']?.toString() ?? '0') ?? 0;
-        hostShareEarnings.value = double.tryParse(payload['host_share_earnings']?.toString() ?? '0') ?? 0;
+        totalFanGiftsEarned.value =
+            double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ?? 0;
+        totalReleasedRewards.value =
+            double.tryParse(
+              payload['total_released_rewards']?.toString() ?? '0',
+            ) ??
+            0;
+        hostShareEarnings.value =
+            double.tryParse(
+              payload['host_share_earnings']?.toString() ?? '0',
+            ) ??
+            0;
         _showQuizEndSummaryDialog();
         break;
     }
@@ -3366,7 +3647,9 @@ class CreateController extends GetxController {
     }
     final roomId = (targetLiveId != null && targetLiveId.isNotEmpty)
         ? targetLiveId
-        : (liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc');
+        : (liveRoomId.value.isNotEmpty
+              ? liveRoomId.value
+              : 'a81f7ca6-16f9-42fe-9be0-03c47700d7df');
     if (liveRoomId.value.isEmpty) {
       liveRoomId.value = roomId;
     }
@@ -3386,22 +3669,33 @@ class CreateController extends GetxController {
         if (id != null) {
           karaokeGameId.value = id.toString();
         }
-        karaokeGameStatus.value = res['status']?.toString() ?? 'WAITING_FOR_SINGER';
-        print("[DEBUG LIVE KARAOKE] Karaoke game created/found. ID: ${karaokeGameId.value}, status: ${karaokeGameStatus.value}");
+        karaokeGameStatus.value =
+            res['status']?.toString() ?? 'WAITING_FOR_SINGER';
+        print(
+          "[DEBUG LIVE KARAOKE] Karaoke game created/found. ID: ${karaokeGameId.value}, status: ${karaokeGameStatus.value}",
+        );
 
         if (res['participants'] is List) {
-          karaokeParticipants.value = List<Map<String, dynamic>>.from(res['participants']);
+          karaokeParticipants.value = List<Map<String, dynamic>>.from(
+            res['participants'],
+          );
         }
 
         if (res['active_performance'] is Map) {
           final perf = Map<String, dynamic>.from(res['active_performance']);
           karaokeActivePerformance.value = perf;
           karaokePerformanceId.value = perf['id']?.toString() ?? '';
-          karaokeCurrentSinger.value = perf['performer_username']?.toString() ?? '';
-          karaokeCurrentSingerId.value = perf['performer_id'] is int ? perf['performer_id'] : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
-          karaokeCurrentTrackTitle.value = perf['track_title']?.toString() ?? '';
-          karaokeCurrentTrackArtist.value = perf['track_artist']?.toString() ?? '';
-          karaokeCurrentTrackType.value = perf['content_type']?.toString() ?? 'INSTRUMENTAL';
+          karaokeCurrentSinger.value =
+              perf['performer_username']?.toString() ?? '';
+          karaokeCurrentSingerId.value = perf['performer_id'] is int
+              ? perf['performer_id']
+              : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
+          karaokeCurrentTrackTitle.value =
+              perf['track_title']?.toString() ?? '';
+          karaokeCurrentTrackArtist.value =
+              perf['track_artist']?.toString() ?? '';
+          karaokeCurrentTrackType.value =
+              perf['content_type']?.toString() ?? 'INSTRUMENTAL';
           karaokeIsRewardEligible.value = perf['is_reward_eligible'] == true;
         }
       }
@@ -3422,7 +3716,9 @@ class CreateController extends GetxController {
     try {
       final auth = Get.find<AuthService>();
       final token = auth.accessToken.value;
-      final roomId = liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc';
+      final roomId = liveRoomId.value.isNotEmpty
+          ? liveRoomId.value
+          : 'a81f7ca6-16f9-42fe-9be0-03c47700d7df';
 
       final parsed = Uri.parse(ApiConstants.baseUrl);
       final wsScheme = parsed.scheme == 'https' ? 'wss' : 'ws';
@@ -3430,55 +3726,74 @@ class CreateController extends GetxController {
 
       final String wsUrl;
       if (roomId.isNotEmpty) {
-        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/karaoke/?token=${token ?? ''}';
+        wsUrl =
+            '$wsScheme://${parsed.host}$portStr/ws/live/$roomId/karaoke/?token=${token ?? ''}';
       } else if (karaokeGameId.value.isNotEmpty) {
-        wsUrl = '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
+        wsUrl =
+            '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
       } else {
         return;
       }
 
       print("[DEBUG LIVE KARAOKE WS] Connecting to Karaoke WebSocket: $wsUrl");
-      WebSocket.connect(wsUrl).then((ws) {
-        _karaokeWs = ws;
-        print("[DEBUG LIVE KARAOKE WS] Connected successfully!");
-
-        // Request authoritative state
-        _sendKaraokeWsAction({'action': 'get_state'});
-
-        ws.listen((event) {
-          try {
-            final data = jsonDecode(event.toString());
-            print("[DEBUG LIVE KARAOKE WS Event]: $data");
-            if (data is Map<String, dynamic>) {
-              _handleKaraokeWsEvent(data);
-            }
-          } catch (e) {
-            print("[DEBUG LIVE KARAOKE WS] Parse error: $e");
-          }
-        }, onError: (err) {
-          print("[DEBUG LIVE KARAOKE WS] Stream error: $err");
-          _karaokeWs = null;
-        }, onDone: () {
-          print("[DEBUG LIVE KARAOKE WS] Stream closed");
-          _karaokeWs = null;
-        });
-      }).catchError((err) {
-        print("[DEBUG LIVE KARAOKE WS] Connect error: $err");
-        if (karaokeGameId.value.isNotEmpty && !wsUrl.contains('live-karaoke')) {
-          final fallbackUrl = '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
-          print("[DEBUG LIVE KARAOKE WS] Trying fallback URL: $fallbackUrl");
-          WebSocket.connect(fallbackUrl).then((ws) {
+      WebSocket.connect(wsUrl)
+          .then((ws) {
             _karaokeWs = ws;
+            print("[DEBUG LIVE KARAOKE WS] Connected successfully!");
+
+            // Request authoritative state
             _sendKaraokeWsAction({'action': 'get_state'});
-            ws.listen((event) {
-              try {
-                final data = jsonDecode(event.toString());
-                if (data is Map<String, dynamic>) _handleKaraokeWsEvent(data);
-              } catch (_) {}
-            }, onError: (_) => _karaokeWs = null, onDone: () => _karaokeWs = null);
-          }).catchError((_) {});
-        }
-      });
+
+            ws.listen(
+              (event) {
+                try {
+                  final data = jsonDecode(event.toString());
+                  print("[DEBUG LIVE KARAOKE WS Event]: $data");
+                  if (data is Map<String, dynamic>) {
+                    _handleKaraokeWsEvent(data);
+                  }
+                } catch (e) {
+                  print("[DEBUG LIVE KARAOKE WS] Parse error: $e");
+                }
+              },
+              onError: (err) {
+                print("[DEBUG LIVE KARAOKE WS] Stream error: $err");
+                _karaokeWs = null;
+              },
+              onDone: () {
+                print("[DEBUG LIVE KARAOKE WS] Stream closed");
+                _karaokeWs = null;
+              },
+            );
+          })
+          .catchError((err) {
+            print("[DEBUG LIVE KARAOKE WS] Connect error: $err");
+            if (karaokeGameId.value.isNotEmpty &&
+                !wsUrl.contains('live-karaoke')) {
+              final fallbackUrl =
+                  '$wsScheme://${parsed.host}$portStr/ws/live-karaoke/${karaokeGameId.value}/?token=${token ?? ''}';
+              print(
+                "[DEBUG LIVE KARAOKE WS] Trying fallback URL: $fallbackUrl",
+              );
+              WebSocket.connect(fallbackUrl)
+                  .then((ws) {
+                    _karaokeWs = ws;
+                    _sendKaraokeWsAction({'action': 'get_state'});
+                    ws.listen(
+                      (event) {
+                        try {
+                          final data = jsonDecode(event.toString());
+                          if (data is Map<String, dynamic>)
+                            _handleKaraokeWsEvent(data);
+                        } catch (_) {}
+                      },
+                      onError: (_) => _karaokeWs = null,
+                      onDone: () => _karaokeWs = null,
+                    );
+                  })
+                  .catchError((_) {});
+            }
+          });
     } catch (e) {
       print("[DEBUG LIVE KARAOKE WS] Exception connecting: $e");
     }
@@ -3511,28 +3826,41 @@ class CreateController extends GetxController {
         }
         if (data['state'] is Map) {
           final state = Map<String, dynamic>.from(data['state']);
-          karaokeGameStatus.value = state['status']?.toString() ?? 'WAITING_FOR_SINGER';
+          karaokeGameStatus.value =
+              state['status']?.toString() ?? 'WAITING_FOR_SINGER';
           if (state['participants'] is List) {
-            karaokeParticipants.value = List<Map<String, dynamic>>.from(state['participants']);
+            karaokeParticipants.value = List<Map<String, dynamic>>.from(
+              state['participants'],
+            );
           }
           if (state['active_performance'] is Map) {
             final perf = Map<String, dynamic>.from(state['active_performance']);
             karaokeActivePerformance.value = perf;
             karaokePerformanceId.value = perf['id']?.toString() ?? '';
-            karaokeCurrentSinger.value = perf['performer_username']?.toString() ?? '';
-            karaokeCurrentSingerId.value = perf['performer_id'] is int ? perf['performer_id'] : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
-            karaokeCurrentTrackTitle.value = perf['track_title']?.toString() ?? '';
-            karaokeCurrentTrackArtist.value = perf['track_artist']?.toString() ?? '';
-            karaokeCurrentTrackType.value = perf['content_type']?.toString() ?? 'INSTRUMENTAL';
+            karaokeCurrentSinger.value =
+                perf['performer_username']?.toString() ?? '';
+            karaokeCurrentSingerId.value = perf['performer_id'] is int
+                ? perf['performer_id']
+                : (int.tryParse(perf['performer_id']?.toString() ?? '') ?? 0);
+            karaokeCurrentTrackTitle.value =
+                perf['track_title']?.toString() ?? '';
+            karaokeCurrentTrackArtist.value =
+                perf['track_artist']?.toString() ?? '';
+            karaokeCurrentTrackType.value =
+                perf['content_type']?.toString() ?? 'INSTRUMENTAL';
             karaokeIsRewardEligible.value = perf['is_reward_eligible'] == true;
           }
         }
         break;
 
       case 'SINGER_ASSIGNED':
-        karaokePerformanceId.value = payload['performance_id']?.toString() ?? '';
-        karaokeCurrentSinger.value = payload['performer_username']?.toString() ?? 'Guest';
-        karaokeCurrentSingerId.value = payload['performer_id'] is int ? payload['performer_id'] : (int.tryParse(payload['performer_id']?.toString() ?? '') ?? 0);
+        karaokePerformanceId.value =
+            payload['performance_id']?.toString() ?? '';
+        karaokeCurrentSinger.value =
+            payload['performer_username']?.toString() ?? 'Guest';
+        karaokeCurrentSingerId.value = payload['performer_id'] is int
+            ? payload['performer_id']
+            : (int.tryParse(payload['performer_id']?.toString() ?? '') ?? 0);
         karaokeCurrentSingerSeat.value = payload['seat']?.toString() ?? '1';
         karaokeGameStatus.value = 'SINGER_ASSIGNED';
 
@@ -3557,7 +3885,8 @@ class CreateController extends GetxController {
         karaokeCurrentTrackId.value = payload['track_id']?.toString() ?? '';
         karaokeCurrentTrackTitle.value = payload['title']?.toString() ?? '';
         karaokeCurrentTrackArtist.value = payload['artist']?.toString() ?? '';
-        karaokeCurrentTrackType.value = payload['type']?.toString() ?? 'INSTRUMENTAL';
+        karaokeCurrentTrackType.value =
+            payload['type']?.toString() ?? 'INSTRUMENTAL';
         karaokeDurationMs.value = payload['duration_ms'] ?? 200000;
         karaokeIsRewardEligible.value = payload['is_reward_eligible'] == true;
         karaokeGameStatus.value = 'TRACK_SELECTED';
@@ -3572,11 +3901,15 @@ class CreateController extends GetxController {
         break;
 
       case 'PLAYBACK_PREPARED':
-        karaokePlaybackToken.value = payload['playback_token']?.toString() ?? '';
+        karaokePlaybackToken.value =
+            payload['playback_token']?.toString() ?? '';
         karaokeAudioUrl.value = payload['audio_url']?.toString() ?? '';
-        karaokeDurationMs.value = payload['duration_ms'] ?? karaokeDurationMs.value;
+        karaokeDurationMs.value =
+            payload['duration_ms'] ?? karaokeDurationMs.value;
         if (payload['lyrics'] is List) {
-          karaokeLyricsList.value = List<Map<String, dynamic>>.from(payload['lyrics']);
+          karaokeLyricsList.value = List<Map<String, dynamic>>.from(
+            payload['lyrics'],
+          );
         }
         karaokeGameStatus.value = 'PLAYBACK_PREPARED';
         break;
@@ -3587,16 +3920,22 @@ class CreateController extends GetxController {
         final durMs = payload['duration_ms'] ?? karaokeDurationMs.value;
         final durSec = (durMs is int && durMs > 0) ? (durMs ~/ 1000) : 180;
         _startKaraokeCountdownTimer(durSec);
+        final playUrl =
+            payload['audio_url']?.toString() ?? karaokeAudioUrl.value;
+        if (playUrl.isNotEmpty) karaokeAudioUrl.value = playUrl;
+        _playKaraokeAudio(karaokeAudioUrl.value);
         break;
 
       case 'LYRIC_LINE_CHANGED':
-        karaokeCurrentLyricLine.value = payload['line_no'] ?? (karaokeCurrentLyricLine.value + 1);
+        karaokeCurrentLyricLine.value =
+            payload['line_no'] ?? (karaokeCurrentLyricLine.value + 1);
         karaokeCurrentLyricText.value = payload['text']?.toString() ?? '';
         break;
 
       case 'PERFORMANCE_COMPLETED':
         isKaraokePerformanceActive.value = false;
         _karaokeTimer?.cancel();
+        _stopKaraokeAudio();
         karaokeGameStatus.value = 'COMPLETED';
         Get.snackbar(
           "Performance Completed! 🌟",
@@ -3608,12 +3947,21 @@ class CreateController extends GetxController {
         break;
 
       case 'REWARD_PENDING':
-        karaokeHeldReward.value = double.tryParse(payload['amount']?.toString() ?? '3.0') ?? 3.0;
+        karaokeHeldReward.value =
+            double.tryParse(payload['amount']?.toString() ?? '3.0') ?? 3.0;
         final rUid = payload['user_id'];
-        final rIdx = karaokeParticipants.indexWhere((p) => p['user_id'] == rUid);
+        final rIdx = karaokeParticipants.indexWhere(
+          (p) => p['user_id'] == rUid,
+        );
         if (rIdx != -1) {
-          final curB = double.tryParse(karaokeParticipants[rIdx]['platform_reward_b']?.toString() ?? '0') ?? 0;
-          karaokeParticipants[rIdx]['platform_reward_b'] = (curB + karaokeHeldReward.value).toStringAsFixed(2);
+          final curB =
+              double.tryParse(
+                karaokeParticipants[rIdx]['platform_reward_b']?.toString() ??
+                    '0',
+              ) ??
+              0;
+          karaokeParticipants[rIdx]['platform_reward_b'] =
+              (curB + karaokeHeldReward.value).toStringAsFixed(2);
           karaokeParticipants.refresh();
         }
         Get.snackbar(
@@ -3648,10 +3996,17 @@ class CreateController extends GetxController {
       case 'GIFT_SENT':
         final recId = payload['receiver_user_id'] ?? payload['recipient_id'];
         final amt = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0;
-        final gIdx = karaokeParticipants.indexWhere((p) => p['user_id'] == recId);
+        final gIdx = karaokeParticipants.indexWhere(
+          (p) => p['user_id'] == recId,
+        );
         if (gIdx != -1) {
-          final curA = double.tryParse(karaokeParticipants[gIdx]['fan_gifts_a']?.toString() ?? '0') ?? 0;
-          karaokeParticipants[gIdx]['fan_gifts_a'] = (curA + amt).toStringAsFixed(2);
+          final curA =
+              double.tryParse(
+                karaokeParticipants[gIdx]['fan_gifts_a']?.toString() ?? '0',
+              ) ??
+              0;
+          karaokeParticipants[gIdx]['fan_gifts_a'] = (curA + amt)
+              .toStringAsFixed(2);
           karaokeParticipants.refresh();
         }
         karaokeTotalFanGifts.value += amt;
@@ -3660,11 +4015,26 @@ class CreateController extends GetxController {
       case 'GAME_ENDED':
         isKaraokePerformanceActive.value = false;
         _karaokeTimer?.cancel();
+        _stopKaraokeAudio();
         karaokeGameStatus.value = 'ENDED';
-        karaokeTotalFanGifts.value = double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ?? karaokeTotalFanGifts.value;
-        karaokeTotalReleasedRewards.value = double.tryParse(payload['total_released_rewards']?.toString() ?? '0') ?? 0;
-        karaokeTotalForfeitedRewards.value = double.tryParse(payload['total_forfeited_rewards']?.toString() ?? '0') ?? 0;
-        karaokeHostShareEarnings.value = double.tryParse(payload['host_share_earnings']?.toString() ?? '0') ?? 0;
+        karaokeTotalFanGifts.value =
+            double.tryParse(payload['total_fan_gifts']?.toString() ?? '0') ??
+            karaokeTotalFanGifts.value;
+        karaokeTotalReleasedRewards.value =
+            double.tryParse(
+              payload['total_released_rewards']?.toString() ?? '0',
+            ) ??
+            0;
+        karaokeTotalForfeitedRewards.value =
+            double.tryParse(
+              payload['total_forfeited_rewards']?.toString() ?? '0',
+            ) ??
+            0;
+        karaokeHostShareEarnings.value =
+            double.tryParse(
+              payload['host_share_earnings']?.toString() ?? '0',
+            ) ??
+            0;
         _showKaraokeEndSummaryDialog();
         break;
     }
@@ -3681,7 +4051,8 @@ class CreateController extends GetxController {
         karaokeTimerSeconds.value--;
         final m = karaokeTimerSeconds.value ~/ 60;
         final s = karaokeTimerSeconds.value % 60;
-        karaokeTimerText.value = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+        karaokeTimerText.value =
+            '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
       } else {
         karaokeTimerSeconds.value = 0;
         karaokeTimerText.value = '00:00';
@@ -3691,51 +4062,72 @@ class CreateController extends GetxController {
     });
   }
 
-  /// Browse Admin-Published Music or Instrumental tracks
+  /// Browse Admin-Published Music or Instrumental tracks from API
   Future<void> fetchKaraokeCatalog({String? type, String? query}) async {
     isKaraokeCatalogLoading.value = true;
-    final rId = liveRoomId.value.isNotEmpty ? liveRoomId.value : '09a71a9c-d0fa-40c2-9e88-b4b1c8df4cfc';
+    final catType = type ?? selectedKaraokeCategory.value;
+    final rId = liveRoomId.value.isNotEmpty
+        ? liveRoomId.value
+        : 'a81f7ca6-16f9-42fe-9be0-03c47700d7df';
     try {
-      final list = await gameService.getKaraokeCatalog(rId, type: type, q: query);
-      if (list.isNotEmpty) {
-        karaokeCatalog.value = list;
-      } else if (karaokeCatalog.isEmpty) {
-        // Fallback default tracks catalog if server returns empty list
-        karaokeCatalog.value = [
-          {
-            "id": "7649d2cb-6ff5-4ea5-8968-3d1fe5a4b706",
-            "title": "Blinding Lights (Beat Instrumental)",
-            "artist": "The Weeknd",
-            "content_type": "INSTRUMENTAL",
-            "duration_ms": 200000,
-            "status": "PUBLISHED",
-            "audio_url": "https://assets.glotune.com/audio/instrumental/blinding_lights_beat.mp3"
-          },
-          {
-            "id": "8931b4fc-21a4-4df1-8012-4c28fe9021e1",
-            "title": "Shape of You (Acoustic Pop)",
-            "artist": "Ed Sheeran",
-            "content_type": "MUSIC",
-            "duration_ms": 233000,
-            "status": "PUBLISHED",
-            "audio_url": "https://assets.glotune.com/audio/music/shape_of_you.mp3"
-          },
-          {
-            "id": "9042c1ab-43b9-4112-98ab-10ef87a09123",
-            "title": "Someone Like You (Piano Instrumental)",
-            "artist": "Adele",
-            "content_type": "INSTRUMENTAL",
-            "duration_ms": 285000,
-            "status": "PUBLISHED",
-            "audio_url": "https://assets.glotune.com/audio/instrumental/someone_like_you_piano.mp3"
-          },
-        ];
+      var list = await gameService.getKaraokeCatalog(
+        rId,
+        type: catType,
+        q: query,
+      );
+      if (list.isEmpty && rId != 'a81f7ca6-16f9-42fe-9be0-03c47700d7df') {
+        list = await gameService.getKaraokeCatalog(
+          'a81f7ca6-16f9-42fe-9be0-03c47700d7df',
+          type: catType,
+          q: query,
+        );
+      }
+      if (list.isEmpty && (query == null || query.isEmpty)) {
+        list = await gameService.getKaraokeCatalog(rId);
+        if (list.isEmpty && rId != 'a81f7ca6-16f9-42fe-9be0-03c47700d7df') {
+          list = await gameService.getKaraokeCatalog(
+            'a81f7ca6-16f9-42fe-9be0-03c47700d7df',
+          );
+        }
+      }
+
+      karaokeCatalog.value = list;
+
+      // Auto-load first track details and lyrics if none currently active
+      if (karaokeCurrentTrackId.value.isEmpty && list.isNotEmpty) {
+        final first = list.first;
+        karaokeCurrentTrackId.value = first['id']?.toString() ?? '';
+        karaokeCurrentTrackTitle.value = first['title']?.toString() ?? '';
+        karaokeCurrentTrackArtist.value = first['artist']?.toString() ?? '';
+        karaokeCurrentTrackType.value =
+            first['content_type']?.toString() ?? 'INSTRUMENTAL';
+        karaokeDurationMs.value = first['duration_ms'] ?? 200000;
+        if (first['audio_url'] != null) {
+          karaokeAudioUrl.value = first['audio_url'].toString();
+        }
+        if (first['lyric_segments'] is List) {
+          karaokeLyricsList.value = List<Map<String, dynamic>>.from(
+            first['lyric_segments'],
+          );
+          if (karaokeLyricsList.isNotEmpty) {
+            karaokeCurrentLyricText.value = "🎵 Ready: ${first['title']}";
+            karaokeNextLyricText.value =
+                karaokeLyricsList.first['text']?.toString() ?? '';
+          }
+        }
       }
     } catch (e) {
       print("[DEBUG LIVE KARAOKE] fetchKaraokeCatalog error: $e");
+      karaokeCatalog.value = [];
     } finally {
       isKaraokeCatalogLoading.value = false;
     }
+  }
+
+  /// Change Karaoke playlist category (Music vs Instrumentals)
+  void setKaraokeCategory(String category) {
+    selectedKaraokeCategory.value = category;
+    fetchKaraokeCatalog(type: category);
   }
 
   /// Host Assigns Singer Slot
@@ -3756,6 +4148,34 @@ class CreateController extends GetxController {
 
   /// Assigned Guest Selects Track
   Future<void> selectKaraokeTrack(String trackId, String contentType) async {
+    Map<String, dynamic>? selected;
+    for (final t in karaokeCatalog) {
+      if (t['id']?.toString() == trackId) {
+        selected = t;
+        break;
+      }
+    }
+    if (selected != null) {
+      karaokeCurrentTrackId.value = trackId;
+      karaokeCurrentTrackTitle.value = selected['title']?.toString() ?? '';
+      karaokeCurrentTrackArtist.value = selected['artist']?.toString() ?? '';
+      karaokeCurrentTrackType.value = contentType;
+      karaokeDurationMs.value = selected['duration_ms'] ?? 200000;
+      if (selected['audio_url'] != null) {
+        karaokeAudioUrl.value = selected['audio_url'].toString();
+      }
+      if (selected['lyric_segments'] is List) {
+        karaokeLyricsList.value = List<Map<String, dynamic>>.from(
+          selected['lyric_segments'],
+        );
+        if (karaokeLyricsList.isNotEmpty) {
+          karaokeCurrentLyricText.value = "🎵 Ready: ${selected['title']}";
+          karaokeNextLyricText.value =
+              karaokeLyricsList.first['text']?.toString() ?? '';
+        }
+      }
+    }
+
     _sendKaraokeWsAction({
       "action": "select_track",
       "performance_id": karaokePerformanceId.value,
@@ -3784,6 +4204,16 @@ class CreateController extends GetxController {
 
   /// Start Performance
   Future<void> startKaraokePerformance() async {
+    isKaraokePerformanceActive.value = true;
+    karaokeGameStatus.value = 'PERFORMANCE_ACTIVE';
+    final durSec = (karaokeDurationMs.value > 0)
+        ? (karaokeDurationMs.value ~/ 1000)
+        : 200;
+    _startKaraokeCountdownTimer(durSec);
+    if (karaokeAudioUrl.value.isNotEmpty) {
+      _playKaraokeAudio(karaokeAudioUrl.value);
+    }
+
     _sendKaraokeWsAction({
       "action": "start_performance",
       "performance_id": karaokePerformanceId.value,
@@ -3812,6 +4242,7 @@ class CreateController extends GetxController {
 
   /// Complete Performance
   Future<void> completeKaraokePerformance({bool force = false}) async {
+    _stopKaraokeAudio();
     _sendKaraokeWsAction({
       "action": "complete_performance",
       "performance_id": karaokePerformanceId.value,
@@ -3827,6 +4258,7 @@ class CreateController extends GetxController {
 
   /// Singer Quits Early
   Future<void> leaveKaraokePerformance({String reason = 'SINGER_QUIT'}) async {
+    _stopKaraokeAudio();
     _sendKaraokeWsAction({
       "action": "leave_performance",
       "performance_id": karaokePerformanceId.value,
@@ -3841,7 +4273,10 @@ class CreateController extends GetxController {
   }
 
   /// Host Removes Singer Early
-  Future<void> removeKaraokeSinger({String reason = 'INTERRUPTED_BY_HOST'}) async {
+  Future<void> removeKaraokeSinger({
+    String reason = 'INTERRUPTED_BY_HOST',
+  }) async {
+    _stopKaraokeAudio();
     _sendKaraokeWsAction({
       "action": "remove_singer",
       "performance_id": karaokePerformanceId.value,
@@ -3878,30 +4313,188 @@ class CreateController extends GetxController {
 
   /// Host Ends Game Session
   Future<void> endKaraokeGame({String reason = 'HOST_ENDED'}) async {
-    _sendKaraokeWsAction({
-      "action": "end_game",
-      "reason": reason,
-    });
+    _stopKaraokeAudio();
+    _sendKaraokeWsAction({"action": "end_game", "reason": reason});
     if (karaokeGameId.value.isNotEmpty) {
       await gameService.endKaraokeGame(karaokeGameId.value, reason: reason);
+    }
+  }
+
+  Timer? _karaokeLyricSyncTimer;
+
+  String _resolveKaraokeAudioUrl(String? rawUrl) {
+    if (rawUrl != null &&
+        rawUrl.trim().isNotEmpty &&
+        !rawUrl.contains('assets.glotune.com')) {
+      return rawUrl.trim();
+    }
+    final trackId = karaokeCurrentTrackId.value;
+    for (final t in karaokeCatalog) {
+      if (t['id']?.toString() == trackId || t['audio_url'] != null) {
+        final catUrl = t['audio_url']?.toString();
+        if (catUrl != null &&
+            catUrl.isNotEmpty &&
+            !catUrl.contains('assets.glotune.com')) {
+          return catUrl;
+        }
+      }
+    }
+    return rawUrl?.trim() ?? "";
+  }
+
+  Future<void> _playKaraokeAudio(String? url) async {
+    try {
+      await _stopKaraokeAudio();
+      final targetUrl = _resolveKaraokeAudioUrl(url);
+      if (targetUrl.isEmpty) return;
+      print("[LiveKaraoke Audio Host] Initializing and playing: $targetUrl");
+      final player = vp.VideoPlayerController.networkUrl(Uri.parse(targetUrl));
+      _karaokeAudioPlayer = player;
+      await player.initialize();
+      await player.setVolume(1.0);
+      await player.play();
+      print("[LiveKaraoke Audio Host] Audio playback started!");
+
+      // Start Real-time Lyrics Synchronization Timer
+      _karaokeLyricSyncTimer?.cancel();
+      _karaokeLyricSyncTimer = Timer.periodic(
+        const Duration(milliseconds: 150),
+        (_) {
+          if (_karaokeAudioPlayer == null ||
+              !_karaokeAudioPlayer!.value.isInitialized)
+            return;
+          final posMs = _karaokeAudioPlayer!.value.position.inMilliseconds;
+          _updateLyricsAtPosition(posMs);
+        },
+      );
+    } catch (e) {
+      print("[LiveKaraoke Audio Host] Error playing karaoke track: $e");
+    }
+  }
+
+  void _updateLyricsAtPosition(int posMs) {
+    if (karaokeLyricsList.isEmpty) return;
+
+    int activeIdx = -1;
+    for (int i = 0; i < karaokeLyricsList.length; i++) {
+      final seg = karaokeLyricsList[i];
+      final start = seg['start_ms'] is int
+          ? seg['start_ms'] as int
+          : (int.tryParse(seg['start_ms']?.toString() ?? '') ?? 0);
+      final end = seg['end_ms'] is int
+          ? seg['end_ms'] as int
+          : (int.tryParse(seg['end_ms']?.toString() ?? '') ?? 9999999);
+      if (posMs >= start && posMs < end) {
+        activeIdx = i;
+        break;
+      }
+    }
+
+    if (activeIdx == -1) {
+      final firstStart = karaokeLyricsList.first['start_ms'] is int
+          ? karaokeLyricsList.first['start_ms'] as int
+          : 0;
+      if (posMs < firstStart) {
+        karaokeCurrentLyricText.value = "🎵 [Music Intro]";
+        karaokeNextLyricText.value =
+            karaokeLyricsList.first['text']?.toString() ?? '';
+        return;
+      }
+      final lastEnd = karaokeLyricsList.last['end_ms'] is int
+          ? karaokeLyricsList.last['end_ms'] as int
+          : 0;
+      if (posMs >= lastEnd) {
+        karaokeCurrentLyricText.value = "🎵 [Outro]";
+        karaokeNextLyricText.value = "";
+        return;
+      }
+      for (int i = 0; i < karaokeLyricsList.length - 1; i++) {
+        final curEnd = karaokeLyricsList[i]['end_ms'] is int
+            ? karaokeLyricsList[i]['end_ms'] as int
+            : 0;
+        final nextStart = karaokeLyricsList[i + 1]['start_ms'] is int
+            ? karaokeLyricsList[i + 1]['start_ms'] as int
+            : 0;
+        if (posMs >= curEnd && posMs < nextStart) {
+          karaokeCurrentLyricText.value = "🎵 [Instrumental Break]";
+          karaokeNextLyricText.value =
+              karaokeLyricsList[i + 1]['text']?.toString() ?? '';
+          return;
+        }
+      }
+    } else {
+      final currentSeg = karaokeLyricsList[activeIdx];
+      final currentLine = currentSeg['text']?.toString() ?? '';
+      final nextLine = (activeIdx + 1 < karaokeLyricsList.length)
+          ? (karaokeLyricsList[activeIdx + 1]['text']?.toString() ?? '')
+          : '';
+
+      if (karaokeCurrentLyricText.value != currentLine) {
+        karaokeCurrentLyricText.value = currentLine;
+        karaokeCurrentLyricLine.value =
+            currentSeg['line_no'] ?? (activeIdx + 1);
+        karaokeNextLyricText.value = nextLine;
+
+        advanceKaraokeLyric(
+          lineNo: karaokeCurrentLyricLine.value,
+          startMs: currentSeg['start_ms'] ?? 0,
+          endMs: currentSeg['end_ms'] ?? 0,
+          text: currentLine,
+        );
+      }
+    }
+  }
+
+  Future<void> _stopKaraokeAudio() async {
+    _karaokeLyricSyncTimer?.cancel();
+    _karaokeLyricSyncTimer = null;
+
+    try {
+      if (_karaokeAudioPlayer != null) {
+        print("[LiveKaraoke Audio Host] Stopping audio player");
+        await _karaokeAudioPlayer!.pause();
+        await _karaokeAudioPlayer!.dispose();
+        _karaokeAudioPlayer = null;
+      }
+    } catch (e) {
+      print("[LiveKaraoke Audio Host] Error stopping audio player: $e");
+      _karaokeAudioPlayer = null;
     }
   }
 
   void _showKaraokeEndSummaryDialog() {
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
         backgroundColor: const Color(0xFF1E293B),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("🏆 Karaoke Session Complete", style: TextStyle(color: Colors.white, fontSize: 18.0, fontWeight: FontWeight.bold)),
+              const Text(
+                "🏆 Karaoke Session Complete",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 16.0),
-              Text("Total Fan Gifts: ${karaokeTotalFanGifts.value}", style: const TextStyle(color: Colors.cyanAccent)),
-              Text("Platform Rewards Released: ${karaokeTotalReleasedRewards.value}", style: const TextStyle(color: Colors.greenAccent)),
-              Text("Host Share (10%): ${karaokeHostShareEarnings.value}", style: const TextStyle(color: Colors.amberAccent)),
+              Text(
+                "Total Fan Gifts: ${karaokeTotalFanGifts.value}",
+                style: const TextStyle(color: Colors.cyanAccent),
+              ),
+              Text(
+                "Platform Rewards Released: ${karaokeTotalReleasedRewards.value}",
+                style: const TextStyle(color: Colors.greenAccent),
+              ),
+              Text(
+                "Host Share (10%): ${karaokeHostShareEarnings.value}",
+                style: const TextStyle(color: Colors.amberAccent),
+              ),
               const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: () => Get.back(),
@@ -3915,6 +4508,9 @@ class CreateController extends GetxController {
   }
 
   void navigateTo(String step) {
+    if (step != "LiveKaraoke") {
+      _stopKaraokeAudio();
+    }
     currentStep.value = step;
     if (step == "LiveBoxBattle") {
       joinSession("box battle");
@@ -3987,22 +4583,29 @@ class CreateController extends GetxController {
 
     // Start periodic status poll
     _matchmakingHeartbeatTimer?.cancel();
-    _matchmakingHeartbeatTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+    _matchmakingHeartbeatTimer = Timer.periodic(const Duration(seconds: 2), (
+      timer,
+    ) async {
       if (!isMatchmaking.value) {
         timer.cancel();
         return;
       }
       final statusRes = await gameService.getMatchmakingStatus();
       print("[DEBUG 1v1] statusRes: $statusRes");
-      if (statusRes != null && (statusRes['status'] == 'matched' || statusRes['match_id'] != null)) {
+      if (statusRes != null &&
+          (statusRes['status'] == 'matched' || statusRes['match_id'] != null)) {
         timer.cancel();
         _matchmakingTimer?.cancel();
         isMatchmaking.value = false;
 
-        final matchId = statusRes['match_id']?.toString() ?? statusRes['id']?.toString() ?? '';
+        final matchId =
+            statusRes['match_id']?.toString() ??
+            statusRes['id']?.toString() ??
+            '';
         final opp = statusRes['opponent'] ?? statusRes['matched_user'];
         if (opp is Map) {
-          opponentName.value = opp['username'] ?? opp['full_name'] ?? 'Challenger';
+          opponentName.value =
+              opp['username'] ?? opp['full_name'] ?? 'Challenger';
           opponentAvatar.value = opp['profile_picture'] ?? '';
           opponentUserId.value = opp['id'];
         }
@@ -4023,7 +4626,11 @@ class CreateController extends GetxController {
   }
 
   /// Challenge or invite a user to 1v1 battle
-  Future<void> inviteUserToBattle(int userId, String userName, {String? userAvatar}) async {
+  Future<void> inviteUserToBattle(
+    int userId,
+    String userName, {
+    String? userAvatar,
+  }) async {
     opponentName.value = userName;
     if (userAvatar != null && userAvatar.isNotEmpty) {
       opponentAvatar.value = userAvatar;
@@ -4031,7 +4638,11 @@ class CreateController extends GetxController {
     opponentUserId.value = userId;
 
     if (liveRoomId.value.isNotEmpty) {
-      await gameService.inviteToLiveRoom(liveRoomId.value, userId, role: 'co_host');
+      await gameService.inviteToLiveRoom(
+        liveRoomId.value,
+        userId,
+        role: 'co_host',
+      );
     }
     if (activeLobbyId.value.isNotEmpty) {
       await gameService.inviteToLobby(activeLobbyId.value, userId);
@@ -4085,10 +4696,13 @@ class CreateController extends GetxController {
     final res = await gameService.getMatchScores(activeMatchId.value);
     if (res != null) {
       if (res['host_score'] != null) {
-        hostBattleScore.value = int.tryParse(res['host_score'].toString()) ?? hostBattleScore.value;
+        hostBattleScore.value =
+            int.tryParse(res['host_score'].toString()) ?? hostBattleScore.value;
       }
       if (res['opponent_score'] != null) {
-        opponentBattleScore.value = int.tryParse(res['opponent_score'].toString()) ?? opponentBattleScore.value;
+        opponentBattleScore.value =
+            int.tryParse(res['opponent_score'].toString()) ??
+            opponentBattleScore.value;
       }
     }
   }
@@ -4097,7 +4711,11 @@ class CreateController extends GetxController {
   Future<void> sendBattleScore(int points, {String action = 'point'}) async {
     hostBattleScore.value += points;
     if (activeMatchId.value.isNotEmpty) {
-      await gameService.submitScore(activeMatchId.value, scoreDelta: points, action: action);
+      await gameService.submitScore(
+        activeMatchId.value,
+        scoreDelta: points,
+        action: action,
+      );
     }
   }
 
@@ -4202,7 +4820,9 @@ class CreateController extends GetxController {
               Text(
                 battleWinner.value == 'host'
                     ? "🏆 VICTORY!"
-                    : (battleWinner.value == 'opponent' ? "DEFEAT 🥊" : "🤝 DRAW!"),
+                    : (battleWinner.value == 'opponent'
+                          ? "DEFEAT 🥊"
+                          : "🤝 DRAW!"),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -4225,7 +4845,10 @@ class CreateController extends GetxController {
                 onPressed: () {
                   Get.back();
                 },
-                child: const Text("Continue", style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  "Continue",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
