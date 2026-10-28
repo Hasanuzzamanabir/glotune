@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:glotune/app/core/constants/gift_catalogue.dart';
 import 'package:glotune/app/data/models/gift_item_model.dart';
@@ -395,10 +396,17 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                           gradient: LinearGradient(colors: _selectedGift.gradientColors),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
-                        child: Text(
-                          _selectedGift.icon,
-                          style: TextStyle(fontSize: 16.sp),
-                        ),
+                        child: _selectedGift.svgAsset != null
+                            ? SvgPicture.asset(
+                                _selectedGift.svgAsset!,
+                                width: 22.w,
+                                height: 22.w,
+                                fit: BoxFit.contain,
+                              )
+                            : Text(
+                                _selectedGift.icon,
+                                style: TextStyle(fontSize: 16.sp),
+                              ),
                       ),
                       SizedBox(width: 8.w),
                       Expanded(
@@ -648,32 +656,20 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
             ),
             SizedBox(height: 3.h),
 
-            // Icon thumbnail with gradient background
+            // Icon thumbnail (no background)
             Expanded(
               child: Center(
-                child: Container(
-                  width: 44.w,
-                  height: 44.w,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gift.gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: gift.gradientColors.last.withValues(alpha: 0.3),
-                        blurRadius: 6,
+                child: gift.svgAsset != null
+                    ? SvgPicture.asset(
+                        gift.svgAsset!,
+                        width: 44.w,
+                        height: 44.w,
+                        fit: BoxFit.contain,
+                      )
+                    : Text(
+                        gift.icon,
+                        style: TextStyle(fontSize: 28.sp),
                       ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    gift.icon,
-                    style: TextStyle(fontSize: 22.sp),
-                  ),
-                ),
               ),
             ),
             SizedBox(height: 2.h),

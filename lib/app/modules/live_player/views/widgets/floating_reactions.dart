@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:glotune/app/core/constants/gift_catalogue.dart';
 
 class FloatingReactions extends StatefulWidget {
   final Stream<String> reactionStream;
@@ -29,10 +31,18 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
   void _addReaction(String type) {
     if (!mounted) return;
     
-    IconData iconData = Icons.thumb_up;
-    Color color = Colors.blue;
-    
-    if (type == 'heart' || type == 'love') {
+    IconData iconData = Icons.favorite;
+    Color color = Colors.redAccent;
+    String? svgAsset;
+    String? emoji;
+
+    // Check if this reaction is a gift from the GiftCatalogue
+    final gift = GiftCatalogue.find(type);
+    if (gift != null) {
+      svgAsset = gift.svgAsset;
+      emoji = gift.icon;
+      color = gift.categoryColor;
+    } else if (type == 'heart' || type == 'love') {
       iconData = Icons.favorite;
       color = Colors.red;
     } else if (type == 'like') {
@@ -68,6 +78,8 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
       type: type,
       icon: iconData,
       color: color,
+      svgAsset: svgAsset,
+      emoji: emoji,
       controller: controller,
       startX: _random.nextDouble() * 50 - 25, // offset from center
     );
@@ -129,11 +141,23 @@ class _FloatingReactionsState extends State<FloatingReactions> with TickerProvid
                             ),
                           ],
                         ),
-                        child: Icon(
-                          item.icon,
-                          color: item.color,
-                          size: 36.sp,
-                        ),
+                        child: item.svgAsset != null
+                            ? SvgPicture.asset(
+                                item.svgAsset!,
+                                width: 38.w,
+                                height: 38.w,
+                                fit: BoxFit.contain,
+                              )
+                            : (item.emoji != null
+                                ? Text(
+                                    item.emoji!,
+                                    style: TextStyle(fontSize: 32.sp),
+                                  )
+                                : Icon(
+                                    item.icon,
+                                    color: item.color,
+                                    size: 36.sp,
+                                  )),
                       ),
                     ),
                   ),
@@ -152,6 +176,8 @@ class _ReactionItem {
   final String type;
   final IconData icon;
   final Color color;
+  final String? svgAsset;
+  final String? emoji;
   final AnimationController controller;
   final double startX;
 
@@ -160,6 +186,8 @@ class _ReactionItem {
     required this.type,
     required this.icon,
     required this.color,
+    this.svgAsset,
+    this.emoji,
     required this.controller,
     required this.startX,
   });

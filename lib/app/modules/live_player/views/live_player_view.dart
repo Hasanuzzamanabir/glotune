@@ -3704,16 +3704,19 @@ class LivePlayerView extends GetView<LivePlayerController> {
 );
 }
 
-  void _showGiftBottomSheet() {
-    controller.fetchUserProfile();
+  void _showGiftBottomSheet() async {
+    print("[DEBUG GIFT SHEET] Opening gift gallery, fetching profile...");
+    await controller.fetchUserProfile();
+    final coins = controller.userProfile.value?.yourCoins ?? 0;
+    print("[DEBUG GIFT SHEET] Fetched profile coins: $coins");
     GiftGallerySheet.show(
       context: Get.context!,
-      userCoins: controller.userProfile.value?.yourCoins ?? 0,
+      userCoins: coins,
       recipientName: controller.invitingHostName.value.isNotEmpty && controller.invitingHostName.value != 'Host'
           ? controller.invitingHostName.value
           : "Host",
       onSend: (gift, quantity) async {
-        await controller.sendGift(gift.name, quantity: quantity, coins: gift.coins);
+        await controller.sendGift(gift, quantity: quantity, coins: gift.coins);
       },
     );
   }

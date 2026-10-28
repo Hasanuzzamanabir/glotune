@@ -9,6 +9,10 @@ class GiftItem {
   final Color categoryColor;
   final List<Color> gradientColors;
 
+  /// Optional: path to an SVG asset, e.g. 'assets/svg/GT001_Appreciation-Bloom.svg'.
+  /// When provided the gift gallery renders the SVG instead of the emoji [icon].
+  final String? svgAsset;
+
   const GiftItem({
     required this.code,
     required this.name,
@@ -17,6 +21,7 @@ class GiftItem {
     required this.icon,
     required this.categoryColor,
     required this.gradientColors,
+    this.svgAsset,
   });
 
   String get formattedCoins {

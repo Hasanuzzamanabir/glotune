@@ -11,6 +11,8 @@ import 'package:glotune/app/core/values/api_constants.dart';
 import 'package:glotune/app/core/services/auth_service.dart';
 import 'package:glotune/app/core/services/notification_websocket_service.dart';
 import 'package:glotune/app/data/models/user_profile.dart';
+import 'package:glotune/app/core/constants/gift_catalogue.dart';
+import 'package:glotune/app/data/models/gift_item_model.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart' as vp;
 
@@ -1417,19 +1419,30 @@ class LivePlayerController extends GetxController {
     try {
       final authService = Get.find<AuthService>();
       final token = authService.accessToken.value;
-      if (token == null) return;
+      if (token == null) {
+        print("[DEBUG LivePlayer] fetchUserProfile: Token is NULL!");
+        return;
+      }
 
+      print("[DEBUG LivePlayer] GET ${ApiConstants.baseUrl}auth/profile/me/ ...");
       final response = await apiClient.get(
         Uri.parse('${ApiConstants.baseUrl}auth/profile/me/'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      print("[DEBUG LivePlayer] fetchUserProfile response: ${response.statusCode} | body: ${response.body}");
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        userProfile.value = UserProfile.fromJson(data);
+        if (data is Map<String, dynamic>) {
+          userProfile.value = UserProfile.fromJson(data);
+          print("[DEBUG LivePlayer] UserProfile loaded: ${userProfile.value?.fullName} | yourCoins: ${userProfile.value?.yourCoins}");
+        }
+      } else {
+        print("[DEBUG LivePlayer] Failed to load profile: ${response.statusCode} ${response.body}");
       }
     } catch (e) {
-      print("Error fetching user profile in LivePlayerController: $e");
+      print("[DEBUG LivePlayer] Error fetching user profile: $e");
     }
   }
 
@@ -1745,6 +1758,7 @@ class LivePlayerController extends GetxController {
     print("[LivePlayer] Processing event: $data");
     final type = data['type']?.toString();
     final action = data['action']?.toString();
+    final event = data['event']?.toString();
 
     // 0. Session status & notification event (e.g. joined box battle, quiz, 1v1, 2v2, live, karaoke)
     if (type == 'session_status' ||
@@ -1849,17 +1863,59 @@ class LivePlayerController extends GetxController {
       print("[LivePlayer WS] Incoming reaction event: $reactionName");
       _reactionStreamController.add(reactionName);
     }
-    // 3. Gift event
-    else if (type == 'gift') {
-      final giftType = data['gift_type']?.toString() ?? 'gift';
-      final quantity = data['quantity'] ?? 1;
-      final sender = data['username'] ?? data['user']?['username'] ?? 'Someone';
-      _reactionStreamController.add(giftType);
-      // Also add as system message in chat
+    // 3a. Personal Gift Sent Acknowledgment from Server
+    else if (type == 'gift_sent' || event == 'gift_sent' || action == 'gift_sent') {
+      final dynamic rawSentData = data['data'];
+      final Map<String, dynamic> giftData = (rawSentData is Map<String, dynamic>)
+          ? rawSentData
+          : data;
+      final remaining = giftData['remaining_coins'];
+      if (remaining != null && userProfile.value != null) {
+        final parsed = int.tryParse(remaining.toString());
+        if (parsed != null) {
+          userProfile.value = userProfile.value!.copyWith(yourCoins: parsed);
+          print("[LivePlayer WS] Updated user balance to $parsed coins");
+        }
+      }
+    }
+    // 3b. Room Broadcast Gift Received (Trigger Animation & Chat Banner)
+    else if (type == 'gift_received' ||
+        event == 'gift_received' ||
+        action == 'gift_received' ||
+        type == 'gift') {
+      final dynamic rawRecvData = data['data'];
+      final Map<String, dynamic> giftData = (rawRecvData is Map<String, dynamic>)
+          ? rawRecvData
+          : data;
+      final giftCode = giftData['gift_code']?.toString() ?? '';
+      final giftName = giftData['gift_name']?.toString() ??
+          giftData['gift_type']?.toString() ??
+          'Gift';
+      final quantity = giftData['quantity'] ?? 1;
+      final coins = giftData['coins'] ?? 0;
+      final totalCoins = giftData['total_coins'] ?? (coins * quantity);
+      final senderName = giftData['sender_name']?.toString() ??
+          data['username'] ??
+          data['user']?['username'] ??
+          'Someone';
+      final recipientName = giftData['recipient_name']?.toString() ?? '';
+      final giftIdentifier = giftCode.isNotEmpty ? giftCode : giftName;
+
+      print("[LivePlayer WS] Incoming gift received: $giftIdentifier x$quantity from $senderName");
+      _reactionStreamController.add(giftIdentifier);
+
+      final toStr = recipientName.isNotEmpty ? ' to $recipientName' : '';
+      final coinStr = totalCoins > 0 ? ' ($totalCoins coins)' : '';
       liveMessages.insert(0, {
-        'message': '🎁 $sender sent $quantity $giftType!',
+        'message': '🎁 $senderName sent $quantity $giftName$coinStr$toStr!',
         'user': {'username': 'System'},
         'is_system': true,
+        'gift_code': giftCode,
+        'gift_name': giftName,
+        'quantity': quantity,
+        'total_coins': totalCoins,
+        'sender_name': senderName,
+        'recipient_name': recipientName,
       });
     }
     // 4. Typing event
@@ -2643,7 +2699,12 @@ class LivePlayerController extends GetxController {
     );
   }
 
-  Future<void> sendGift(String giftType, {int quantity = 1, int coins = 0}) async {
+  Future<void> sendGift(
+    dynamic giftOrName, {
+    int quantity = 1,
+    int coins = 0,
+    int? recipientId,
+  }) async {
     final authService = Get.find<AuthService>();
     final token = authService.accessToken.value;
 
@@ -2657,6 +2718,122 @@ class LivePlayerController extends GetxController {
       return;
     }
 
+    // Resolve gift details from GiftItem or canonical code/name lookup
+    String giftCode = '';
+    String giftName = 'Gift';
+    int unitCoins = coins;
+
+    if (giftOrName is GiftItem) {
+      giftCode = giftOrName.code;
+      giftName = giftOrName.name;
+      unitCoins = giftOrName.coins;
+    } else if (giftOrName is String) {
+      final found = GiftCatalogue.find(giftOrName);
+      if (found != null) {
+        giftCode = found.code;
+        giftName = found.name;
+        unitCoins = found.coins;
+      } else {
+        giftName = giftOrName;
+        if (giftOrName.toUpperCase().startsWith('GT')) {
+          giftCode = giftOrName.toUpperCase();
+        }
+      }
+    }
+
+    final totalCoins = unitCoins * quantity;
+    final senderId = userProfile.value?.id;
+    final resolvedRecipientId = recipientId ?? (hostId.value > 0 ? hostId.value : null);
+
+    print("[DEBUG SEND GIFT] userProfile: ${userProfile.value?.fullName} (id: $senderId)");
+    print("[DEBUG SEND GIFT] yourCoins locally: ${userProfile.value?.yourCoins}");
+    print("[DEBUG SEND GIFT] giftCode: '$giftCode', giftName: '$giftName', unitCoins: $unitCoins, qty: $quantity, totalCoins: $totalCoins");
+    print("[DEBUG SEND GIFT] resolvedRecipientId: $resolvedRecipientId (hostId: ${hostId.value})");
+
+    if (userProfile.value == null || userProfile.value!.yourCoins == 0) {
+      print("[DEBUG SEND GIFT] yourCoins is 0 or null locally, refreshing from /auth/profile/me/ ...");
+      await fetchUserProfile();
+      print("[DEBUG SEND GIFT] After refresh -> yourCoins: ${userProfile.value?.yourCoins}");
+    }
+
+    final currentCoins = userProfile.value?.yourCoins ?? 0;
+    print("[DEBUG SEND GIFT] Balance check: currentCoins=$currentCoins, required totalCoins=$totalCoins");
+
+    // Only block on client if user definitely has a recorded balance that is less than totalCoins
+    if (currentCoins > 0 && currentCoins < totalCoins) {
+      print("[DEBUG SEND GIFT] Insufficient balance: $currentCoins < $totalCoins");
+      Get.snackbar(
+        'Insufficient Coins',
+        'You have $currentCoins coins, but this gift requires $totalCoins coins.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (currentCoins == 0) {
+      print("[DEBUG SEND GIFT] Notice: Local balance is 0. Sending to backend WebSocket for authoritative atomic balance verification.");
+    }
+
+    // 1. Authoritative WebSocket Send (with atomic deduction & room broadcast)
+    if (_chatWs != null) {
+      try {
+        final wsPayload = {
+          "event": "send_gift",
+          "action": "send_gift",
+          "data": {
+            "gift_code": giftCode,
+            "gift_name": giftName,
+            "coins": unitCoins,
+            "quantity": quantity,
+            "total_coins": totalCoins,
+            if (senderId != null) "sender_id": senderId,
+            if (resolvedRecipientId != null) "recipient_id": resolvedRecipientId,
+            "room_id": roomId,
+          },
+          // flat fields for backward compatibility
+          "gift_code": giftCode,
+          "gift_name": giftName,
+          "gift_type": giftName,
+          "coins": unitCoins,
+          "quantity": quantity,
+          "total_coins": totalCoins,
+          if (senderId != null) "sender_id": senderId,
+          if (resolvedRecipientId != null) "recipient_id": resolvedRecipientId,
+          "room_id": roomId,
+        };
+
+        _chatWs!.add(jsonEncode(wsPayload));
+        print("[LivePlayer WS] Sent gift via WebSocket: $wsPayload");
+
+        // Optimistically deduct coins locally
+        if (userProfile.value != null && totalCoins > 0) {
+          final current = userProfile.value!.yourCoins;
+          final updated = current - totalCoins;
+          userProfile.value = userProfile.value!.copyWith(
+            yourCoins: updated > 0 ? updated : 0,
+          );
+        }
+
+        // Local reaction animation trigger
+        _reactionStreamController.add(giftCode.isNotEmpty ? giftCode : giftName);
+
+        if (Get.isBottomSheetOpen == true) {
+          Get.back();
+        }
+        Get.snackbar(
+          'Gift Sent! 🎁',
+          'Sent $quantity $giftName successfully!',
+          colorText: Colors.white,
+          backgroundColor: Colors.green,
+        );
+        return;
+      } catch (wsErr) {
+        print("[LivePlayer WS] Error sending gift via WebSocket: $wsErr, falling back to REST");
+      }
+    }
+
+    // 2. Fallback REST API
     try {
       final response = await apiClient.post(
         Uri.parse('${ApiConstants.baseUrl}live/rooms/$roomId/send-gift/'),
@@ -2664,39 +2841,31 @@ class LivePlayerController extends GetxController {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'gift_type': giftType, 'quantity': quantity}),
+        body: jsonEncode({
+          'gift_code': giftCode,
+          'gift_type': giftName,
+          'quantity': quantity,
+          if (resolvedRecipientId != null) 'recipient_id': resolvedRecipientId,
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Deduct coins locally if available
-        if (userProfile.value != null && coins > 0) {
+        if (userProfile.value != null && totalCoins > 0) {
           final current = userProfile.value!.yourCoins;
-          final updated = current - (coins * quantity);
-          userProfile.value = userProfile.value!.copyWith(yourCoins: updated > 0 ? updated : 0);
+          final updated = current - totalCoins;
+          userProfile.value = userProfile.value!.copyWith(
+            yourCoins: updated > 0 ? updated : 0,
+          );
         }
 
-        // Broadcast gift action over WebSocket to all participants
-        try {
-          if (_chatWs != null) {
-            _chatWs!.add(
-              jsonEncode({
-                "action": "gift",
-                "gift_type": giftType,
-                "quantity": quantity,
-              }),
-            );
-          }
-        } catch (wsErr) {
-          print("[LivePlayer WS] Error broadcasting gift: $wsErr");
+        _reactionStreamController.add(giftCode.isNotEmpty ? giftCode : giftName);
+
+        if (Get.isBottomSheetOpen == true) {
+          Get.back();
         }
-
-        // Local reaction stream
-        _reactionStreamController.add(giftType);
-
-        Get.back(); // close bottom sheet
         Get.snackbar(
           'Gift Sent! 🎁',
-          'Sent $quantity $giftType successfully!',
+          'Sent $quantity $giftName successfully!',
           colorText: Colors.white,
           backgroundColor: Colors.green,
         );
@@ -2704,28 +2873,13 @@ class LivePlayerController extends GetxController {
         try {
           final errorBody = jsonDecode(response.body);
           if (errorBody is Map<String, dynamic>) {
-            if (errorBody.containsKey('detail')) {
-              Get.snackbar(
-                'Error',
-                errorBody['detail'].toString(),
-                backgroundColor: Colors.red,
-                colorText: Colors.white,
-              );
-            } else if (errorBody.containsKey('error')) {
-              Get.snackbar(
-                'Error',
-                errorBody['error'].toString(),
-                backgroundColor: Colors.red,
-                colorText: Colors.white,
-              );
-            } else {
-              Get.snackbar(
-                'Error',
-                'Failed to send gift: ${response.statusCode}',
-                backgroundColor: Colors.red,
-                colorText: Colors.white,
-              );
-            }
+            final msg = errorBody['detail'] ?? errorBody['error'] ?? 'Failed to send gift: ${response.statusCode}';
+            Get.snackbar(
+              'Error',
+              msg.toString(),
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
           } else {
             Get.snackbar(
               'Error',

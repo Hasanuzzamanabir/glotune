@@ -2000,16 +2000,44 @@ class CreateController extends GetxController {
       print("[DEBUG LIVE WS] Incoming reaction event: $reactionName");
       _reactionStreamController.add(reactionName);
     }
-    // 3. Incoming gift
-    else if (type == 'gift') {
-      final giftType = data['gift_type']?.toString() ?? 'gift';
-      final quantity = data['quantity'] ?? 1;
-      final sender = data['username'] ?? data['user']?['username'] ?? 'Someone';
-      _reactionStreamController.add(giftType);
+    // 3. Incoming gift (gift_received room broadcast)
+    else if (type == 'gift_received' ||
+        data['event']?.toString() == 'gift_received' ||
+        action == 'gift_received' ||
+        type == 'gift') {
+      final dynamic rawData = data['data'];
+      final Map<String, dynamic> giftData = (rawData is Map<String, dynamic>)
+          ? rawData
+          : data;
+      final giftCode = giftData['gift_code']?.toString() ?? '';
+      final giftName = giftData['gift_name']?.toString() ??
+          giftData['gift_type']?.toString() ??
+          'Gift';
+      final quantity = giftData['quantity'] ?? 1;
+      final coins = giftData['coins'] ?? 0;
+      final totalCoins = giftData['total_coins'] ?? (coins * quantity);
+      final senderName = giftData['sender_name']?.toString() ??
+          data['username'] ??
+          data['user']?['username'] ??
+          'Someone';
+      final recipientName = giftData['recipient_name']?.toString() ?? '';
+      final giftIdentifier = giftCode.isNotEmpty ? giftCode : giftName;
+
+      print("[DEBUG LIVE WS] Host received gift broadcast: $giftIdentifier x$quantity from $senderName");
+      _reactionStreamController.add(giftIdentifier);
+
+      final toStr = recipientName.isNotEmpty ? ' to $recipientName' : '';
+      final coinStr = totalCoins > 0 ? ' ($totalCoins coins)' : '';
       liveMessages.insert(0, {
-        'message': '🎁 $sender sent $quantity $giftType!',
+        'message': '🎁 $senderName sent $quantity $giftName$coinStr$toStr!',
         'user': {'username': 'System'},
         'is_system': true,
+        'gift_code': giftCode,
+        'gift_name': giftName,
+        'quantity': quantity,
+        'total_coins': totalCoins,
+        'sender_name': senderName,
+        'recipient_name': recipientName,
       });
     }
     // 4. Viewer typing
