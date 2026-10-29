@@ -893,52 +893,60 @@ class LiveStreamView extends GetView<CreateController> {
 
     return Align(
       alignment: Alignment.centerLeft,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          color: bgColor,
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 320.w,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ImageUtils.safeCircleAvatar(
-              radius: 9.r,
-              backgroundColor: Colors.grey.shade400,
-              imageUrl: avatarUrl,
-            ),
-            SizedBox(width: 6.w),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: "$username ",
-                    style: TextStyle(
-                      color: userColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextSpan(
-                    text: message,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: bgColor,
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ImageUtils.safeCircleAvatar(
+                radius: 9.r,
+                backgroundColor: Colors.grey.shade400,
+                imageUrl: avatarUrl,
+              ),
+              SizedBox(width: 6.w),
+              Flexible(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "$username ",
+                        style: TextStyle(
+                          color: userColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: message,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  softWrap: true,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

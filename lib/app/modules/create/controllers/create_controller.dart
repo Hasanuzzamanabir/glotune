@@ -27,6 +27,7 @@ class CreateController extends GetxController {
   final isFlashOn = false.obs;
   final isFrontCamera = true.obs;
   final isRecording = false.obs;
+  
   final isRecordingPaused = false.obs;
   final recordedSeconds = 0.obs;
   Timer? _recordingTimer;
