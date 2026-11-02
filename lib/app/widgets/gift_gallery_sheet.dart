@@ -140,7 +140,10 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                           ),
                           SizedBox(width: 6.w),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6.w,
+                              vertical: 2.h,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFFE91E63), Color(0xFF9C27B0)],
@@ -162,7 +165,7 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                       Text(
                         widget.recipientName != null
                             ? "Send to @${widget.recipientName} • Small Gifts, Big Moments!"
-                            : "Small Gifts, Big Moments • Initial Catalogue",
+                            : "Small Gifts, Big Moments • Animated Video Effects on Exclusive Gifts",
                         style: TextStyle(
                           color: Colors.white54,
                           fontSize: 9.5.sp,
@@ -180,19 +183,31 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                     Get.toNamed(Routes.MAKE_DONATION);
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 5.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.amber.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(color: Colors.amber.withValues(alpha: 0.6), width: 1),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.6),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.monetization_on, color: Colors.amber, size: 14),
+                        const Icon(
+                          Icons.monetization_on,
+                          color: Colors.amber,
+                          size: 14,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
-                          widget.userCoins > 0 ? "${widget.userCoins}" : "Recharge",
+                          widget.userCoins > 0
+                              ? "${widget.userCoins}"
+                              : "Recharge",
                           style: TextStyle(
                             color: Colors.amber,
                             fontSize: 11.sp,
@@ -200,7 +215,11 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                           ),
                         ),
                         SizedBox(width: 4.w),
-                        Icon(Icons.add_circle, color: Colors.amberAccent, size: 13.sp),
+                        Icon(
+                          Icons.add_circle,
+                          color: Colors.amberAccent,
+                          size: 13.sp,
+                        ),
                       ],
                     ),
                   ),
@@ -211,7 +230,11 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                 IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white54,
+                    size: 20,
+                  ),
                   onPressed: () => Get.back(),
                 ),
               ],
@@ -233,12 +256,24 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                 controller: _searchController,
                 style: TextStyle(color: Colors.white, fontSize: 11.5.sp),
                 decoration: InputDecoration(
-                  hintText: "Search gifts by name or code (e.g. GT001, Dragon)...",
-                  hintStyle: TextStyle(color: Colors.white38, fontSize: 10.5.sp),
-                  prefixIcon: Icon(Icons.search, color: Colors.white54, size: 16.sp),
+                  hintText:
+                      "Search gifts by name or code (e.g. GT001, Dragon)...",
+                  hintStyle: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 10.5.sp,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.white54,
+                    size: 16.sp,
+                  ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.white54, size: 14.sp),
+                          icon: Icon(
+                            Icons.clear,
+                            color: Colors.white54,
+                            size: 14.sp,
+                          ),
                           onPressed: () {
                             setState(() {
                               _searchController.clear();
@@ -272,6 +307,7 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                 final cat = GiftCatalogue.categories[idx];
                 final isSelected = _selectedCategory == cat;
                 final count = _getCountForCategory(cat);
+                final isSpecial = cat == 'Special & Exclusive';
 
                 return GestureDetector(
                   onTap: () {
@@ -281,34 +317,83 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 5.h,
+                    ),
                     decoration: BoxDecoration(
                       gradient: isSelected
-                          ? const LinearGradient(
-                              colors: [Color(0xFFE50914), Color(0xFF8B0000)],
-                            )
-                          : null,
-                      color: isSelected ? null : Colors.white.withValues(alpha: 0.06),
+                          ? (isSpecial
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFFF59E0B),
+                                      Color(0xFFE91E63),
+                                    ],
+                                  )
+                                : const LinearGradient(
+                                    colors: [
+                                      Color(0xFFE50914),
+                                      Color(0xFF8B0000),
+                                    ],
+                                  ))
+                          : (isSpecial
+                                ? LinearGradient(
+                                    colors: [
+                                      const Color(
+                                        0xFFF59E0B,
+                                      ).withValues(alpha: 0.15),
+                                      const Color(
+                                        0xFFE91E63,
+                                      ).withValues(alpha: 0.15),
+                                    ],
+                                  )
+                                : null),
+                      color: isSelected
+                          ? null
+                          : Colors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(16.r),
                       border: Border.all(
-                        color: isSelected ? Colors.redAccent : Colors.white10,
+                        color: isSelected
+                            ? (isSpecial
+                                  ? Colors.amberAccent
+                                  : Colors.redAccent)
+                            : (isSpecial
+                                  ? Colors.amber.withValues(alpha: 0.4)
+                                  : Colors.white10),
                         width: 1,
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (isSpecial) ...[
+                          const Icon(
+                            Icons.auto_awesome,
+                            color: Colors.amberAccent,
+                            size: 12,
+                          ),
+                          SizedBox(width: 3.w),
+                        ],
                         Text(
                           cat,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
+                            color: isSelected
+                                ? Colors.white
+                                : (isSpecial
+                                      ? Colors.amberAccent
+                                      : Colors.white70),
                             fontSize: 10.sp,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: (isSelected || isSpecial)
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                         SizedBox(width: 4.w),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 4.w,
+                            vertical: 1.h,
+                          ),
                           decoration: BoxDecoration(
                             color: isSelected ? Colors.black26 : Colors.white10,
                             borderRadius: BorderRadius.circular(8.r),
@@ -338,22 +423,32 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.card_giftcard_outlined, color: Colors.white24, size: 42.sp),
+                        Icon(
+                          Icons.card_giftcard_outlined,
+                          color: Colors.white24,
+                          size: 42.sp,
+                        ),
                         SizedBox(height: 8.h),
                         Text(
                           "No gifts found for '$_searchQuery'",
-                          style: TextStyle(color: Colors.white54, fontSize: 11.sp),
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11.sp,
+                          ),
                         ),
                       ],
                     ),
                   )
                 : GridView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       crossAxisSpacing: 8.w,
                       mainAxisSpacing: 8.h,
-                      childAspectRatio: 0.76,
+                      childAspectRatio: 0.74,
                     ),
                     itemCount: filtered.length,
                     itemBuilder: (context, idx) {
@@ -371,7 +466,10 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
             decoration: BoxDecoration(
               color: const Color(0xFF161626),
               border: Border(
-                top: BorderSide(color: Colors.white.withValues(alpha: 0.08), width: 1),
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
+                ),
               ),
               boxShadow: [
                 BoxShadow(
@@ -393,7 +491,9 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                       Container(
                         padding: EdgeInsets.all(5.w),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: _selectedGift.gradientColors),
+                          gradient: LinearGradient(
+                            colors: _selectedGift.gradientColors,
+                          ),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: _selectedGift.svgAsset != null
@@ -426,7 +526,11 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                             ),
                             Row(
                               children: [
-                                const Icon(Icons.monetization_on, color: Colors.amber, size: 11),
+                                const Icon(
+                                  Icons.monetization_on,
+                                  color: Colors.amber,
+                                  size: 11,
+                                ),
                                 SizedBox(width: 3.w),
                                 Text(
                                   "${_selectedGift.formattedCoins} Coins each",
@@ -442,36 +546,47 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                         ),
                       ),
 
-                      // Quantity Preset Chips
+                      // Quantity Selector Chips
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: _presetQuantities.map((qty) {
                           final isQtySelected = _selectedQuantity == qty;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedQuantity = qty;
-                              });
-                            },
-                            child: Container(
-                              margin: EdgeInsets.only(left: 4.w),
-                              padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
-                              decoration: BoxDecoration(
-                                color: isQtySelected
-                                    ? Colors.amber.withValues(alpha: 0.25)
-                                    : Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(10.r),
-                                border: Border.all(
-                                  color: isQtySelected ? Colors.amber : Colors.white12,
-                                  width: 1,
+                          return Padding(
+                            padding: EdgeInsets.only(left: 4.w),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedQuantity = qty;
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 7.w,
+                                  vertical: 4.h,
                                 ),
-                              ),
-                              child: Text(
-                                "${qty}x",
-                                style: TextStyle(
-                                  color: isQtySelected ? Colors.amber : Colors.white70,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold,
+                                decoration: BoxDecoration(
+                                  color: isQtySelected
+                                      ? Colors.amber.withValues(alpha: 0.25)
+                                      : Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  border: Border.all(
+                                    color: isQtySelected
+                                        ? Colors.amber
+                                        : Colors.white12,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  "x$qty",
+                                  style: TextStyle(
+                                    color: isQtySelected
+                                        ? Colors.amberAccent
+                                        : Colors.white70,
+                                    fontSize: 9.5.sp,
+                                    fontWeight: isQtySelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
                                 ),
                               ),
                             ),
@@ -480,23 +595,30 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 10.h),
 
-                  // Row 2: Total Calculation & Send Button
+                  // Row 2: Total Coins & Send Action Button
                   Row(
                     children: [
-                      // Total cost
+                      // Total cost indicator
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             "Total Cost",
-                            style: TextStyle(color: Colors.white54, fontSize: 9.sp),
+                            style: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 8.5.sp,
+                            ),
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.monetization_on, color: Colors.amber, size: 14),
+                              const Icon(
+                                Icons.monetization_on,
+                                color: Colors.amber,
+                                size: 14,
+                              ),
                               SizedBox(width: 3.w),
                               Text(
                                 "$totalCost Coins",
@@ -531,7 +653,12 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                                     _isSending = true;
                                   });
                                   try {
-                                    await widget.onSend(_selectedGift, _selectedQuantity);
+                                    // Dismiss bottom sheet so the full-screen video popup animation is visible
+                                    Get.back();
+                                    await widget.onSend(
+                                      _selectedGift,
+                                      _selectedQuantity,
+                                    );
                                   } finally {
                                     if (mounted) {
                                       setState(() {
@@ -543,12 +670,18 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                           child: Ink(
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFFE50914), Color(0xFFFF5252), Color(0xFFE91E63)],
+                                colors: [
+                                  Color(0xFFE50914),
+                                  Color(0xFFFF5252),
+                                  Color(0xFFE91E63),
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(14.r),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.redAccent.withValues(alpha: 0.4),
+                                  color: Colors.redAccent.withValues(
+                                    alpha: 0.4,
+                                  ),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -567,9 +700,14 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                                       ),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.send_rounded, color: Colors.white, size: 15.sp),
+                                        Icon(
+                                          Icons.send_rounded,
+                                          color: Colors.white,
+                                          size: 15.sp,
+                                        ),
                                         SizedBox(width: 6.w),
                                         Text(
                                           "Send ${_selectedQuantity > 1 ? '($_selectedQuantity)' : ''}",
@@ -613,7 +751,9 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
               : Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isSelected ? gift.categoryColor : Colors.white.withValues(alpha: 0.08),
+            color: isSelected
+                ? gift.categoryColor
+                : Colors.white.withValues(alpha: 0.08),
             width: isSelected ? 1.8 : 0.8,
           ),
           boxShadow: isSelected
@@ -634,7 +774,7 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+                  padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.8.h),
                   decoration: BoxDecoration(
                     color: Colors.black45,
                     borderRadius: BorderRadius.circular(4.r),
@@ -648,10 +788,35 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                     ),
                   ),
                 ),
-                if (isSelected)
-                  Icon(Icons.check_circle, color: gift.categoryColor, size: 10.sp)
+                if (gift.videoAsset != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 3.w,
+                      vertical: 0.8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE50914), Color(0xFFFF5252)],
+                      ),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Text(
+                      "🎬 FX",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 6.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  )
+                else if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    color: gift.categoryColor,
+                    size: 9.sp,
+                  )
                 else
-                  SizedBox(width: 10.sp),
+                  SizedBox(width: 8.sp),
               ],
             ),
             SizedBox(height: 3.h),
@@ -666,10 +831,7 @@ class _GiftGallerySheetState extends State<GiftGallerySheet> {
                         height: 44.w,
                         fit: BoxFit.contain,
                       )
-                    : Text(
-                        gift.icon,
-                        style: TextStyle(fontSize: 28.sp),
-                      ),
+                    : Text(gift.icon, style: TextStyle(fontSize: 28.sp)),
               ),
             ),
             SizedBox(height: 2.h),

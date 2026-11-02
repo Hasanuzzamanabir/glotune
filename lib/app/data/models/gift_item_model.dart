@@ -13,6 +13,9 @@ class GiftItem {
   /// When provided the gift gallery renders the SVG instead of the emoji [icon].
   final String? svgAsset;
 
+  /// Optional: path to an animated WebM video asset, e.g. 'assets/video/Animate_rescue_truck_icon_transparent.webm'.
+  final String? videoAsset;
+
   const GiftItem({
     required this.code,
     required this.name,
@@ -22,6 +25,7 @@ class GiftItem {
     required this.categoryColor,
     required this.gradientColors,
     this.svgAsset,
+    this.videoAsset,
   });
 
   String get formattedCoins {

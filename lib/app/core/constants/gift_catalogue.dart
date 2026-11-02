@@ -668,6 +668,7 @@ class GiftCatalogue {
       coins: 10000,
       icon: '🚒',
       svgAsset: 'assets/svg/GT066_Rescue-Truck.svg',
+      videoAsset: 'assets/video/GT066_Rescue-Truck.mp4',
       categoryColor: Color(0xFFF59E0B),
       gradientColors: [Color(0xFFB71C1C), Color(0xFFFF5252)],
     ),
@@ -678,6 +679,7 @@ class GiftCatalogue {
       coins: 20000,
       icon: '🌟',
       svgAsset: 'assets/svg/GT067_Doctor-Star.svg',
+      videoAsset: 'assets/video/GT067_Doctor-Star.mp4',
       categoryColor: Color(0xFFF59E0B),
       gradientColors: [Color(0xFF006064), Color(0xFF18FFFF)],
     ),
@@ -688,6 +690,7 @@ class GiftCatalogue {
       coins: 50000,
       icon: '💡',
       svgAsset: 'assets/svg/GT068_Teacher-Light.svg',
+      videoAsset: 'assets/video/GT068_Teacher-Light.mp4',
       categoryColor: Color(0xFFF59E0B),
       gradientColors: [Color(0xFFE65100), Color(0xFFFFD700)],
     ),
@@ -698,6 +701,7 @@ class GiftCatalogue {
       coins: 100000,
       icon: '🌌',
       svgAsset: 'assets/svg/GT069_Galaxy-Voyage.svg',
+      videoAsset: 'assets/video/GT069_Galaxy-Voyage.mp4',
       categoryColor: Color(0xFFF59E0B),
       gradientColors: [Color(0xFF4A148C), Color(0xFF7C4DFF)],
     ),
@@ -708,6 +712,7 @@ class GiftCatalogue {
       coins: 500000,
       icon: '👑',
       svgAsset: 'assets/svg/GT070_Royal-Castle.svg',
+      videoAsset: 'assets/video/GT070_Royal-Castle.mp4',
       categoryColor: Color(0xFFF59E0B),
       gradientColors: [Color(0xFF311B92), Color(0xFFFFD700)],
     ),
@@ -718,10 +723,14 @@ class GiftCatalogue {
       coins: 1000000,
       icon: '🐲',
       svgAsset: 'assets/svg/GT071_Dragon-Legend.svg',
+      videoAsset: 'assets/video/GT071_Dragon-Legend.mp4',
       categoryColor: Color(0xFFF59E0B),
       gradientColors: [Color(0xFFB71C1C), Color(0xFFFFD700)],
     ),
   ];
+
+  /// The 6 exclusive gifts that have animated video assets.
+  static List<GiftItem> get videoGifts => allGifts.where((g) => g.videoAsset != null).toList();
 
   static List<GiftItem> getByCategory(String category) {
     if (category == 'All') return allGifts;
@@ -758,5 +767,33 @@ class GiftCatalogue {
   static GiftItem? find(String codeOrName) {
     if (codeOrName.trim().isEmpty) return null;
     return findByCode(codeOrName) ?? findByName(codeOrName);
+  }
+
+  /// Resolve animated video asset path for a gift code or gift name
+  static String? getVideoAsset(String codeOrName) {
+    if (codeOrName.trim().isEmpty) return null;
+    final item = find(codeOrName);
+    if (item?.videoAsset != null) return item!.videoAsset;
+
+    final lower = codeOrName.trim().toLowerCase();
+    if (lower.contains('rescue') || lower.contains('truck') || lower == 'gt066' || lower == 'gt038') {
+      return 'assets/video/GT066_Rescue-Truck.mp4';
+    }
+    if (lower.contains('doctor') || lower == 'gt067' || lower == 'gt041') {
+      return 'assets/video/GT067_Doctor-Star.mp4';
+    }
+    if (lower.contains('teacher') || lower == 'gt068' || lower == 'gt042' || lower == 'gt007') {
+      return 'assets/video/GT068_Teacher-Light.mp4';
+    }
+    if (lower.contains('galaxy') || lower == 'gt069') {
+      return 'assets/video/GT069_Galaxy-Voyage.mp4';
+    }
+    if (lower.contains('castle') || lower == 'gt070' || lower == 'gt057') {
+      return 'assets/video/GT070_Royal-Castle.mp4';
+    }
+    if (lower.contains('dragon') || lower == 'gt071' || lower == 'gt055') {
+      return 'assets/video/GT071_Dragon-Legend.mp4';
+    }
+    return null;
   }
 }
