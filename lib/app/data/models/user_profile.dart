@@ -66,19 +66,51 @@ class UserProfile {
       return 0;
     }
 
+    final Map<String, dynamic> p = (json['data'] is Map<String, dynamic>)
+        ? json['data'] as Map<String, dynamic>
+        : (json['user'] is Map<String, dynamic>
+            ? json['user'] as Map<String, dynamic>
+            : (json['profile'] is Map<String, dynamic>
+                ? json['profile'] as Map<String, dynamic>
+                : json));
+
+    int parsedCoins = 0;
+    final coinCandidates = [
+      p['your_coins'],
+      p['coins'],
+      p['coin_balance'],
+      p['balance'],
+      p['remaining_coins'],
+      p['total_coins'],
+      p['wallet_balance'],
+      if (p['wallet'] is Map) (p['wallet']['coins'] ?? p['wallet']['balance']),
+    ];
+
+    for (final candidate in coinCandidates) {
+      if (candidate != null) {
+        final val = parseInt(candidate);
+        if (val > 0) {
+          parsedCoins = val;
+          break;
+        }
+      }
+    }
+
+    print("[DEBUG UserProfile.fromJson] JSON keys: ${p.keys.toList()} | parsed yourCoins: $parsedCoins");
+
     return UserProfile(
-      id: parseInt(json['id']),
-      email: json['email']?.toString(),
-      fullName: json['full_name']?.toString(),
-      userType: json['user_type']?.toString(),
-      country: json['country']?.toString(),
-      city: json['city']?.toString(),
-      profilePictureUrl: json['profile_picture_url']?.toString(),
-      coverPhotoUrl: json['cover_photo_url']?.toString(),
-      subscriberCount: parseInt(json['suscriber_count']),
-      followerCount: parseInt(json['follower_count']),
-      followingCount: parseInt(json['following_count']),
-      yourCoins: parseInt(json['your_coins']),
+      id: parseInt(p['id']),
+      email: p['email']?.toString(),
+      fullName: p['full_name']?.toString() ?? p['name']?.toString() ?? p['username']?.toString(),
+      userType: p['user_type']?.toString(),
+      country: p['country']?.toString(),
+      city: p['city']?.toString(),
+      profilePictureUrl: p['profile_picture_url']?.toString() ?? p['avatar']?.toString() ?? p['profile_picture']?.toString(),
+      coverPhotoUrl: p['cover_photo_url']?.toString(),
+      subscriberCount: parseInt(p['subscriber_count'] ?? p['suscriber_count']),
+      followerCount: parseInt(p['follower_count']),
+      followingCount: parseInt(p['following_count']),
+      yourCoins: parsedCoins,
     );
   }
 }

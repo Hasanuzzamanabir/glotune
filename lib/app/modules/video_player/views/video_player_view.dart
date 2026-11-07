@@ -4,10 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:chewie/chewie.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
-import 'package:glotune/app/modules/home/views/widgets/video_card.dart';
 import 'package:glotune/app/data/models/content_comment.dart';
 import 'package:glotune/app/core/services/auth_service.dart';
 import 'package:glotune/app/routes/app_pages.dart';
+import 'package:glotune/app/widgets/gift_gallery_sheet.dart';
 import '../controllers/video_player_controller.dart';
 
 class VideoPlayerView extends GetView<VideoPlayerController> {
@@ -212,7 +212,11 @@ class VideoPlayerView extends GetView<VideoPlayerController> {
             ),
           ),
           _buildActionButton(Icons.download_outlined, 'Download'),
-          _buildActionButton(Icons.card_giftcard, 'Gift'),
+          _buildActionButton(
+            Icons.card_giftcard,
+            'Gift',
+            onTap: _openGiftGallery,
+          ),
         ],
       ),
     );
@@ -337,6 +341,25 @@ class VideoPlayerView extends GetView<VideoPlayerController> {
       _CommentsOverlay(controller: controller),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _openGiftGallery() {
+    final creatorName = controller.videoData?.authorName.isNotEmpty == true
+        ? controller.videoData!.authorName
+        : "Creator";
+    GiftGallerySheet.show(
+      context: Get.context!,
+      recipientName: creatorName,
+      onSend: (gift, qty) async {
+        Get.back();
+        Get.snackbar(
+          'Gift Sent! 🎁',
+          'Sent $qty x ${gift.name} to $creatorName!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      },
     );
   }
 }
@@ -833,10 +856,13 @@ class _CommentsOverlay extends StatelessWidget {
                       );
                     }),
                   ),
-                  Icon(
-                    Icons.card_giftcard,
-                    color: AppColors.textSecondary,
-                    size: 20.w,
+                  GestureDetector(
+                    onTap: _openGiftGallery,
+                    child: Icon(
+                      Icons.card_giftcard,
+                      color: AppColors.primary,
+                      size: 20.w,
+                    ),
                   ),
                 ],
               ),
@@ -886,6 +912,25 @@ class _CommentsOverlay extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+
+  void _openGiftGallery() {
+    final creatorName = controller.videoData?.authorName.isNotEmpty == true
+        ? controller.videoData!.authorName
+        : "Creator";
+    GiftGallerySheet.show(
+      context: Get.context!,
+      recipientName: creatorName,
+      onSend: (gift, qty) async {
+        Get.back();
+        Get.snackbar(
+          'Gift Sent! 🎁',
+          'Sent $qty x ${gift.name} to $creatorName!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      },
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:glotune/app/data/models/content_list.dart';
 import 'package:glotune/app/core/values/app_colors.dart';
 import 'package:glotune/app/data/models/content_comment.dart';
 import 'package:glotune/app/core/services/auth_service.dart';
+import 'package:glotune/app/widgets/gift_gallery_sheet.dart';
 
 class ShortsPlayerView extends GetView<ShortsPlayerController> {
   const ShortsPlayerView({super.key});
@@ -829,10 +830,13 @@ class _ShortsCommentsOverlay extends StatelessWidget {
                       );
                     }),
                   ),
-                  Icon(
-                    Icons.card_giftcard,
-                    color: AppColors.textSecondary,
-                    size: 20.w,
+                  GestureDetector(
+                    onTap: () => _openGiftGallery(index),
+                    child: Icon(
+                      Icons.card_giftcard,
+                      color: AppColors.primary,
+                      size: 20.w,
+                    ),
                   ),
                 ],
               ),
@@ -882,6 +886,24 @@ class _ShortsCommentsOverlay extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+
+  void _openGiftGallery(int index) {
+    final short = controller.shortsList[index];
+    final creatorName = short.authorName.isNotEmpty ? short.authorName : "Creator";
+    GiftGallerySheet.show(
+      context: Get.context!,
+      recipientName: creatorName,
+      onSend: (gift, qty) async {
+        Get.back();
+        Get.snackbar(
+          'Gift Sent! 🎁',
+          'Sent $qty x ${gift.name} to $creatorName!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      },
     );
   }
 }

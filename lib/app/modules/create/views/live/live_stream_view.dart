@@ -411,10 +411,7 @@ class LiveStreamView extends GetView<CreateController> {
         children: [
           Obx(() {
             final pic = controller.userProfile.value?.profilePictureUrl;
-            return ImageUtils.safeCircleAvatar(
-              radius: 14.r,
-              imageUrl: pic,
-            );
+            return ImageUtils.safeCircleAvatar(radius: 14.r, imageUrl: pic);
           }),
           SizedBox(width: 6.w),
           Column(
@@ -818,7 +815,8 @@ class LiveStreamView extends GetView<CreateController> {
           final userObj = msg is Map
               ? (msg['user'] is Map ? msg['user'] : msg)
               : {};
-          final isSession = msg is Map &&
+          final isSession =
+              msg is Map &&
               (msg['is_session_notification'] == true ||
                   msg['type'] == 'session_status_notification' ||
                   msg['type'] == 'session_status');
@@ -827,7 +825,8 @@ class LiveStreamView extends GetView<CreateController> {
               userObj['full_name'] ??
               userObj['name'] ??
               "Viewer";
-          final avatar = (msg is Map ? msg['profile_picture'] : null) ??
+          final avatar =
+              (msg is Map ? msg['profile_picture'] : null) ??
               userObj['profile_picture'] ??
               userObj['avatar'];
           final isAction =
@@ -842,8 +841,8 @@ class LiveStreamView extends GetView<CreateController> {
               type: isSession
                   ? "session"
                   : (isAction
-                      ? "join_dark"
-                      : (index % 3 == 0 ? "chat_peach" : "chat_white")),
+                        ? "join_dark"
+                        : (index % 3 == 0 ? "chat_peach" : "chat_white")),
               avatarUrl: avatar?.toString(),
             ),
           );
@@ -894,52 +893,60 @@ class LiveStreamView extends GetView<CreateController> {
 
     return Align(
       alignment: Alignment.centerLeft,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          color: bgColor,
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 320.w,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ImageUtils.safeCircleAvatar(
-              radius: 9.r,
-              backgroundColor: Colors.grey.shade400,
-              imageUrl: avatarUrl,
-            ),
-            SizedBox(width: 6.w),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: "$username ",
-                    style: TextStyle(
-                      color: userColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextSpan(
-                    text: message,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: bgColor,
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ImageUtils.safeCircleAvatar(
+                radius: 9.r,
+                backgroundColor: Colors.grey.shade400,
+                imageUrl: avatarUrl,
+              ),
+              SizedBox(width: 6.w),
+              Flexible(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "$username ",
+                        style: TextStyle(
+                          color: userColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: message,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  softWrap: true,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

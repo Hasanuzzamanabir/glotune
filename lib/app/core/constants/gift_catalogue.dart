@@ -1,0 +1,799 @@
+import 'package:flutter/material.dart';
+import 'package:glotune/app/data/models/gift_item_model.dart';
+
+class GiftCatalogue {
+  static const String title = "Gift Gallery";
+  static const String subtitle = "Initial Catalogue (70 Gifts)";
+  static const String slogan = "Small Gifts, Big Moments • Your Support Makes Creativity Go Further!";
+  static const String footer = "GLOTUNE • More Gifts • More Joy • A Brighter World";
+
+  static const List<String> categories = [
+    'All',
+    'Emotions',
+    'Animals',
+    'Crops & Nature',
+    'Nature & Beauty',
+    'Vehicles',
+    'Professionals',
+    'World Destinations',
+    'Fantasy',
+    'Skies & Destinations',
+    'Special & Exclusive',
+  ];
+
+  static const List<GiftItem> allGifts = [
+    // 1. Emotions (10)
+    GiftItem(
+      code: 'GT001',
+      name: 'Appreciation Bloom',
+      category: 'Emotions',
+      coins: 1,
+      icon: '💐',
+      svgAsset: 'assets/svg/GT001_Appreciation-Bloom.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFF880E4F), Color(0xFFE91E63)],
+    ),
+    GiftItem(
+      code: 'GT002',
+      name: 'Support Hand',
+      category: 'Emotions',
+      coins: 5,
+      icon: '🤲',
+      svgAsset: 'assets/svg/GT002_Support-Hand.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFF4A148C), Color(0xFFAB47BC)],
+    ),
+    GiftItem(
+      code: 'GT003',
+      name: 'Miss You Star',
+      category: 'Emotions',
+      coins: 10,
+      icon: '⭐',
+      svgAsset: 'assets/svg/GT003_Miss-You-Star.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFFF57F17), Color(0xFFFFD54F)],
+    ),
+    GiftItem(
+      code: 'GT004',
+      name: 'Love Bloom',
+      category: 'Emotions',
+      coins: 20,
+      icon: '💖',
+      svgAsset: 'assets/svg/GT004_Love-Bloom.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFFC2185B), Color(0xFFF48FB1)],
+    ),
+    GiftItem(
+      code: 'GT005',
+      name: 'Friendship Link',
+      category: 'Emotions',
+      coins: 25,
+      icon: '🧑‍🤝‍🧑',
+      svgAsset: 'assets/svg/GT005_Friendship-Link.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
+    ),
+    GiftItem(
+      code: 'GT006',
+      name: 'Thank You Glow',
+      category: 'Emotions',
+      coins: 50,
+      icon: '💌',
+      svgAsset: 'assets/svg/GT006_Thank-You-Glow.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFFB71C1C), Color(0xFFEF5350)],
+    ),
+    GiftItem(
+      code: 'GT007',
+      name: 'Teacher Light',
+      category: 'Emotions',
+      coins: 70,
+      icon: '📚',
+      svgAsset: 'assets/svg/GT007_Teacher-Light.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFF1B5E20), Color(0xFF66BB6A)],
+    ),
+    GiftItem(
+      code: 'GT008',
+      name: 'Cocoa Harvest',
+      category: 'Emotions',
+      coins: 80,
+      icon: '🍫',
+      svgAsset: 'assets/svg/GT008_Cocoa-Harvest.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFF3E2723), Color(0xFF8D6E63)],
+    ),
+    GiftItem(
+      code: 'GT009',
+      name: 'Mango Sunrise',
+      category: 'Emotions',
+      coins: 90,
+      icon: '🥭',
+      svgAsset: 'assets/svg/GT009_Mango-Sunrise.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFB74D)],
+    ),
+    GiftItem(
+      code: 'GT010',
+      name: 'GloTune Heartbeat',
+      category: 'Emotions',
+      coins: 100,
+      icon: '💓',
+      svgAsset: 'assets/svg/GT010_GloTune-Heartbeat.svg',
+      categoryColor: Color(0xFFE91E63),
+      gradientColors: [Color(0xFF880E4F), Color(0xFFFF4081)],
+    ),
+
+    // 2. Animals (10)
+    GiftItem(
+      code: 'GT011',
+      name: 'Whale Wave',
+      category: 'Animals',
+      coins: 120,
+      icon: '🐋',
+      svgAsset: 'assets/svg/GT011_Whale-Wave.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFF01579B), Color(0xFF29B6F6)],
+    ),
+    GiftItem(
+      code: 'GT012',
+      name: 'Panda Cheer',
+      category: 'Animals',
+      coins: 150,
+      icon: '🐼',
+      svgAsset: 'assets/svg/GT012_Panda-Cheer.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFF212121), Color(0xFF757575)],
+    ),
+    GiftItem(
+      code: 'GT013',
+      name: 'Lion Spirit',
+      category: 'Animals',
+      coins: 200,
+      icon: '🦁',
+      svgAsset: 'assets/svg/GT013_Lion-Spirit.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFFBF360C), Color(0xFFFF8A65)],
+    ),
+    GiftItem(
+      code: 'GT014',
+      name: 'Peacock Bloom',
+      category: 'Animals',
+      coins: 250,
+      icon: '🦚',
+      svgAsset: 'assets/svg/GT014_Peacock-Bloom.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFF004D40), Color(0xFF26A69A)],
+    ),
+    GiftItem(
+      code: 'GT015',
+      name: 'Giraffe Sunrise',
+      category: 'Animals',
+      coins: 300,
+      icon: '🦒',
+      svgAsset: 'assets/svg/GT015_Giraffe-Sunrise.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFB300)],
+    ),
+    GiftItem(
+      code: 'GT016',
+      name: 'Butterfly Garden',
+      category: 'Animals',
+      coins: 350,
+      icon: '🦋',
+      svgAsset: 'assets/svg/GT016_Butterfly-Garden.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFF4A148C), Color(0xFFEA80FC)],
+    ),
+    GiftItem(
+      code: 'GT017',
+      name: 'Dolphin Splash',
+      category: 'Animals',
+      coins: 400,
+      icon: '🐬',
+      svgAsset: 'assets/svg/GT017_Dolphin-Splash.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFF006064), Color(0xFF00E5FF)],
+    ),
+    GiftItem(
+      code: 'GT018',
+      name: 'Elephant Parade',
+      category: 'Animals',
+      coins: 450,
+      icon: '🐘',
+      svgAsset: 'assets/svg/GT018_Elephant-Parade.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFF37474F), Color(0xFF90A4AE)],
+    ),
+    GiftItem(
+      code: 'GT019',
+      name: 'Giraffe Sunrise',
+      category: 'Animals',
+      coins: 500,
+      icon: '🦒',
+      svgAsset: 'assets/svg/GT019_Giraffe-Sunrise.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFFFF6F00), Color(0xFFFFD54F)],
+    ),
+    GiftItem(
+      code: 'GT020',
+      name: 'Phoenix Rise',
+      category: 'Animals',
+      coins: 600,
+      icon: '🦅',
+      svgAsset: 'assets/svg/GT020_Phoenix-Rise.svg',
+      categoryColor: Color(0xFF10B981),
+      gradientColors: [Color(0xFFB71C1C), Color(0xFFFFAB00)],
+    ),
+
+    // 3. Crops & Nature (6)
+    GiftItem(
+      code: 'GT021',
+      name: 'Cocoa Harvest',
+      category: 'Crops & Nature',
+      coins: 80,
+      icon: '🌰',
+      svgAsset: 'assets/svg/GT021_Cocoa-Harvest.svg',
+      categoryColor: Color(0xFF22C55E),
+      gradientColors: [Color(0xFF4E342E), Color(0xFFA1887F)],
+    ),
+    GiftItem(
+      code: 'GT022',
+      name: 'Mango Sunrise',
+      category: 'Crops & Nature',
+      coins: 90,
+      icon: '🥭',
+      svgAsset: 'assets/svg/GT022_Mango-Sunrise.svg',
+      categoryColor: Color(0xFF22C55E),
+      gradientColors: [Color(0xFFF57F17), Color(0xFFFFCA28)],
+    ),
+    GiftItem(
+      code: 'GT023',
+      name: 'Golden Wheat',
+      category: 'Crops & Nature',
+      coins: 120,
+      icon: '🌾',
+      svgAsset: 'assets/svg/GT023_Golden-Wheat.svg',
+      categoryColor: Color(0xFF22C55E),
+      gradientColors: [Color(0xFFFF8F00), Color(0xFFFFE082)],
+    ),
+    GiftItem(
+      code: 'GT024',
+      name: 'Coffee Bloom',
+      category: 'Crops & Nature',
+      coins: 150,
+      icon: '☕',
+      svgAsset: 'assets/svg/GT024_Coffee-Bloom.svg',
+      categoryColor: Color(0xFF22C55E),
+      gradientColors: [Color(0xFF2E1C0C), Color(0xFF6D4C41)],
+    ),
+    GiftItem(
+      code: 'GT025',
+      name: 'Pineapple Party',
+      category: 'Crops & Nature',
+      coins: 200,
+      icon: '🍍',
+      svgAsset: 'assets/svg/GT025_Pineapple-Party.svg',
+      categoryColor: Color(0xFF22C55E),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFEE58)],
+    ),
+    GiftItem(
+      code: 'GT026',
+      name: 'Rice Field Breeze',
+      category: 'Crops & Nature',
+      coins: 250,
+      icon: '🌿',
+      svgAsset: 'assets/svg/GT026_Rice-Field-Breeze.svg',
+      categoryColor: Color(0xFF22C55E),
+      gradientColors: [Color(0xFF1B5E20), Color(0xFF81C784)],
+    ),
+
+    // 4. Nature & Beauty (6)
+    GiftItem(
+      code: 'GT027',
+      name: 'Sunflower Glow',
+      category: 'Nature & Beauty',
+      coins: 300,
+      icon: '🌻',
+      svgAsset: 'assets/svg/GT027_Sunflower-Glow.svg',
+      categoryColor: Color(0xFF06B6D4),
+      gradientColors: [Color(0xFFF57F17), Color(0xFFFFF176)],
+    ),
+    GiftItem(
+      code: 'GT028',
+      name: 'Ocean Wave',
+      category: 'Nature & Beauty',
+      coins: 350,
+      icon: '🌊',
+      svgAsset: 'assets/svg/GT028_Ocean-Wave.svg',
+      categoryColor: Color(0xFF06B6D4),
+      gradientColors: [Color(0xFF01579B), Color(0xFF4FC3F7)],
+    ),
+    GiftItem(
+      code: 'GT029',
+      name: 'Love Bloom',
+      category: 'Nature & Beauty',
+      coins: 400,
+      icon: '🌸',
+      svgAsset: 'assets/svg/GT029_Love-Bloom.svg',
+      categoryColor: Color(0xFF06B6D4),
+      gradientColors: [Color(0xFF880E4F), Color(0xFFF06292)],
+    ),
+    GiftItem(
+      code: 'GT030',
+      name: 'Golden Mountain',
+      category: 'Nature & Beauty',
+      coins: 500,
+      icon: '🏔️',
+      svgAsset: 'assets/svg/GT030_Golden-Mountain.svg',
+      categoryColor: Color(0xFF06B6D4),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFD54F)],
+    ),
+    GiftItem(
+      code: 'GT031',
+      name: 'City Lights',
+      category: 'Nature & Beauty',
+      coins: 600,
+      icon: '🏙️',
+      svgAsset: 'assets/svg/GT031_City-Lights.svg',
+      categoryColor: Color(0xFF06B6D4),
+      gradientColors: [Color(0xFF1A237E), Color(0xFF7E57C2)],
+    ),
+    GiftItem(
+      code: 'GT032',
+      name: 'Forest Haven',
+      category: 'Nature & Beauty',
+      coins: 1000,
+      icon: '🌲',
+      svgAsset: 'assets/svg/GT032_Forest-Haven.svg',
+      categoryColor: Color(0xFF06B6D4),
+      gradientColors: [Color(0xFF004D40), Color(0xFF4DB6AC)],
+    ),
+
+    // 5. Vehicles (7)
+    GiftItem(
+      code: 'GT034',
+      name: 'Bullet Train',
+      category: 'Vehicles',
+      coins: 350,
+      icon: '🚄',
+      svgAsset: 'assets/svg/GT034_Bullet-Train.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
+    ),
+    GiftItem(
+      code: 'GT035',
+      name: 'Ocean Yacht',
+      category: 'Vehicles',
+      coins: 450,
+      icon: '🛥️',
+      svgAsset: 'assets/svg/GT035_Ocean-Yacht.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFF006064), Color(0xFF26C6DA)],
+    ),
+    GiftItem(
+      code: 'GT036',
+      name: 'Helicopter Lift',
+      category: 'Vehicles',
+      coins: 550,
+      icon: '🚁',
+      svgAsset: 'assets/svg/GT036_Helicopter-Lift.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFF1B5E20), Color(0xFF66BB6A)],
+    ),
+    GiftItem(
+      code: 'GT037',
+      name: 'Space Cruiser',
+      category: 'Vehicles',
+      coins: 700,
+      icon: '🚀',
+      svgAsset: 'assets/svg/GT037_Space-Cruiser.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFF311B92), Color(0xFF7C4DFF)],
+    ),
+    GiftItem(
+      code: 'GT038',
+      name: 'Mountain Bike',
+      category: 'Vehicles',
+      coins: 900,
+      icon: '🚴',
+      svgAsset: 'assets/svg/GT038_Mountain-Bike.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFFBF360C), Color(0xFFFFAB40)],
+    ),
+    GiftItem(
+      code: 'GT039',
+      name: 'Luxury Car',
+      category: 'Vehicles',
+      coins: 1200,
+      icon: '🏎️',
+      svgAsset: 'assets/svg/GT039_Luxury-Car.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFFB71C1C), Color(0xFFFF5252)],
+    ),
+    GiftItem(
+      code: 'GT040',
+      name: 'City Bus',
+      category: 'Vehicles',
+      coins: 1500,
+      icon: '🚌',
+      svgAsset: 'assets/svg/GT040_City-Bus.svg',
+      categoryColor: Color(0xFF3B82F6),
+      gradientColors: [Color(0xFF004D40), Color(0xFF00E676)],
+    ),
+
+    // 6. Professionals (7)
+    GiftItem(
+      code: 'GT041',
+      name: 'Doctor Star',
+      category: 'Professionals',
+      coins: 250,
+      icon: '👨‍⚕️',
+      svgAsset: 'assets/svg/GT041_Doctor-Star.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFF0277BD), Color(0xFF40C4FF)],
+    ),
+    GiftItem(
+      code: 'GT042',
+      name: 'Teacher Light',
+      category: 'Professionals',
+      coins: 300,
+      icon: '👨‍🏫',
+      svgAsset: 'assets/svg/GT042_Teacher-Light.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFF2E7D32), Color(0xFFA5D6A7)],
+    ),
+    GiftItem(
+      code: 'GT043',
+      name: 'Farmer Harvest',
+      category: 'Professionals',
+      coins: 350,
+      icon: '👨‍🌾',
+      svgAsset: 'assets/svg/GT043_Farmer-Harvest.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFD54F)],
+    ),
+    GiftItem(
+      code: 'GT044',
+      name: 'Engineer Build',
+      category: 'Professionals',
+      coins: 500,
+      icon: '👷',
+      svgAsset: 'assets/svg/GT044_Engineer-Build.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFFF57F17), Color(0xFFFF8F00)],
+    ),
+    GiftItem(
+      code: 'GT045',
+      name: 'Chef Flame',
+      category: 'Professionals',
+      coins: 600,
+      icon: '👨‍🍳',
+      svgAsset: 'assets/svg/GT045_Chef-Flame.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFFC62828), Color(0xFFFF8A80)],
+    ),
+    GiftItem(
+      code: 'GT046',
+      name: 'Scientist Spark',
+      category: 'Professionals',
+      coins: 1200,
+      icon: '👨‍🔬',
+      svgAsset: 'assets/svg/GT046_Scientist-Spark.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFF4A148C), Color(0xFFB388FF)],
+    ),
+    GiftItem(
+      code: 'GT048',
+      name: 'Pilot Sky',
+      category: 'Professionals',
+      coins: 1500,
+      icon: '👨‍✈️',
+      svgAsset: 'assets/svg/GT048_Pilot-Sky.svg',
+      categoryColor: Color(0xFF8B5CF6),
+      gradientColors: [Color(0xFF0D47A1), Color(0xFF82B1FF)],
+    ),
+
+    // 7. World Destinations (6)
+    GiftItem(
+      code: 'GT049',
+      name: 'Mountain Adventure',
+      category: 'World Destinations',
+      coins: 400,
+      icon: '🗻',
+      svgAsset: 'assets/svg/GT049_Mountain-Adventure.svg',
+      categoryColor: Color(0xFF0EA5E9),
+      gradientColors: [Color(0xFF263238), Color(0xFF78909C)],
+    ),
+    GiftItem(
+      code: 'GT050',
+      name: 'Desert Paradise',
+      category: 'World Destinations',
+      coins: 600,
+      icon: '🏜️',
+      svgAsset: 'assets/svg/GT050_Desert-Paradise.svg',
+      categoryColor: Color(0xFF0EA5E9),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFCC80)],
+    ),
+    GiftItem(
+      code: 'GT051',
+      name: 'Water Wonder',
+      category: 'World Destinations',
+      coins: 800,
+      icon: '🏞️',
+      svgAsset: 'assets/svg/GT051_Water-Wonder.svg',
+      categoryColor: Color(0xFF0EA5E9),
+      gradientColors: [Color(0xFF006064), Color(0xFF80DEEA)],
+    ),
+    GiftItem(
+      code: 'GT052',
+      name: 'Skyline Explorer',
+      category: 'World Destinations',
+      coins: 1200,
+      icon: '🌆',
+      svgAsset: 'assets/svg/GT052_Skyline-Explorer.svg',
+      categoryColor: Color(0xFF0EA5E9),
+      gradientColors: [Color(0xFF311B92), Color(0xFFBA68C8)],
+    ),
+    GiftItem(
+      code: 'GT053',
+      name: 'Global Journey',
+      category: 'World Destinations',
+      coins: 1500,
+      icon: '🌍',
+      svgAsset: 'assets/svg/GT053_Global-Journey.svg',
+      categoryColor: Color(0xFF0EA5E9),
+      gradientColors: [Color(0xFF01579B), Color(0xFF80CBC4)],
+    ),
+    GiftItem(
+      code: 'GT054',
+      name: 'Island Escape',
+      category: 'World Destinations',
+      coins: 2000,
+      icon: '🏝️',
+      svgAsset: 'assets/svg/GT054_Island-Escape.svg',
+      categoryColor: Color(0xFF0EA5E9),
+      gradientColors: [Color(0xFF004D40), Color(0xFF69F0AE)],
+    ),
+
+    // 8. Fantasy (4)
+    GiftItem(
+      code: 'GT055',
+      name: 'Thunder Dragon',
+      category: 'Fantasy',
+      coins: 500,
+      icon: '🐉',
+      svgAsset: 'assets/svg/GT055_Thunder-Dragon.svg',
+      categoryColor: Color(0xFFEC4899),
+      gradientColors: [Color(0xFFB71C1C), Color(0xFFFFD600)],
+    ),
+    GiftItem(
+      code: 'GT056',
+      name: 'Star Cloud',
+      category: 'Fantasy',
+      coins: 700,
+      icon: '🌌',
+      svgAsset: 'assets/svg/GT056_Star-Cloud.svg',
+      categoryColor: Color(0xFFEC4899),
+      gradientColors: [Color(0xFF311B92), Color(0xFF00E5FF)],
+    ),
+    GiftItem(
+      code: 'GT057',
+      name: 'Magic Castle',
+      category: 'Fantasy',
+      coins: 900,
+      icon: '🏰',
+      svgAsset: 'assets/svg/GT057_Magic-Castle.svg',
+      categoryColor: Color(0xFFEC4899),
+      gradientColors: [Color(0xFF4A148C), Color(0xFFFF80AB)],
+    ),
+    GiftItem(
+      code: 'GT059',
+      name: 'Infinity Stone',
+      category: 'Fantasy',
+      coins: 2000,
+      icon: '🔮',
+      svgAsset: 'assets/svg/GT059_Infinity-Stage.svg',
+      categoryColor: Color(0xFFEC4899),
+      gradientColors: [Color(0xFF1A237E), Color(0xFFE040FB)],
+    ),
+
+    // 9. Skies & Destinations (6)
+    GiftItem(
+      code: 'GT060',
+      name: 'Ocean Arena',
+      category: 'Skies & Destinations',
+      coins: 600,
+      icon: '🏟️',
+      svgAsset: 'assets/svg/GT060_Ocean-Arena.svg',
+      categoryColor: Color(0xFF2563EB),
+      gradientColors: [Color(0xFF0D47A1), Color(0xFF00E5FF)],
+    ),
+    GiftItem(
+      code: 'GT061',
+      name: 'Sky Dome',
+      category: 'Skies & Destinations',
+      coins: 1000,
+      icon: '🪐',
+      svgAsset: 'assets/svg/GT061_Sky-Dome.svg',
+      categoryColor: Color(0xFF2563EB),
+      gradientColors: [Color(0xFF1A237E), Color(0xFF80D8FF)],
+    ),
+    GiftItem(
+      code: 'GT062',
+      name: 'Global Arena',
+      category: 'Skies & Destinations',
+      coins: 1500,
+      icon: '🌐',
+      svgAsset: 'assets/svg/GT062_Global-Arena.svg',
+      categoryColor: Color(0xFF2563EB),
+      gradientColors: [Color(0xFF311B92), Color(0xFF64FFDA)],
+    ),
+    GiftItem(
+      code: 'GT063',
+      name: 'Golden Trophy',
+      category: 'Skies & Destinations',
+      coins: 2500,
+      icon: '🏆',
+      svgAsset: 'assets/svg/GT063_Golden-Trophy.svg',
+      categoryColor: Color(0xFF2563EB),
+      gradientColors: [Color(0xFFFF6F00), Color(0xFFFFD54F)],
+    ),
+    GiftItem(
+      code: 'GT064',
+      name: 'Golden Trophy',
+      category: 'Skies & Destinations',
+      coins: 3000,
+      icon: '🥇',
+      svgAsset: 'assets/svg/GT064_Golden-Trophy.svg',
+      categoryColor: Color(0xFF2563EB),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFEE58)],
+    ),
+    GiftItem(
+      code: 'GT065',
+      name: 'World Cup Trophy',
+      category: 'Skies & Destinations',
+      coins: 5000,
+      icon: '🏆',
+      svgAsset: 'assets/svg/GT065_World-Cup-Trophy.svg',
+      categoryColor: Color(0xFF2563EB),
+      gradientColors: [Color(0xFFFF8F00), Color(0xFFFFF9C4)],
+    ),
+
+    // 10. Special & Exclusive (6)
+    GiftItem(
+      code: 'GT066',
+      name: 'Rescue Truck',
+      category: 'Special & Exclusive',
+      coins: 10000,
+      icon: '🚒',
+      svgAsset: 'assets/svg/GT066_Rescue-Truck.svg',
+      videoAsset: 'assets/video/GT066_Rescue-Truck.mp4',
+      categoryColor: Color(0xFFF59E0B),
+      gradientColors: [Color(0xFFB71C1C), Color(0xFFFF5252)],
+    ),
+    GiftItem(
+      code: 'GT067',
+      name: 'Doctor Star',
+      category: 'Special & Exclusive',
+      coins: 20000,
+      icon: '🌟',
+      svgAsset: 'assets/svg/GT067_Doctor-Star.svg',
+      videoAsset: 'assets/video/GT067_Doctor-Star.mp4',
+      categoryColor: Color(0xFFF59E0B),
+      gradientColors: [Color(0xFF006064), Color(0xFF18FFFF)],
+    ),
+    GiftItem(
+      code: 'GT068',
+      name: 'Teacher Light',
+      category: 'Special & Exclusive',
+      coins: 50000,
+      icon: '💡',
+      svgAsset: 'assets/svg/GT068_Teacher-Light.svg',
+      videoAsset: 'assets/video/GT068_Teacher-Light.mp4',
+      categoryColor: Color(0xFFF59E0B),
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFD700)],
+    ),
+    GiftItem(
+      code: 'GT069',
+      name: 'Galaxy Voyage',
+      category: 'Special & Exclusive',
+      coins: 100000,
+      icon: '🌌',
+      svgAsset: 'assets/svg/GT069_Galaxy-Voyage.svg',
+      videoAsset: 'assets/video/GT069_Galaxy-Voyage.mp4',
+      categoryColor: Color(0xFFF59E0B),
+      gradientColors: [Color(0xFF4A148C), Color(0xFF7C4DFF)],
+    ),
+    GiftItem(
+      code: 'GT070',
+      name: 'Royal Castle',
+      category: 'Special & Exclusive',
+      coins: 500000,
+      icon: '👑',
+      svgAsset: 'assets/svg/GT070_Royal-Castle.svg',
+      videoAsset: 'assets/video/GT070_Royal-Castle.mp4',
+      categoryColor: Color(0xFFF59E0B),
+      gradientColors: [Color(0xFF311B92), Color(0xFFFFD700)],
+    ),
+    GiftItem(
+      code: 'GT071',
+      name: 'Dragon Legend',
+      category: 'Special & Exclusive',
+      coins: 1000000,
+      icon: '🐲',
+      svgAsset: 'assets/svg/GT071_Dragon-Legend.svg',
+      videoAsset: 'assets/video/GT071_Dragon-Legend.mp4',
+      categoryColor: Color(0xFFF59E0B),
+      gradientColors: [Color(0xFFB71C1C), Color(0xFFFFD700)],
+    ),
+  ];
+
+  /// The 6 exclusive gifts that have animated video assets.
+  static List<GiftItem> get videoGifts => allGifts.where((g) => g.videoAsset != null).toList();
+
+  static List<GiftItem> getByCategory(String category) {
+    if (category == 'All') return allGifts;
+    return allGifts.where((g) => g.category.toLowerCase() == category.toLowerCase()).toList();
+  }
+
+  static List<GiftItem> search(String query, {String? category}) {
+    final list = (category == null || category == 'All') ? allGifts : getByCategory(category);
+    if (query.trim().isEmpty) return list;
+    final q = query.trim().toLowerCase();
+    return list.where((g) =>
+      g.name.toLowerCase().contains(q) ||
+      g.code.toLowerCase().contains(q) ||
+      g.coins.toString().contains(q)
+    ).toList();
+  }
+
+  static GiftItem? findByCode(String code) {
+    try {
+      return allGifts.firstWhere((g) => g.code.toUpperCase() == code.trim().toUpperCase());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static GiftItem? findByName(String name) {
+    try {
+      return allGifts.firstWhere((g) => g.name.toLowerCase() == name.trim().toLowerCase());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static GiftItem? find(String codeOrName) {
+    if (codeOrName.trim().isEmpty) return null;
+    return findByCode(codeOrName) ?? findByName(codeOrName);
+  }
+
+  /// Resolve animated video asset path for a gift code or gift name
+  static String? getVideoAsset(String codeOrName) {
+    if (codeOrName.trim().isEmpty) return null;
+    final item = find(codeOrName);
+    if (item?.videoAsset != null) return item!.videoAsset;
+
+    final lower = codeOrName.trim().toLowerCase();
+    if (lower.contains('rescue') || lower.contains('truck') || lower == 'gt066' || lower == 'gt038') {
+      return 'assets/video/GT066_Rescue-Truck.mp4';
+    }
+    if (lower.contains('doctor') || lower == 'gt067' || lower == 'gt041') {
+      return 'assets/video/GT067_Doctor-Star.mp4';
+    }
+    if (lower.contains('teacher') || lower == 'gt068' || lower == 'gt042' || lower == 'gt007') {
+      return 'assets/video/GT068_Teacher-Light.mp4';
+    }
+    if (lower.contains('galaxy') || lower == 'gt069') {
+      return 'assets/video/GT069_Galaxy-Voyage.mp4';
+    }
+    if (lower.contains('castle') || lower == 'gt070' || lower == 'gt057') {
+      return 'assets/video/GT070_Royal-Castle.mp4';
+    }
+    if (lower.contains('dragon') || lower == 'gt071' || lower == 'gt055') {
+      return 'assets/video/GT071_Dragon-Legend.mp4';
+    }
+    return null;
+  }
+}
